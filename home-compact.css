@@ -1,0 +1,71 @@
+/* Compact research rhythm while preserving readable type and source limitations. */
+#main-content #proof { padding: 65px 0; }
+#main-content #proof .section-head { margin-bottom: 24px; }
+#proof .section-head p { line-height: 1.5; }
+#proof .research-status { margin: 20px 0 24px; padding: 14px 18px; gap: 12px; }
+#proof .research-status span { line-height: 1.45; }
+#proof .audit-heading { margin-bottom: 18px; }
+#proof .coverage-groups { gap: 24px; }
+#proof .coverage-group-heading { padding-bottom: 10px; margin-bottom: 12px; }
+#proof .coverage-pair { gap: 12px; }
+#proof .e-card { padding: 17px; }
+#proof .e-num { margin: 8px 0; }
+#proof .e-card p { min-height: 0; margin: 7px 0; line-height: 1.4; }
+#proof .mini-bar { margin-top: 12px; }
+#proof .source-caption { margin: 16px 0; line-height: 1.45; }
+#proof .evidence-note { padding: 14px 18px; margin-bottom: 14px; }
+#proof .evidence-note p { line-height: 1.45; }
+#proof .evidence-methods { margin: 14px 0; }
+#proof .evidence-methods>summary { padding: 12px 0; }
+#proof .evidence-next { margin-top: 22px; padding: 20px 24px; gap: 22px; }
+#proof .evidence-next p { line-height: 1.5; font-size: 16px; }
+#proof .section-more { margin-top: 16px; }
+.system-diagram { margin: 30px 0 22px; }
+.system-pipeline { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 25px; padding: 0; margin: 0; list-style: none; }
+.system-pipeline>li { position: relative; border: 1px solid #365763; border-top: 3px solid #55c3a3; border-radius: 6px; padding: 24px 18px; background: #0b2534; }
+.system-pipeline>li:not(:last-child)::after { content: '→'; position: absolute; right: -23px; top: 45%; font-size: 23px; color: #7bddc1; }
+.pipeline-number { font-size: 12px; font-weight: 800; color: #80dbc1; }
+.system-pipeline h3 { font: 800 23px/1.25 Manrope,sans-serif; margin: 18px 0; }
+.pipeline-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 62px; align-content: start; }
+.pipeline-tags span { border: 1px solid #496772; padding: 5px 7px; font-size: 12px; color: #c8e6e3; border-radius: 3px; }
+.system-pipeline p { font-size: 16px; line-height: 1.55; color: #d8e6ec; margin: 16px 0; }
+.system-pipeline small { font-size: 13px; line-height: 1.45; color: #9dbac5; display: block; }
+.system-pipeline .review-gate { border-top-color: #dfc17b; background: #26332d; }
+.review-gate .pipeline-number { color: #edd394; }
+.system-diagram figcaption { border-bottom: 1px solid #365763; padding: 20px 0; color: #b5d2da; font-size: 15px; }
+.system-diagram figcaption strong { color: #8ee4c8; }
+#main-content #home-evidence-pathway, #main-content #home-network { padding: 42px 0; }
+.overview-section .section-divider { margin-bottom: 25px; padding-bottom: 16px; }
+.overview-layout { display: grid; grid-template-columns: minmax(0,.82fr) minmax(0,1.18fr); gap: 35px; align-items: center; }
+#main-content .overview-layout .section-head { margin: 0; }
+.overview-layout .graph,.overview-layout .world-wrap { height: 340px; }
+.overview-section .section-more { margin-top: 16px; }
+.overview-section .graph-example { margin-top: 12px; }
+.overview-layout .graph-card { max-width: 180px; padding: 11px; }
+.overview-layout .graph-card b { font-size: 12px; }
+.overview-layout .graph-card span { font-size: 11px; }
+.overview-layout .gcenter { left: 34%; top: 39%; }
+.overview-layout .g1 { left: 3%; top: 8%; }
+.overview-layout .g2 { right: 3%; top: 8%; }
+.overview-layout .g3 { left: 3%; bottom: 18%; }
+.overview-layout .g4 { right: 3%; bottom: 18%; }
+.overview-layout .g5 { left: 34%; bottom: 3%; }
+.overview-layout .map-caption { left: 18px; right: 18px; bottom: 12px; font-size: 11px; }
+@media(min-width:1100px) and (max-height:850px) { .overview-layout .world-wrap,.overview-layout .graph { height: 310px; } }
+@media(max-width:1000px) {
+  .system-pipeline { grid-template-columns: 1fr; gap: 24px; }
+  .system-pipeline>li:not(:last-child)::after { content:'↓'; right:50%; top:auto; bottom:-27px; }
+  .pipeline-tags { min-height: 0; }
+  .system-pipeline h3 { margin: 10px 0; }
+  .overview-layout { grid-template-columns: 1fr; gap: 24px; }
+}
+@media(max-width:760px) {
+  #proof .coverage-pair { grid-template-columns: 1fr 1fr; }
+  #proof .e-card { padding: 14px; }
+  #proof .e-num { font-size: 34px; }
+  #proof .e-card p { font-size: 14px; }
+  #proof .evidence-next { padding: 18px; }
+  .overview-layout .graph { height: auto; }
+  .overview-layout .graph-card { max-width: none; }
+  #main-content #home-evidence-pathway, #main-content #home-network { padding: 40px 0; }
+}
