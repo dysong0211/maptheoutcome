@@ -3,6 +3,8 @@
 Open index.html or serve this folder with any static web server. Upload the contents of this folder to GitHub Pages, keeping assets and subdirectories together.
 
 ## This revision
+- Mobile evidence-gap section now uses a compact 2×2 card grid and fits within a typical phone viewport at both 320px and 390px widths.
+- Preserved all four percentages, denominators, the audit-method link and a concise source citation.
 - White Paper aligned with the current outcome-focused AI engine, institutional buyer and living-record positioning.
 - Reframed the core problem as lost institutional memory and disconnected accountability during implementation.
 - Added automated accountability, frictionless oversight, live program integrity and real-time visibility to the institutional case.

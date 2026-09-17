@@ -387,7 +387,23 @@
 .visual-caption{font-size:9px}
 .audience-line{gap:15px;font-size:12px;margin-top:28px}
 .audience-line i{padding-inline:6px}
-.problem-intro p,#proof .section-head p{font-size:16px}
+.problem-intro p{font-size:16px}
+#proof{padding:16px 0}
+#proof .section-label{margin-bottom:6px}
+#proof .section-head h2{font-size:27px;line-height:1.04}
+#proof .section-head p{display:none}
+#proof .audit-heading{display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px;margin:9px 0 7px}
+#proof .evidence-tag{font-size:10px}
+#proof .audit-heading h3{font-size:17px;line-height:1.1;margin-top:3px}
+#proof .reference-link{font-size:11px}
+#proof .evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#proof .e-card{padding:10px 11px;min-width:0}
+#proof .e-question{font-size:12px;line-height:1.3;min-height:31px}
+#proof .e-num{font-size:32px;margin:6px 0}
+#proof .e-card p{font-size:12px;line-height:1.3;min-height:31px}
+#proof .e-denominator{font-size:10px;line-height:1.35;margin-top:7px}
+#proof .mini-bar{margin-top:8px}
+#proof .source-caption{font-size:10px;line-height:1.35;margin-top:7px}
 .solution-callout{grid-template-columns:1fr;gap:15px;padding:23px}
 .solution-callout h3{font-size:24px}
 .story-panel{padding:23px}
@@ -428,10 +444,18 @@
 .contact-section{padding:48px 0}
 }
 
-@media(max-width:420px){.evidence-grid{grid-template-columns:1fr}
-.e-card p,.e-question{min-height:0}
+@media(max-width:420px){#proof .e-card{padding:9px}
+#proof .e-question{font-size:11px}
+#proof .e-num{font-size:29px}
+#proof .e-card p{font-size:11px;min-height:28px}
+#proof .e-denominator{font-size:9px}
 .hero .buttons{flex-wrap:wrap}
 .hero h1{font-size:46px}
 .extract-grid{grid-template-columns:1fr}
 .extract-card{min-height:0}
+}
+@media(max-width:350px){#proof .evidence-tag{font-size:0}
+#proof .evidence-tag::after{content:"CAMBODIA · 2018–2025";font-size:10px}
+#proof .audit-heading{margin-top:10px}
+#proof .source-caption{line-height:1.35}
 }
