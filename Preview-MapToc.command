@@ -6,6 +6,6 @@ elif command -v python3 >/dev/null 2>&1; then
   exec python3 scripts/preview.py --open
 else
   echo "The local preview needs Node.js 18 or later, or Python 3."
-  echo "You can also upload the complete website to your domain and open Vision there."
+  echo "You can also upload the complete website to your domain and open Demo there."
   read -r -p "Press Return to close. "
 fi

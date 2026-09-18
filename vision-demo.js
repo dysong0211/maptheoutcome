@@ -2,6 +2,8 @@
   const container = document.querySelector('.vision-demo-frame');
   const frame = container?.querySelector('iframe');
   if (!frame) return;
+  const homepagePhone = Boolean(container.closest('.product-demo')) && matchMedia('(max-width: 600px)').matches;
+  if (homepagePhone) return;
   if (location.protocol === 'file:') {
     document.querySelector('#demo-local-preview').hidden = false;
     const link = document.querySelector('.vision-demo-open');

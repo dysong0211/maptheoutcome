@@ -20,7 +20,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
 root = Path(__file__).resolve().parent.parent
 with ThreadingHTTPServer(('127.0.0.1', 0), partial(PreviewHandler, directory=str(root))) as server:
-    url = 'http://127.0.0.1:%s/vision.html#app-demo' % server.server_port
+    url = 'http://127.0.0.1:%s/demo.html#app-demo' % server.server_port
     print('\nMapToc preview: ' + url, flush=True)
     print('Keep this window open. Press Control+C to stop.\n', flush=True)
     if '--open' in sys.argv:

@@ -3,6 +3,13 @@
 Serve this folder with a static web server. Upload the contents of this folder to GitHub Pages, keeping assets and subdirectories together. The interactive demo needs HTTP hosting; opening index.html directly from a file browser is insufficient for the demo.
 
 ## This revision
+- Rewrote the homepage hero around an AI evidence engine and “A new standard for evidence-led development funding.”
+- Replaced the problem and solution paragraphs with short, unboxed evidence phrases and added consistent spacing before major product headings.
+- Moved the interactive demo directly after Evidence Capture. The beta now uses sample lookup mode; live-AI and upload controls are hidden in the static demonstration.
+- On the homepage, phones show a current application screenshot and a full-screen demo link without loading the embedded app. Vision retains its embedded mobile demo.
+- Restored Outcome Trail as a clean MapToc evidence web, with the reported result in the center, eight connected records and an interactive explanation panel.
+- Compacted Why MapToc to category labels and key headlines on desktop and phones.
+- Replaced the top-right contact link with a boxed Demo action and added a dedicated Demo page.
 - Directly opening Vision from a local folder now shows preview instructions instead of a demo directory listing. On a hosted website, the interactive demo loads normally.
 - Added `Preview-MapToc.command` for Mac local preview, using installed Node.js 18+ or Python 3 and an available local port.
 - Matched “Accountability for both sides” to the main Why MapToc heading size on desktop and phones. Added matching numbered category labels to all four benefits.
@@ -69,7 +76,7 @@ Serve this folder with a static web server. Upload the contents of this folder t
 ## Running and uploading the demo
 On a Mac, open `Preview-MapToc.command` in the extracted website folder. Keep its Terminal window open while using the demo; close it or press Control+C to stop. The launcher uses installed Node.js 18+ or Python 3, chooses an available local port, and opens Vision in your browser. If double-clicking does not launch it, open Terminal, type `bash `, drag `Preview-MapToc.command` into the window and press Return. No dependencies need to be installed when either runtime is already available.
 
-Alternatively, run `npm run dev` in this folder, then open `http://127.0.0.1:4173/vision.html#app-demo`. This option requires Node.js 18 or later.
+Alternatively, run `npm run dev` in this folder, then open `http://127.0.0.1:4173/demo.html#app-demo`. This option requires Node.js 18 or later.
 
 For GitHub Pages, upload the extracted website contents, including the complete `demo/` directory, `assets/`, and `.nojekyll`. The compiled demo uses `/demo/` paths and is packaged for the root of the custom domain, such as `maptheoutcome.org`. A GitHub project subpath without that custom domain requires a different base-path build.
 
@@ -79,11 +86,11 @@ Demo scripts and styles are under `demo/app-assets/`; references were updated to
 The demo contains illustrative records and supports page navigation, evidence inspection and local browser interactions. Live AI is disabled in this static export and requires the server application. Uploaded demo files are stored in the browser, not a shared institutional backend. No API keys are included.
 
 ## Verification
-All 84 HTML pages checked for local links, anchor targets, duplicate IDs and spelling. Main website navigation is consistent across its 48 navigation-bearing pages. Accountability heading sizes are checked at desktop, tablet and phone widths. The embedded and full-screen demo are checked for navigation, evidence-panel opening/closing, source detail, mobile navigation, branding, asset loading and horizontal overflow. Live AI remains disabled. Research, White Paper and existing app concept visuals are preserved. No deployment performed.
+All 85 HTML pages checked for local links, anchor targets, duplicate IDs and spelling. Main website navigation is consistent across its 49 navigation-bearing pages. Key homepage sections fit within a typical 390×844 phone viewport; the Product section remains intentionally multi-screen. The embedded and full-screen demo are checked for navigation, mobile behavior, branding, asset loading and horizontal overflow. Live AI remains disabled. Research, White Paper and existing app concept visuals are preserved. No deployment performed.
 
 Concept demonstrations use illustrative records. Proposed capabilities are not a live service.
 
 ## Editorial review before launch
 - The evidence percentages remain labeled preliminary. Publish the audit exports and coding rules to make the findings independently reproducible.
 
-The interactive demo is embedded on both the homepage (after “See the evidence take shape”) and the Vision page. Both use shared interactive-demo.css styling and the same local-preview guidance.
+The interactive demo is available on the dedicated Demo page, the homepage Product section and the Vision page. All three use shared interactive-demo.css styling and the same local-preview guidance.

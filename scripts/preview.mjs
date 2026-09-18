@@ -16,7 +16,7 @@ const server=http.createServer(async(req,res)=>{try{
 }catch{res.writeHead(404,{'Content-Type':'text/plain'});res.end('Not found');}});
 server.on('error',error=>{console.error('Could not start the preview:',error.message);process.exitCode=1;});
 server.listen(port,host,()=>{
- const url='http://'+host+':'+server.address().port+'/vision.html#app-demo';
+ const url='http://'+host+':'+server.address().port+'/demo.html#app-demo';
  console.log('\nMapToc preview: '+url+'\nKeep this window open. Press Control+C to stop.\n');
  if(args.includes('--open')&&process.platform==='darwin'){
   const opener=spawn('open',[url],{stdio:'ignore'});
