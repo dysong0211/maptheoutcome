@@ -1,25 +1,21 @@
 # MapToc website
 
-Serve this folder with a static web server to use the full website and interactive demo. For local preview, run `npm run dev` from this folder and open the address on port 4173. The app demo requires HTTP hosting; opening its HTML directly as a local file will not load its absolute asset paths.
-
-## Interactive app demo
-
-- The homepage “Try the app demo” button, app preview and product-section link open `/demo/`.
-- The supplied demo includes Overview, Evidence Insight, Program Progress, Documents, Finances and a transparency log. The “Website” link returns to the homepage.
-- It uses synthetic example records. Changes and uploaded files are stored in the visitor’s browser. “Reset demo” restores the sample records.
-- Prepared summaries, source inspection and evidence exploration work in this static package. Free-form AI questions and live AI processing are disabled and need the separate server application; no AI keys or server endpoint are included.
-- The demo uses the website’s local font and MapToc symbol through `demo/website-integration.css`. The supplied compiled application is retained.
-
-## GitHub Pages upload
-
-Upload the extracted website contents, including the complete `demo/` directory and `.nojekyll`, to the publishing root. Keep any existing custom-domain configuration. The `.nojekyll` file ensures GitHub Pages serves the demo’s `_next` assets.
-
-The supplied demo is built for `/demo/` at the domain root, such as `maptheoutcome.org/demo/`. Hosting the website beneath a repository subpath requires rebuilding the demo from its source with the corresponding base path. The uploaded archive contains a compiled export, not its source project.
+Serve this folder with a static web server. Upload the contents of this folder to GitHub Pages, keeping assets and subdirectories together. The interactive demo needs HTTP hosting; opening index.html directly from a file browser is insufficient for the demo.
 
 ## This revision
-- Restored the fuller Problem section and comparison diagrams; removed only the requested reconstruction sentence. Both key phrases share the same heading size, with tighter Solution spacing and all wording retained.
-- Restored the open-column Why MapToc design, preserved the institutional block and removed only its eyebrow label.
-- Outcome-diagram keywords use a darker green for stronger contrast.
+- Matched “Accountability for both sides” to the main Why MapToc heading size on desktop and phones. Added matching numbered category labels to all four benefits.
+- Embedded the supplied interactive MapToc demo in Vision, with a full-screen link and return-to-Vision navigation.
+- Applied the website font, symbol and wordmark treatment to the demo. Embedded dialogs scroll into view; the app uses the full phone width on small screens.
+- Based on the newly supplied MapToc_refined_website(1).zip.
+- Added “Accountability for both sides” beneath the three existing Why MapToc columns. The four benefits use a single desktop row and a compact 2×2 phone layout.
+- Simplified the accountability row to match the open Why MapToc columns: thin dividers, numbered labels and bold navy headings, with no surrounding panel or card fills. All benefit wording is retained.
+- Tightened repeated wording in the original benefits and linked the new row to the White Paper.
+- Replaced the repeated Vision benefits with “A record that outlasts the grant”: an illustrative award-to-closure record, staff handover and future funding uses.
+- Updated the Vision introduction and hero labels to emphasize continuity and institutional learning.
+- Preserved the uploaded version’s app concept visuals, product interactions, navigation and other pages.
+
+## Previous revisions carried forward
+- Problem section reduced to key phrases and a direct White Paper link; removed the requested reconstruction and compliance sentences.
 - Hero actions use clean SVG arrows, and the mobile funding headline has explicit word spacing.
 - Further reduced mobile section padding and comparison-card height while keeping app panels and diagrams visible.
 - Compact phone layouts for the Problem, Product, Outcome trail and How it works sections. The Without/With comparison remains side by side on phones.
@@ -68,12 +64,20 @@ The supplied demo is built for `/demo/` at the domain root, such as `maptheoutco
 ## Styles
 `site-system.css` holds shared typography, navigation, branding and layout tokens. `landing-page.css`, `research-panels.css` and `investor-page.css` contain page-specific presentation. `app-preview.css` preserves the detailed concept interface. Document and research-reading styles remain separate.
 
+## Running and uploading the demo
+For a local preview, run `npm run dev` in this folder, then open `http://127.0.0.1:4173/vision.html#app-demo`. Node.js 18 or later is required; no dependency installation is needed.
+
+For GitHub Pages, upload the extracted website contents, including the complete `demo/` directory, `assets/`, and `.nojekyll`. The compiled demo uses `/demo/` paths and is packaged for the root of the custom domain, such as `maptheoutcome.org`. A GitHub project subpath without that custom domain requires a different base-path build.
+
+Demo scripts and styles are under `demo/app-assets/`; references were updated to avoid GitHub Pages skipping an underscore-prefixed asset directory. Preserve all nested directories, JavaScript, stylesheets and text payloads. Replace the website HTML and CSS together, then refresh after deployment.
+
+## Demo scope
+The demo contains illustrative records and supports page navigation, evidence inspection and local browser interactions. Live AI is disabled in this static export and requires the server application. Uploaded demo files are stored in the browser, not a shared institutional backend. No API keys are included.
+
 ## Verification
-The integrated package includes 84 HTML pages. Local routes, asset references and JavaScript syntax were checked. The demo’s five main navigation routes, source inspection, evidence detail, return-to-website link and phone menus were checked at desktop, 390px and 320px widths without missing assets, JavaScript errors or horizontal overflow. Live AI controls remained disabled and made no API requests.
+All 84 HTML pages checked for local links, anchor targets, duplicate IDs and spelling. Main website navigation is consistent across its 48 navigation-bearing pages. Accountability heading sizes are checked at desktop, tablet and phone widths. The embedded and full-screen demo are checked for navigation, evidence-panel opening/closing, source detail, mobile navigation, branding, asset loading and horizontal overflow. Live AI remains disabled. Research, White Paper and existing app concept visuals are preserved. No deployment performed.
 
-The 50 marketing and document pages were checked for local links, anchor targets, duplicate IDs and spelling. Navigation is consistent across all 48 pages that contain it; two compatibility redirects omit navigation. Homepage and Vision checked in the browser at 320, 390, 1024 and 1366 pixels without horizontal overflow or JavaScript errors. Product anchor positioning, source inspection, Vision chapter links and the legacy Investors redirect were checked. Desktop screenshots reviewed. Research and White Paper retain their previously tested layouts. No deployment performed.
-
-The homepage examples and interactive app use illustrative records. Proposed capabilities are not a production service.
+Concept demonstrations use illustrative records. Proposed capabilities are not a live service.
 
 ## Editorial review before launch
 - The evidence percentages remain labeled preliminary. Publish the audit exports and coding rules to make the findings independently reproducible.

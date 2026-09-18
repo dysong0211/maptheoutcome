@@ -15,15 +15,6 @@
 .link-arrow{width:18px;height:18px;flex:none;display:block}
 .hero-final{font-size:14px;font-weight:700;color:#d6e8e9;margin:0}
 .hero-visual{min-width:0;padding-top:0}
-.demo-preview-link{display:block;text-decoration:none;border-radius:12px}
-.demo-preview-link:hover .programme-demo{border-color:var(--mint)}
-.demo-preview-link:focus-visible{outline:3px solid var(--mint);outline-offset:6px}
-.hero-visual .programme-demo figcaption{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.demo-preview-action{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:750;color:#075b46}
-.demo-preview-action .link-arrow{width:14px;height:14px}
-.product-demo-link{display:flex;justify-content:space-between;align-items:center;gap:8px 20px;flex-wrap:wrap;margin-top:18px}
-.product-demo-link .product-note{margin:0}
-.product-demo-link .text-link{color:var(--mint)}
 .hero-caption-row{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.65fr);gap:36px;align-items:baseline}
 .hero-caption-row .visual-caption{margin:0 0 0 56.7px;align-items:baseline}
 .hero-visual .programme-demo{border-radius:12px;border-color:#49636e;box-shadow:0 25px 70px #0004;width:calc(100% - 56.7px);margin-left:auto}
@@ -279,6 +270,20 @@
 .benefit-features h3{font-size:26px;line-height:1.2;margin-top:20px}
 .benefit-features p{font-size:16px;line-height:1.65;margin:18px 0 23px}
 .feature-footer{font-size:12px;color:var(--green);letter-spacing:.045em;margin-top:auto;padding-top:8px}
+.accountability-row{margin:44px 0 32px;padding:0;background:none;border:0;border-radius:0}
+.accountability-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:32px;margin-bottom:24px}
+.accountability-head h3{font-size:var(--section-title);line-height:1.12}
+.accountability-head p{font-size:16px;line-height:1.6;max-width:840px;margin-top:12px}
+.accountability-head strong{color:#264e47;font-weight:700}
+.accountability-lifecycle{display:flex;flex-direction:column;align-items:flex-end;gap:8px;color:#08654f;font-size:10px;line-height:1.4;letter-spacing:.075em;font-weight:800;white-space:nowrap}
+.accountability-lifecycle svg{display:block;width:80px;height:12px}
+.accountability-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:30px}
+.accountability-grid article{background:none;border:0;border-top:1px solid #bdd7ce;border-radius:0;padding:26px 0 0;min-width:0}
+.accountability-grid .feature-index{display:block;font-variant-numeric:tabular-nums}
+.accountability-grid h4{font-size:26px;line-height:1.2;margin-top:20px;color:var(--ink)}
+.accountability-grid p{font-size:16px;line-height:1.65;margin-top:18px}
+.accountability-link{display:inline-flex;align-items:center;gap:14px;min-height:44px;margin-top:12px;color:#08654f;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.accountability-link:hover{color:#053d31}
 .institutional-feature{padding:34px 38px;display:grid;grid-template-columns:1fr 1fr;gap:50px;background:radial-gradient(ellipse at 100% 0,#164538,#0b2534 70%);border:1px solid #365c61;color:#fff;border-radius:12px;box-shadow:0 18px 40px #102b3b14}
 .institutional-feature .eyebrow{color:var(--mint)}
 .institutional-feature h3{font-size:34px;line-height:1.13;margin-top:18px}
@@ -629,4 +634,27 @@
 #problem .story-quote{font-size:14px}
 .product-section .record-topline{flex-wrap:wrap;gap:4px}
 .funding-record{grid-template-columns:54px 1fr}
+}
+
+/* The added accountability row stays a compact two-column grid on phones. */
+@media(max-width:1000px){
+.accountability-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.accountability-head{gap:20px}
+}
+@media(max-width:600px){
+.accountability-row{padding:0;margin:28px 0 20px}
+.accountability-head{grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+.accountability-head h3{font-size:var(--section-title)}
+.accountability-head p{font-size:14px;line-height:1.5;margin-top:10px}
+.accountability-lifecycle{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;font-size:9px}
+.accountability-lifecycle svg{width:auto;max-width:80px;min-width:32px;flex:1}
+.accountability-grid{gap:20px 18px}
+.accountability-grid article{padding:14px 0 0}
+.accountability-grid h4{font-size:21px;margin-top:10px}
+.accountability-grid p{font-size:14px;line-height:1.45;margin-top:10px}
+.accountability-link{font-size:13px;gap:8px;margin-top:10px}
+}
+@media(max-width:350px){
+.accountability-grid{column-gap:14px}
+.accountability-grid h4{font-size:19px}
 }

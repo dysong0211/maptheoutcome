@@ -19,3 +19,9 @@ body, .maptoc-app {
   flex-shrink: 0;
 }
 .maptoc-mark > svg { visibility: hidden; }
+
+.maptoc-sidebar{background-color:#081c29}
+.maptoc-sidebar>a:first-child{padding-inline:20px;gap:10px}
+.maptoc-sidebar>a:first-child>span:last-child{min-width:0}
+.maptoc-sidebar>a:first-child strong{font-size:24px;line-height:1.1}
+.maptoc-sidebar>a:first-child>span:last-child>span{display:block;margin-top:5px;font-size:10px;line-height:1.4;letter-spacing:0;white-space:nowrap}
