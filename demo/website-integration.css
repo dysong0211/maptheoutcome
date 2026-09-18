@@ -14,16 +14,20 @@ body, .maptoc-app {
   font-family: "MapToc Sans", Arial, sans-serif;
 }
 .maptoc-mark {
-  background: url("../assets/maptoc-symbol.svg") center / 30px 30px no-repeat;
+  background: url("../assets/maptoc-symbol.svg") center / 24px 24px no-repeat;
   border: 0;
+  border-radius: 0;
+  width: 24px;
+  height: 28px;
   flex-shrink: 0;
 }
 .maptoc-mark > svg { visibility: hidden; }
 
-.maptoc-sidebar{background-color:#081c29}
-.maptoc-sidebar>a:first-child{padding-inline:20px;gap:10px}
+.maptoc-sidebar{background-color:#081c29;overflow-y:auto}
+.maptoc-sidebar>a:first-child{height:56px;min-height:56px;flex:0 0 56px;align-items:center;padding:8px 20px;gap:8px}
 .maptoc-sidebar>a:first-child>span:last-child{min-width:0}
-.maptoc-sidebar>a:first-child strong{font-size:24px;line-height:1.1}
-.maptoc-sidebar>a:first-child>span:last-child>span{display:block;margin-top:5px;font-size:10px;line-height:1.4;letter-spacing:0;white-space:nowrap}
+.maptoc-sidebar>a:first-child strong{font-size:20px;line-height:1.1;letter-spacing:-.035em}
+/* Override the compiled small-text rule only within the brand lockup. */
+.maptoc-sidebar>a:first-child>span:last-child>span{display:block;margin-top:2px;font-size:8.5px!important;line-height:1.35!important;letter-spacing:0;white-space:nowrap}
 .maptoc-beta-note{margin-top:6px;font-size:11px;font-weight:700;line-height:1.4;color:#007f78}
 [data-beta-hidden="true"]{display:none!important}
