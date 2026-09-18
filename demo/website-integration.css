@@ -1,0 +1,21 @@
+/* Shared MapToc identity, scoped to the supplied interactive demo. */
+@font-face {
+  font-family: "MapToc Sans";
+  src: url("../assets/fonts/dm-sans-latin-wght-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+}
+:root {
+  --font-inter: "MapToc Sans", Arial, sans-serif;
+  --default-font-family: "MapToc Sans", Arial, sans-serif;
+}
+body, .maptoc-app {
+  font-family: "MapToc Sans", Arial, sans-serif;
+}
+.maptoc-mark {
+  background: url("../assets/maptoc-symbol.svg") center / 30px 30px no-repeat;
+  border: 0;
+  flex-shrink: 0;
+}
+.maptoc-mark > svg { visibility: hidden; }

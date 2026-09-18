@@ -41,8 +41,7 @@ function drawDiagram(diagram) {
   if(diagram.dataset.diagram==='funding') {
    if(narrow){const bottom=root.bottom-bounds.y;d=`M ${cx} ${bottom} V ${bottom+13} H 10 V ${ty} H ${r.x-bounds.x}`;}
    else {const start=root.right-bounds.x,end=r.x-bounds.x,mid=(start+end)/2;d=`M ${start} ${cy} H ${mid} V ${ty} H ${end}`;}
-  } else if(narrow) {d=`M ${cx} ${root.bottom-bounds.y} V ${ty} H ${tx}`;}
-  else {d=`M ${cx} ${cy} L ${tx} ${ty}`;}
+  } else {d=`M ${cx} ${cy} L ${tx} ${ty}`;}
   const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',d);
   if(node.getAttribute('aria-pressed')==='true')path.classList.add('is-active');svg.append(path);
  });
