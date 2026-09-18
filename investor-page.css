@@ -11,17 +11,6 @@
 .investor-benefits span{font-size:12px}
 .vision-hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px}
 .vision-hero-actions .text-link{color:var(--mint)}
-.vision-demo{background:#eaf3ef}
-.vision-demo-heading{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px}
-.vision-demo-heading p{font-size:17px;color:var(--muted);margin-top:12px}
-.vision-demo-open{flex:none;background:transparent;border:1px solid #478e76;color:#0a634e}
-.vision-demo-frame{border:1px solid #8caaa6;border-radius:12px;overflow:hidden;background:#f5f6f7;box-shadow:0 18px 45px #153c3112}
-.vision-demo-frame iframe{display:block;width:100%;height:min(760px,calc(100svh - 112px));border:0;scroll-margin-top:88px}
-.vision-demo-notes{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 20px;margin-top:14px}
-.vision-demo-notes p{font-size:12px;color:#4d6d62}
-.vision-demo-notes .chapter-link{margin-top:0}
-@media(max-width:800px){.vision-demo-heading{align-items:flex-start;flex-direction:column;gap:16px}.vision-demo-frame iframe{height:min(700px,calc(100svh - 112px))}.vision-demo-heading p{font-size:15px}}
-@media(max-width:600px){.vision-demo{padding-block:30px}.vision-demo-frame{margin-inline:-18px;border-inline:0;border-radius:0}.vision-demo-frame iframe{height:min(680px,calc(100svh - 112px))}.vision-demo-heading h2{font-size:30px}}
 .investor-preview{min-width:0}
 .investor-preview .programme-screen{grid-template-columns:88px minmax(0,1fr)}
 .investor-preview .demo-evidence-record{display:none}

@@ -3,6 +3,8 @@
 Serve this folder with a static web server. Upload the contents of this folder to GitHub Pages, keeping assets and subdirectories together. The interactive demo needs HTTP hosting; opening index.html directly from a file browser is insufficient for the demo.
 
 ## This revision
+- Directly opening Vision from a local folder now shows preview instructions instead of a demo directory listing. On a hosted website, the interactive demo loads normally.
+- Added `Preview-MapToc.command` for Mac local preview, using installed Node.js 18+ or Python 3 and an available local port.
 - Matched “Accountability for both sides” to the main Why MapToc heading size on desktop and phones. Added matching numbered category labels to all four benefits.
 - Embedded the supplied interactive MapToc demo in Vision, with a full-screen link and return-to-Vision navigation.
 - Applied the website font, symbol and wordmark treatment to the demo. Embedded dialogs scroll into view; the app uses the full phone width on small screens.
@@ -65,7 +67,9 @@ Serve this folder with a static web server. Upload the contents of this folder t
 `site-system.css` holds shared typography, navigation, branding and layout tokens. `landing-page.css`, `research-panels.css` and `investor-page.css` contain page-specific presentation. `app-preview.css` preserves the detailed concept interface. Document and research-reading styles remain separate.
 
 ## Running and uploading the demo
-For a local preview, run `npm run dev` in this folder, then open `http://127.0.0.1:4173/vision.html#app-demo`. Node.js 18 or later is required; no dependency installation is needed.
+On a Mac, open `Preview-MapToc.command` in the extracted website folder. Keep its Terminal window open while using the demo; close it or press Control+C to stop. The launcher uses installed Node.js 18+ or Python 3, chooses an available local port, and opens Vision in your browser. If double-clicking does not launch it, open Terminal, type `bash `, drag `Preview-MapToc.command` into the window and press Return. No dependencies need to be installed when either runtime is already available.
+
+Alternatively, run `npm run dev` in this folder, then open `http://127.0.0.1:4173/vision.html#app-demo`. This option requires Node.js 18 or later.
 
 For GitHub Pages, upload the extracted website contents, including the complete `demo/` directory, `assets/`, and `.nojekyll`. The compiled demo uses `/demo/` paths and is packaged for the root of the custom domain, such as `maptheoutcome.org`. A GitHub project subpath without that custom domain requires a different base-path build.
 
@@ -81,3 +85,5 @@ Concept demonstrations use illustrative records. Proposed capabilities are not a
 
 ## Editorial review before launch
 - The evidence percentages remain labeled preliminary. Publish the audit exports and coding rules to make the findings independently reproducible.
+
+The interactive demo is embedded on both the homepage (after “See the evidence take shape”) and the Vision page. Both use shared interactive-demo.css styling and the same local-preview guidance.

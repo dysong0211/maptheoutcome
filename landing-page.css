@@ -75,7 +75,7 @@
 .solution-callout p{font-size:16px;line-height:1.45;margin:0}
 .solution-callout .text-link{margin-top:4px;min-height:36px;color:var(--green)}
 .solution-callout>.text-link{justify-self:end;color:var(--green)}
-.problem-heading{margin-bottom:18px}
+.problem-heading{margin-bottom:42px}
 .problem-heading .problem-statement{display:block;color:var(--green);margin-bottom:4px}
 .problem-heading h2{font-size:var(--section-title)}
 .problem-story{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);gap:20px}
@@ -295,11 +295,14 @@
 .model>b{display:block;font-size:19px;margin-top:9px}
 .model>p{font-size:14px;margin:8px 0 0}
 .section-note{font-size:12px;line-height:1.6;margin-top:16px;color:var(--muted)}
+.future-section{padding-block:36px}
+.future-section .section-label{margin-bottom:16px}
+.future-section .section-heading{margin-bottom:20px}
 .future-section .section-heading p{color:#bad0da;font-size:17px}
 .resource-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.resource-links>a{padding:27px;border:1px solid #305260;border-radius:12px;background:linear-gradient(145deg,#153746,#0b2432);transition:border-color .2s,box-shadow .2s}
+.resource-links>a{padding:18px 22px;border:1px solid #305260;border-radius:12px;background:linear-gradient(145deg,#153746,#0b2432);transition:border-color .2s,box-shadow .2s}
 .resource-links>a:hover,.resource-links>a:focus-visible{background:#173b46;border-color:#7edabd;box-shadow:0 8px 28px #0002}
-.resource-links h3{font-size:27px;line-height:1.2;margin-top:22px}
+.resource-links h3{font-size:27px;line-height:1.2;margin-top:10px}
 .resource-action{display:flex;justify-content:space-between;gap:16px;font-size:14px;margin-top:25px;color:#b9d3db}
 .resource-action b{color:var(--mint);font-size:20px;width:34px;height:34px;display:grid;place-items:center;border:1px solid #47796e;border-radius:50%}
 .contact-section{background:#0a2638;color:#fff;padding:64px 0}
@@ -491,7 +494,7 @@
 #problem .solution-callout>.text-link{justify-self:start;font-size:14px;min-height:32px}
 #problem .solution-callout p{display:block;font-size:14px;line-height:1.4}
 #problem .solution-callout .text-link{font-size:14px;min-height:32px;margin-top:4px}
-#problem .problem-heading{margin-bottom:12px}
+#problem .problem-heading{margin-bottom:36px}
 #problem .problem-heading h2{font-size:25px}
 #problem .problem-story{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:stretch}
 #problem .story-arrow{display:none}
@@ -657,4 +660,13 @@
 @media(max-width:350px){
 .accountability-grid{column-gap:14px}
 .accountability-grid h4{font-size:19px}
+}
+
+/* Compact institutional resources while preserving the full copy. */
+.future-section .resource-action{margin-top:14px}
+@media(max-width:600px){
+.landing-page .future-section{padding-block:18px}
+.future-section .section-heading p{font-size:15px;margin-top:12px}
+.future-section .resource-links>a{padding:12px 14px}
+.future-section .resource-action{margin-top:0}
 }
