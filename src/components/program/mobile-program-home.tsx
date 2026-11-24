@@ -1,8 +1,10 @@
 "use client";
+import { programIdLine } from "@/lib/program-ids";
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, FileText, CheckCircle2, Upload, Flag, Sparkles } from "lucide-react";
+import { SummaryThemes } from "./summary-themes";
 import { useProgramEvidence } from "./use-program-evidence";
 import { useClarifications } from "./use-clarifications";
 import { useMemoryStore } from "@/stores/program-memory-store";
@@ -28,7 +30,7 @@ export function MobileProgramHome() {
   const source = sources.find(s => s.id===selected), documents = sources.filter(s => memorySourceIds.has(s.id));
   const hasReview = !!source && source.reviewDisposition!=="repository-only" && (!!source.analysis || proposals.some(p=>p.citation.versionId===source.id));
   const health = assuranceHealth(workspace,memory), open = workspace.findings.filter(f => !["closed","dismissed"].includes(f.status));
-  const latest = [...records].sort((a,b) => b.eventDate.localeCompare(a.eventDate))[0];
+  const latest = [...records].filter(r=>r.eventDateBasis!=="document-date").sort((a,b) => b.eventDate.localeCompare(a.eventDate))[0];
   function save(skip:boolean) {
     if(!source)return;
     const ok=saveReviews([source.id],skip?"repository-only":"saved");
@@ -36,7 +38,7 @@ export function MobileProgramHome() {
     if(ok){setSelected("");setStep("summary");setUploadOpen(false);}
   }
   return <div className="mobile-program-home">
-    <header><span>YOUR PROGRAM</span><h1>{program?.name||"Program overview"}</h1><p>Add a document. Check suggestions. See what needs action.</p></header>
+    <header><span>YOUR PROGRAM</span><h1>{program?.name||"Program overview"}</h1>{programIdLine(program)&&<p>{programIdLine(program)}</p>}<p>Add a document. Check suggestions. See what needs action.</p></header>
     <nav aria-label="Simple program workflow" className="mobile-workflow-tabs">{([["upload",Upload,"Upload"],["review",CheckCircle2,"Review"],["summary",FileText,"Summary"]] as const).map(([id,Icon,label])=><button key={id} aria-pressed={step===id} disabled={busy} onClick={()=>{setStep(id);setMessage("");}}><Icon size={18}/>{label}</button>)}</nav>
     {message&&<p role="status" className="mobile-flow-message">{message}</p>}
     {step==="upload"&&<section className="mobile-task-panel">
@@ -50,7 +52,8 @@ export function MobileProgramHome() {
     {step==="review"&&<section className="mobile-task-panel mobile-review-panel"><h2>Check the document</h2>
       {!source?<><p>Choose a document to review.</p><ul className="mobile-document-list">{documents.slice(0,5).map(s=><li key={s.id}><button onClick={()=>setSelected(s.id)}><FileText size={18}/><span>{s.title}</span><ArrowRight size={16}/></button></li>)}</ul>{!documents.length&&<button className="mobile-main-action" onClick={()=>setStep("upload")}>Add your first document</button>}</>:<ReviewBox key={source.id} sourceId={source.id} samplePreview={source.id===incomingSource.id} reviewControls={false} onAnalysisState={state=>setAnalysisBusy(state.busy)} summaryActions={<div className="mobile-review-actions">{hasReview&&<button disabled={busy||role!=="program"} onClick={()=>save(false)}>Save review</button>}<button disabled={busy||role!=="program"} onClick={()=>save(true)}>Save document only</button>{hasReview&&<Link href="/review">Open reviewer inbox →</Link>}</div>}/>}
     </section>}
-    {step==="summary"&&<><section className="mobile-task-panel"><h2>Program Summary</h2><div className="mobile-summary-counts"><span><strong>{sources.length}</strong>documents</span><span><strong>{records.length}</strong>reviewed findings</span></div>
+    {step==="summary"&&<><section className="mobile-task-panel"><h2>Program Summary</h2>{isDefault&&<p className="mobile-demo-note">Sample figures, illustrative only.</p>}<div className="mobile-summary-counts"><span><strong>{sources.length}</strong>documents</span><span><strong>{records.length}</strong>reviewed findings</span></div>
+      <SummaryThemes records={records} />
       {latest?<Link className="mobile-latest-finding" href={`/insights?record=${encodeURIComponent(latest.id)}`}><span>Latest reviewed finding</span><strong>{latest.title}</strong><small>View its source and limits →</small></Link>:<p>No reviewed findings yet. Upload and review a document first.</p>}
       <Link className="mobile-summary-checks" href="/assurance"><strong><Flag size={17}/> Program Assurance Check</strong><span><i className="green"/>{health.passed.length} checks passed</span><span><i className="red"/>{health.issues.length} issues to review</span><span><i className="amber"/>{health.pending.length} need evidence or review</span><small>Open checks →</small></Link>
     </section><section className="mobile-task-panel"><h2>Next action</h2>{open.slice(0,2).map(f=><Link className="mobile-next-action" key={f.id} href={`/assurance?case=${encodeURIComponent(f.id)}`}><span>{f.title}</span><ArrowRight size={18}/></Link>)}{!open.length&&<p>No open requests. Run checks to see what still needs attention.</p>}</section></>}
