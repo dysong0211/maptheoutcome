@@ -56,16 +56,19 @@ function FindingCard({ proposal }: { proposal: EvidenceProposal }) {
               ? "Evidence gap"
               : proposal.kind}
         </strong>
-        <span className="text-slate-500">
-          {proposal.status !== "pending"
-            ? proposal.status
-            : proposal.triage === "kept"
-              ? "Kept · awaiting review"
-              : proposal.triage === "dismissed"
-                ? "Dismissed"
-                : proposal.generation
-                  ? "AI suggestion"
-                  : "Sample suggestion"}
+        <span className="status-triple text-slate-500">
+          <small>Processing: {proposal.generation ? "AI-suggested" : "Sample suggestion"}</small>
+          <small>
+            Human review:{" "}
+            {proposal.status !== "pending"
+              ? proposal.status
+              : proposal.triage === "kept"
+                ? "kept, awaiting approval"
+                : proposal.triage === "dismissed"
+                  ? "dismissed"
+                  : "awaiting review"}
+          </small>
+          <small>Verification: not independently verified</small>
         </span>
       </div>
       {editing ? (
