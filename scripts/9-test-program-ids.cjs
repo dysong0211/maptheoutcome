@@ -1,0 +1,12 @@
+require('./test-evidence.cjs');
+const assert=require('node:assert/strict');
+const {validateProgram}=require('../src/lib/program-assurance.ts');
+const {programIdLine}=require('../src/lib/program-ids.ts');
+const {createProgramExample}=require('../src/lib/program-assurance-examples.ts');
+const base=createProgramExample('health','program-test').program;
+assert.doesNotThrow(()=>validateProgram(base),'existing programs without IDs stay valid');
+assert.doesNotThrow(()=>validateProgram({...base,programRef:'UNDP-2026-001',grantRef:'GR/445'}));
+assert.throws(()=>validateProgram({...base,grantRef:'x'.repeat(61)}),/60 characters/);
+assert.equal(programIdLine({programRef:' P1 ',grantRef:'G2'}),'Program ID P1 · Grant ID G2');
+assert.equal(programIdLine({}),'');assert.equal(programIdLine(undefined),'');
+console.log('Program/grant ID checks passed.');
