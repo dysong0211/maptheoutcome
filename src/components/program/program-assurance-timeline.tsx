@@ -8,6 +8,7 @@ import {
   useOutputStore,
   assessInputs,
 } from "@/stores/output-intelligence-store";
+import { TimelineChain } from "./timeline-chain";
 import { allEvidence } from "@/lib/assurance";
 import type { ProgramActivity } from "@/lib/program-assurance";
 import { caseHref, linkedCaseId } from "@/lib/clarifications";
@@ -231,6 +232,7 @@ export function ProgramAssuranceTimeline({ today }: { today: string }) {
                 ? " · starts after the prerequisite activity"
                 : ""}
             </p>
+            <TimelineChain taskId={task.id} title={task.title} start={task.start} due={task.due} />
             <ul>
               {needs(task).map((d) => {
                 const caseId = linkedCaseId(workspace, d.id),
