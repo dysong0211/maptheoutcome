@@ -1,0 +1,20 @@
+node_modules/
+.pnpm-store/
+.next/
+.next-*/
+.next-demo/
+out/
+dist/
+public-demo/
+app version 1/
+app version 2/
+.next-website/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
+.DS_Store
+prisma/dev.db
+coverage/
+*.tsbuildinfo
