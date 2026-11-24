@@ -1,4 +1,8 @@
 require('./test-evidence.cjs');
+const {syncBrowserStore}=require('../src/lib/cross-tab-store.ts');
+const windowBefore=global.window; delete global.window;
+syncBrowserStore({}, 'server-render-no-storage');
+global.window=windowBefore;
 const assert=require('node:assert/strict');
 const {useMemoryStore:store}=require('../src/stores/program-memory-store.ts');
 const {useDemoStore:roles}=require('../src/stores/demo-store.ts');
