@@ -2,6 +2,8 @@
 // an older tab cannot write its stale whole-store snapshot over newer evidence.
 // This is not a shared-server transaction or cross-device collaboration system.
 export function syncBrowserStore(store: any, key: string) {
+  // Server rendering has no localStorage, so Zustand may omit persist entirely.
+  if (typeof window === "undefined" || !store.persist) return;
   const actions = Object.fromEntries(Object.entries(store.getState()).filter(([, value]) => typeof value === "function").map(([name, action]) => [name, (...args: unknown[]) => {
     // Zustand's synchronous localStorage hydration completes synchronously.
     // If storage is unavailable, fail closed rather than overwrite blindly.
