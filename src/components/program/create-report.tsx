@@ -300,7 +300,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
         </section>
       )}
       {draft && draftContext?.programId === programId && (
-        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={matchingRecords} undated={undatedRecords} sources={sources} />
+        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={reportRecords(records, sources, draftContext.from, draftContext.to)} undated={undatedRecords} sources={sources} />
       )}
       {isDefault && (
         <>
