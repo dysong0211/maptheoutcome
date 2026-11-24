@@ -7,7 +7,7 @@ import { useTracking } from "@/stores/tracking-store";
 import type { ProgramRecord, SourceVersion } from "@/lib/program-memory";
 
 /** Shown under a report draft: what is included, what is unresolved, and a recorded sign-off. */
-export function BeforeYouSend({ programId, from, to, draftKey, records, undated, sources }: { programId: string; from: string; to: string; draftKey: string; records: ProgramRecord[]; undated: ProgramRecord[]; sources: SourceVersion[] }) {
+export function BeforeYouSend({ programId, from, to, draftKey, records, undated, sources, evidenceChanged = false }: { programId: string; from: string; to: string; draftKey: string; records: ProgramRecord[]; undated: ProgramRecord[]; sources: SourceVersion[]; evidenceChanged?: boolean }) {
   const proposals = useMemoryStore((s) => s.proposals);
   const t = useTracking();
   const role = useDemoStore((s) => s.role);
@@ -19,6 +19,14 @@ export function BeforeYouSend({ programId, from, to, draftKey, records, undated,
   const open = proposals.filter((p) => ["pending", "flagged"].includes(p.status) && ids.has(p.citation.versionId) && p.eventDate.slice(0, 10) >= from && p.eventDate.slice(0, 10) <= to);
   const ai = records.filter((r) => (r as { generation?: unknown }).generation);
   const stamp = () => new Date().toISOString();
+  if (evidenceChanged) {
+    return (
+      <section className="memory-card report-draft-panel before-you-send" aria-labelledby="bys-title">
+        <h2 id="bys-title">Before you send</h2>
+        <p role="status">Supporting evidence or reviewed findings changed after this draft was created. These checks cannot describe the old draft. Create the draft again before downloading or signing off.</p>
+      </section>
+    );
+  }
   return (
     <section className="memory-card report-draft-panel before-you-send" aria-labelledby="bys-title">
       <h2 id="bys-title">Before you send</h2>
