@@ -20,9 +20,9 @@ export function defaultReportPeriod(
     .map((record) => recordDate(record.eventDate))
     .filter((date): date is string => date !== null)
     .sort();
-  const to =
-    dates.at(-1) ??
-    (validDate(fallback) ? fallback : validDate(today) ? today : "2026-01-01");
+  const safeToday = validDate(today) ? today : "2026-01-01";
+  const to = dates.filter((date) => date <= safeToday).at(-1) ??
+    (validDate(fallback) && fallback <= safeToday ? fallback : safeToday);
   const from = new Date(Date.parse(`${to}T12:00:00Z`) - 6 * 86400000)
     .toISOString()
     .slice(0, 10);
