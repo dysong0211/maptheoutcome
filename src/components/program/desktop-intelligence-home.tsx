@@ -1,4 +1,5 @@
 "use client";
+import { programIdLine } from "@/lib/program-ids";
 import { useEffect, useState } from "react";
 import { Sparkles, FileText, TriangleAlert } from "lucide-react";
 import { useMemoryStore } from "@/stores/program-memory-store";
@@ -19,6 +20,7 @@ export function DesktopIntelligenceHome() {
   const allSources = useMemoryStore((s) => s.sources);
   const sources = allSources.filter(s=>(s.programId||"cambodia-demo")===(program?.id||"cambodia-demo"));
   const role = useDemoStore((s) => s.role);
+  const memoryProposals = useMemoryStore((s) => s.proposals);
   const importSample = useMemoryStore((s) => s.importSample);
   const [capture, setCapture] = useState<{
     ids: string[];
@@ -65,9 +67,16 @@ export function DesktopIntelligenceHome() {
       : capture.analyzingId || analysis.busy
         ? 1
         : 0;
+  const analysing = Boolean(capture.analyzingId || analysis.busy);
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!analysing) { setSeconds(0); return; }
+    const t = setInterval(() => setSeconds((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [analysing]);
   const status = busy
-    ? capture.analyzingId || analysis.busy
-      ? "Analysing document…"
+    ? analysing
+      ? `Analysing document… ${seconds}s${seconds > 20 ? " (large documents can take longer)" : ""}`
       : "Reading source…"
     : failed
       ? "Needs attention"
@@ -82,12 +91,13 @@ export function DesktopIntelligenceHome() {
     <div className="home-compact lean-overview space-y-5">
       <header className="overview-title-row">
         <div>
-        <p className="v1-positioning">PROGRAM INTELLIGENCE AND ASSURANCE · VERSION 1</p>
+        <p className="v1-positioning">PROGRAM OVERVIEW</p>
         <h1 className="mt-1 flex items-center gap-3 text-3xl font-semibold tracking-tight">
           Program overview
         </h1>
+        <p className="mt-1 text-sm text-slate-500">See what is new in your program, and add documents to keep it current.</p>
         </div>
-        <Link className="overview-program-tab" href="/program">{program?.name||"2026 MOH Maternal Delivery"}<span>{program?.country||"Country not set"} · {program?.sample!==false?"Demo":"Program"}</span></Link>
+        <Link className="overview-program-tab" href="/program">{program?.name||"2026 MOH Maternal Delivery"}<span>{program?.country||"Country not set"} · {program?.sample!==false?"Demo":"Program"}{programIdLine(program)?` · ${programIdLine(program)}`:""}</span></Link>
       </header>
       <OverviewBridge />
       <section
@@ -115,7 +125,7 @@ export function DesktopIntelligenceHome() {
           </span>
           <p>Capture once. Keep the context. Build the program record.</p>
         </header>
-        <p className="mt-2 text-xs text-slate-300">Records stay in this browser unless you run live AI analysis, which sends selected content to the configured provider. Sample content is synthetic; don't upload confidential programme data.</p>
+        <p className="mt-2 mb-6 text-xs text-slate-300">Records stay in this browser unless you run live AI analysis, which sends selected content to the configured provider. Sample content is synthetic; don't upload confidential programme data.</p>
         <div className="ai-workbench-grid">
           <div className="ai-input-surface">
             <h2>Add program documents</h2>
@@ -142,7 +152,9 @@ export function DesktopIntelligenceHome() {
                         ? "Review saved"
                         : s.reviewDisposition === "repository-only"
                           ? "Repository only"
-                          : "Awaiting review"}
+                          : memoryProposals.some((p) => p.citation.versionId === s.id && ["pending", "flagged"].includes(p.status))
+                            ? "To review"
+                            : "Stored"}
                     </small>
                   </button>
                   <button
