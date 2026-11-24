@@ -1,5 +1,6 @@
 "use client";
 import { programIdLine } from "@/lib/program-ids";
+import { localDay } from "@/lib/local-date";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -43,7 +44,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
   const period = defaultReportPeriod(
     records,
     program?.periodEnd ?? "",
-    new Date().toISOString().slice(0, 10),
+    localDay(),
   );
   const [to, setTo] = useState(period.to);
   const [from, setFrom] = useState(period.from);

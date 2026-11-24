@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -249,7 +250,7 @@ export function ClarificationCase({
     passageId: submissionPassage,
     date: submissionDate,
     reason: submissionReason,
-    today: new Date().toISOString().slice(0, 10),
+    today: localDay(),
   });
   const documentCheckPassed =
     !!control &&
@@ -828,7 +829,7 @@ export function ClarificationCase({
                             <input
                               ref={submissionDateInput}
                               type="date"
-                              max={new Date().toISOString().slice(0, 10)}
+                              max={localDay()}
                               value={submissionDate}
                               onInput={(e) => setSubmissionDate(e.currentTarget.value)}
                               onChange={(e) =>
@@ -879,7 +880,7 @@ export function ClarificationCase({
                               passageId: submissionPassage,
                               date: actualSubmissionDate,
                               reason: submissionReason,
-                              today: new Date().toISOString().slice(0, 10),
+                              today: localDay(),
                             });
                             if (submissionProblem || !submissionRecord) {
                               setError(submissionProblem || "Choose a received submission record.");

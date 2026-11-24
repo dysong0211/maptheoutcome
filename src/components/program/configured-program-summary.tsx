@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import Link from "next/link";
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { useClarifications } from "./use-clarifications";
@@ -134,6 +135,6 @@ export function ConfiguredProgramSummary() {
           );
         })}
       </div>
-    </section><AssuranceBirdseye /><ProgramAssuranceTimeline today={new Date().toISOString().slice(0,10)}/></>
+    </section><AssuranceBirdseye /><ProgramAssuranceTimeline today={localDay()}/></>
   );
 }

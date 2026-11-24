@@ -1,5 +1,6 @@
 "use client";
 
+import { localDay } from "@/lib/local-date";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -423,7 +424,7 @@ export function ConnectedOutcomeTrail({
                     <details className="trail-review">
                       <summary>Review & provenance</summary>
                       <p>
-                        {active.reviewedBy} · {active.reviewedAt.slice(0, 10)}
+                        {active.reviewedBy} · {localDay(active.reviewedAt)}
                       </p>
                       <p>
                         Event: {active.eventDate} · {active.location}

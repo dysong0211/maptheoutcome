@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import Link from "next/link";
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { useTracking } from "@/stores/tracking-store";
@@ -58,7 +59,7 @@ export function TimelineChain({ taskId, title, start, due, planned }: Props) {
         </li>
         <li>
           <b>5 Review decision</b>{" "}
-          {record ? <span>Approved by {record.reviewedBy} on {record.reviewedAt.slice(0, 10)}. Not independently verified.</span> : <Missing what="comes from the linked finding" />}
+          {record ? <span>Approved by {record.reviewedBy} on {localDay(record.reviewedAt)}. Not independently verified.</span> : <Missing what="comes from the linked finding" />}
         </li>
       </ol>
     </details>

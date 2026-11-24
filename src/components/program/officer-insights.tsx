@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import { useState } from "react";
 import Link from "next/link";
 import { MessageSquare, Sparkles } from "lucide-react";
@@ -138,7 +139,7 @@ export function OfficerInsights({
                   name="observedOn"
                   type="date"
                   required
-                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  defaultValue={localDay()}
                   className="memory-input mt-1"
                 />
               </label>

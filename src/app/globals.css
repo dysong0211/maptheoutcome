@@ -2119,3 +2119,4 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
  .trail-statement,.trail-quotation blockquote { font-size:13px; line-height:1.5; }
  .trail-footer .memory-action { padding:10px; font-size:12px; }
 }
+.ai-results-surface{overflow-x:hidden}

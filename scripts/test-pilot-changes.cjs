@@ -92,3 +92,9 @@ console.log('Pilot change checks passed: event dates, dismissed review, conditio
   assert.equal(useTracking.getState().decideSuggestion('g1','dismissed','x'),undefined,'already decided');
 }
 console.log('Plan revision and requirement suggestion checks passed.');
+
+// local calendar day, not UTC (Bangkok 00:30 on 25 Nov is still 24 Nov in UTC)
+{const {localDay}=require('../src/lib/local-date.ts');const p=process.env.TZ;
+ process.env.TZ='Asia/Bangkok';assert.equal(localDay('2026-11-24T17:30:00.000Z'),'2026-11-25');
+ process.env.TZ='America/Los_Angeles';assert.equal(localDay('2026-11-25T03:00:00.000Z'),'2026-11-24');
+ if(p===undefined)delete process.env.TZ;else process.env.TZ=p;console.log('local-day ok');}

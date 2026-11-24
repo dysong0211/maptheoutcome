@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
@@ -165,7 +166,7 @@ export function InputReviewControl({ id }: { id: string }) {
                   ? "Accepted for input"
                   : "More evidence requested"}
               </strong>{" "}
-              · {r.actor} · {r.occurredAt.slice(0, 10)}
+              · {r.actor} · {localDay(r.occurredAt)}
               <p>{r.reason}</p>
               <span className="text-[10px]">Pinned source: {r.sourceId}</span>
             </div>

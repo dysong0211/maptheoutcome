@@ -5,9 +5,10 @@ import { useTracking, conditionStatus, indicatorStatus, progressPercent, current
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { useClarifications } from "./use-clarifications";
 import { useDemoStore, pilotSingleOperator } from "@/stores/demo-store";
+import { localDay } from "@/lib/local-date";
 import { suggestRequirements, useAIStatus, aiProviderName } from "@/lib/ai-client";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDay();
 const num = (v: string) => (v.trim() === "" || Number.isNaN(Number(v)) ? undefined : Number(v));
 function daysUntil(d: string) {
   return Math.round((Date.parse(`${d}T00:00:00Z`) - Date.parse(`${today()}T00:00:00Z`)) / 86400000);
@@ -279,7 +280,7 @@ function IndicatorRow({ i, srcTitle }: { i: Indicator; srcTitle: (id?: string) =
         {(i.revisions ?? []).length > 0 && (
           <ul className="plan-revisions" aria-label="Plan changes">
             {i.revisions!.map((r) => (
-              <li key={r.id}><small>{r.at.slice(0, 10)} · Reason: {r.reason}{r.target !== undefined ? ` · Target ${r.target}` : ""}{r.targetDate ? ` · by ${r.targetDate}` : ""}{r.action ? ` · Action: ${r.action}` : ""}</small></li>
+              <li key={r.id}><small>{localDay(r.at)} · Reason: {r.reason}{r.target !== undefined ? ` · Target ${r.target}` : ""}{r.targetDate ? ` · by ${r.targetDate}` : ""}{r.action ? ` · Action: ${r.action}` : ""}</small></li>
             ))}
           </ul>
         )}
@@ -313,4 +314,4 @@ function IndicatorRow({ i, srcTitle }: { i: Indicator; srcTitle: (id?: string) =
       </details>
     </li>
   );
-                                                                                                                                               }
+    }

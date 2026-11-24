@@ -1,5 +1,6 @@
 "use client";
 
+import { localDay } from "@/lib/local-date";
 import { eventDateText } from "@/lib/event-date";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -51,7 +52,7 @@ export function AssuranceWatch() { return <AssuranceBirdseye/>; }
 export function ProgramIntelligence() {
   const {records,reach,cost,covered,total,elapsed,days,open,stale,workspace,tasks,sources,now} = useProgramSnapshot();
   if(workspace.program&&workspace.program.id!=="cambodia-demo")return <ConfiguredProgramSummary/>;
-  const today = now === null ? "" : new Date(now).toISOString().slice(0,10);
+  const today = now === null ? "" : localDay(now);
   const overdue = tasks.filter(t=>!t.completedAt && today && t.due<today);
   const reachPercent = reach.actual !== null && reach.target ? Math.round(reach.actual/reach.target*100) : null;
   const fundingPercent = cost.actual !== null ? Math.round(cost.actual/60000*100) : null;
@@ -90,7 +91,7 @@ export function ProgramIntelligence() {
 export function OverviewAttention({embedded=false}:{embedded?:boolean}) {
   const {workspace,tasks,requirements,sources,now} = useProgramSnapshot();
   const done = useTodo(s => s.done);
-  const today = now === null ? "" : new Date(now).toISOString().slice(0,10);
+  const today = now === null ? "" : localDay(now);
   return <div className={embedded?"embedded-inbox":""}><AssuranceInbox items={assuranceInbox(workspace,sources,tasks,requirements,done,today)}/></div>;
 }
 

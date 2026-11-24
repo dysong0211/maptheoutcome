@@ -1,3 +1,4 @@
+import { localDay } from "@/lib/local-date";
 import type { MemoryEvent } from "./program-memory";
 
 export const eventGroups = [
@@ -67,7 +68,7 @@ export function filterEvents(
     .filter((event) => {
       const time = Date.parse(event.occurredAt);
       const day = Number.isFinite(time)
-        ? new Date(time).toISOString().slice(0, 10)
+        ? localDay(time)
         : "";
       return (
         (!filters.group || eventGroup(event.action) === filters.group) &&
