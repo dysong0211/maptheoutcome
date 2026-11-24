@@ -1,4 +1,5 @@
 "use client";
+import { syncBrowserStore } from "@/lib/cross-tab-store";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
@@ -174,3 +175,5 @@ export const useAssurance = create<Store>()(
     },
   ),
 );
+
+syncBrowserStore(useAssurance, "maptoc-v1-assurance-v1");

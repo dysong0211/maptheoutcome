@@ -1,4 +1,5 @@
 "use client";
+import { syncBrowserStore } from "@/lib/cross-tab-store";
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -231,7 +232,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "SAMPLE_CAPTURED",
-              actor: "Maya Chen · Program manager",
+              actor: "Program manager · identity not verified",
               occurredAt,
               detail:
                 "Weekly outreach update added. Three prepared suggestions queued; no live upload, parsing or AI call occurred.",
@@ -254,7 +255,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "SOURCE_CAPTURED",
-              actor: "Maya Chen · Program manager",
+              actor: "Program manager · identity not verified",
               occurredAt: source.capturedAt,
               detail: `${source.originalFileName ?? source.title} captured in browser-local demo storage. No AI extraction was run.`,
               href: `/sources/view?id=${encodeURIComponent(source.id)}`,
@@ -348,7 +349,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: result.runId,
               action: "AI_ANALYSIS_COMPLETED",
-              actor: `OpenAI · ${result.model}`,
+              actor: `AI provider · ${result.model}`,
               occurredAt: result.generatedAt,
               detail: `${proposals.length} suggestions for ${source.title}; human review required. ${result.nextSteps.join(" ")}`,
               href: proposals.length
@@ -391,7 +392,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "SUGGESTION_PREPARED",
-              actor: "Maya Chen · Program manager",
+              actor: "Program manager · identity not verified",
               occurredAt: new Date().toISOString(),
               detail: `${proposal.title}: ${action}. Original: ${proposal.statement} Proposed wording: ${statement.trim()}. Reviewer approval still required.`,
               href: `/review?item=${encodeURIComponent(id)}`,
@@ -428,7 +429,7 @@ export const useMemoryStore = create<MemoryState>()(
         const occurredAt = new Date().toISOString();
         const actor = pilotSingleOperator
           ? "Pilot participant · demo self-review"
-          : "Sam Rivera · M&E reviewer";
+          : "M&E reviewer · identity not verified";
         const { status: _status, ...finding } = proposal;
         const record: ProgramRecord = {
           ...finding,
@@ -526,8 +527,8 @@ export const useMemoryStore = create<MemoryState>()(
                 pilotSingleOperator
                   ? "Pilot participant · demo"
                   : useDemoStore.getState().role === "reviewer"
-                    ? "Sam Rivera · M&E reviewer"
-                    : "Maya Chen · Program manager",
+                    ? "M&E reviewer · identity not verified"
+                    : "Program manager · identity not verified",
               occurredAt: generatedAt,
               detail: `Program evidence brief saved. ${ids.length} reviewed records: ${ids.join(", ")}. Not submitted or independently verified.`,
               href: "/program?view=reports#report-builder",
@@ -559,7 +560,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "SUBMISSION_SUBMITTED",
-              actor: "Maya Chen · Program manager",
+              actor: "Program manager · identity not verified",
               occurredAt,
               detail: `${state.submission?.status === "context-requested" ? "Resubmitted" : "Submitted"} brief: ${state.draft.title}. ${state.submission?.status ?? "draft"} → submitted. ${state.draft.recordIds.length} reviewed findings with source citations; not a certification of impact.`,
               href: "/program?view=reports#report-builder",
@@ -591,7 +592,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "CONTEXT_REQUESTED",
-              actor: "Ari Okafor · Funder reviewer",
+              actor: "Funder reviewer · identity not verified",
               occurredAt,
               detail: `Brief: ${state.draft.title}. Submitted → context requested. Reason: ${note.trim()}`,
               href: "/program?view=reports#report-builder",
@@ -625,7 +626,7 @@ export const useMemoryStore = create<MemoryState>()(
             {
               id: crypto.randomUUID(),
               action: "SUBMISSION_ACCEPTED",
-              actor: "Ari Okafor · Funder reviewer",
+              actor: "Funder reviewer · identity not verified",
               occurredAt,
               detail: `Accepted for reporting. ${note.trim()}`,
               href: "/program?view=reports#report-builder",
@@ -640,3 +641,5 @@ export const useMemoryStore = create<MemoryState>()(
     { name: "maptoc-program-memory-v1", version: 1 },
   ),
 );
+
+syncBrowserStore(useMemoryStore, "maptoc-program-memory-v1");
