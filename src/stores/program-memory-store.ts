@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import { extractEventDate, cleanDate } from "@/lib/event-date";
 import { syncBrowserStore } from "@/lib/cross-tab-store";
 
@@ -322,7 +323,7 @@ export const useMemoryStore = create<MemoryState>()(
               stated(finding, source) ||
               (Number.isFinite(Date.parse(source.sourceDate))
                 ? source.sourceDate.slice(0, 10)
-                : result.generatedAt.slice(0, 10)),
+                : localDay(result.generatedAt)),
             eventDateBasis: stated(finding, source)
               ? ("stated" as const)
               : ("document-date" as const),
