@@ -1,0 +1,264 @@
+.workspace {
+  margin: 20px 0;
+}
+.steps {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.steps li {
+  padding: 7px 11px;
+  background: #e3f2ec;
+  color: #24644e;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.documents {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.document {
+  border: 1px solid #bcd7ca;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f2f8f5;
+  min-width: 0;
+}
+.document h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 5px !important;
+  font-size: 17px !important;
+}
+.document > p {
+  color: #5f786b;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.document :global(.compact-capture) > label {
+  display: none;
+}
+.document :global(.home-upload-actions) {
+  width: 100%;
+  gap: 6px;
+}
+.document :global(.home-upload-actions button) {
+  flex: 1;
+  padding: 8px;
+  font-size: 12px;
+}
+.document :global(.home-dropzone) {
+  padding: 12px;
+  gap: 9px;
+}
+.sourceState {
+  font-size: 12px;
+  color: #33715a;
+}
+.scope {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.scope label {
+  flex: 1;
+  min-width: 130px;
+}
+.scope button {
+  margin: 12px 0;
+  min-height: 44px;
+}
+.mode {
+  font-size: 12px;
+  color: #63766c;
+  line-height: 1.5;
+}
+.review > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 12px;
+}
+.review > header h3 {
+  margin: 0 !important;
+  font-size: 19px !important;
+}
+.review > header h3 span {
+  font-size: 13px;
+  background: #e1ede6;
+  padding: 3px 7px;
+  border-radius: 8px;
+}
+.suggestion {
+  padding: 15px 16px;
+  background: white;
+  border: 1px solid #cdded3;
+  border-left: 4px solid #bca15a;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.suggestion.accepted {
+  border-left-color: #138767;
+  background: #f6fcf8;
+}
+.suggestion.dismissed {
+  opacity: 0.65;
+  border-left-color: #91a196;
+}
+.suggestionHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 9px;
+}
+.category {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  color: #086d56;
+  text-transform: uppercase;
+}
+.decision {
+  font-size: 11px;
+  color: #697b70;
+  text-transform: capitalize;
+}
+.suggestion > strong {
+  font-size: 16px;
+}
+.suggestion > p {
+  font-size: 13px;
+  color: #577465;
+  margin-top: 5px;
+}
+.suggestion details {
+  padding: 10px 12px !important;
+  background: #f7faf8 !important;
+  margin: 11px 0 !important;
+}
+.suggestion summary {
+  font-size: 12px !important;
+}
+.suggestion blockquote {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #426b57;
+  border-left: 2px solid #8ebca7;
+  padding-left: 11px;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  gap: 7px;
+}
+.actions button {
+  padding: 6px 11px !important;
+  font-size: 12px !important;
+}
+.actions button[aria-pressed="true"] {
+  background: #107b5f !important;
+  color: white !important;
+}
+.actions button:last-child {
+  margin-left: auto;
+  color: #6b6863 !important;
+  background: #f3f3ee !important;
+}
+.editFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+.hint,
+.notes p {
+  font-size: 12px;
+  color: #6a786c;
+  line-height: 1.5;
+}
+.hint {
+  margin-top: 8px;
+}
+.notes {
+  padding: 12px 14px;
+  background: #fff8e4;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+.notes p + p {
+  margin-top: 7px;
+}
+.notice {
+  padding: 11px 13px;
+  background: #fff0d4;
+  border: 1px solid #edd393;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #765018;
+  margin: 10px 0;
+}
+.apply {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 16px;
+}
+.apply p {
+  font-size: 12px;
+  color: #667b6d;
+  max-width: 370px;
+}
+.apply button {
+  flex-shrink: 0;
+}
+.document :global(.compact-capture) p {
+  overflow-wrap: anywhere;
+}
+.document :global(.compact-capture) input[type="file"] {
+  width: 1px !important;
+  padding: 0 !important;
+}
+@media (max-width: 650px) {
+  .documents {
+    grid-template-columns: 1fr;
+  }
+  .steps {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .steps li {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  .scope button {
+    width: 100%;
+    margin-top: 0;
+  }
+  .apply {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .editFields {
+    grid-template-columns: 1fr;
+  }
+  .suggestion {
+    padding: 12px;
+  }
+  .suggestionHeading {
+    align-items: start;
+  }
+  .document {
+    padding: 13px;
+  }
+}

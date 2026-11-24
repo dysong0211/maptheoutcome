@@ -1,0 +1,1160 @@
+.assurance-unified .as-heading h1 {
+  font-size: 32px;
+  letter-spacing: -0.7px;
+}
+.assurance-unified .as-heading p {
+  max-width: 780px;
+  margin-top: 8px;
+  font-size: 15px;
+}
+.assurance-unified .as-heading {
+  margin-bottom: 18px;
+}
+.assurance-unified .assurance-main-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+.assurance-main-tabs a {
+  min-width: 140px;
+}
+.assurance-health,
+.assurance-unified-queue,
+.assurance-check-section {
+  border: 1px solid #cbded7;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.assurance-health > .workspace-section-header,
+.assurance-three-rows > .workspace-section-header {
+  background: #103b34;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 26px;
+}
+.workspace-section-header h2 {
+  font-size: 27px;
+  line-height: 1.25;
+  font-weight: 650;
+  color: #fff;
+  margin: 5px 0 0;
+}
+.workspace-section-header .assurance-eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.3px;
+  color: #9de0c4;
+}
+.assurance-health .assurance-run {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #35c59d;
+  min-height: 44px;
+  background: #078577;
+  color: #fff;
+  white-space: nowrap;
+}
+.assurance-health .assurance-run:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.health-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 20px;
+  padding: 14px 24px;
+  background: #f4f9f7;
+  color: #557569;
+  font-size: 12px;
+  border-bottom: 1px solid #dce9e3;
+}
+.health-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.health-lights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 22px 24px 16px;
+}
+.assurance-unified .health-light {
+  position: relative;
+  text-align: left;
+  padding: 19px 17px;
+  border: 1px solid #c7e0d5;
+  border-radius: 13px;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  color: #174b3e;
+  background: #f5fbf8;
+  overflow: hidden;
+}
+.health-light.green {
+  border-top: 4px solid #18ad77;
+}
+.health-light.red {
+  border-top: 4px solid #ef5d61;
+  background: #fff7f6;
+  color: #9b3339;
+}
+.health-light.amber {
+  border-top: 4px solid #edb537;
+  background: #fffaf0;
+  color: #8b6419;
+}
+.health-light[aria-pressed="true"] {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.health-light-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #d4f4e5;
+}
+.health-light.red .health-light-icon {
+  background: #ffe0df;
+}
+.health-light.amber .health-light-icon {
+  background: #ffedbb;
+}
+.health-light > strong {
+  font-size: 34px;
+  line-height: 1.2;
+}
+.health-light-label,
+.health-light > small,
+.health-light-preview {
+  grid-column: 1/-1;
+}
+.health-light-label {
+  font-size: 16px;
+  font-weight: 650;
+  margin-top: 12px;
+}
+.health-light > small {
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.8;
+  margin-top: 6px;
+  min-height: 36px;
+}
+.health-light-preview {
+  border-top: 1px solid #dce7df;
+  margin-top: 13px;
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.health-light-preview > span {
+  display: block;
+}
+.health-coverage {
+  padding: 0 24px 20px;
+}
+.health-coverage > div {
+  display: flex;
+  gap: 3px;
+  height: 9px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #e9efec;
+}
+.health-coverage > div > span.green {
+  background: #18ad77;
+}
+.health-coverage > div > span.red {
+  background: #ef5d61;
+}
+.health-coverage > div > span.amber {
+  background: #edb537;
+}
+.health-coverage > p {
+  font-size: 12px;
+  color: #668074;
+  margin: 10px 0 0;
+}
+.assurance-queue-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 25px;
+}
+.assurance-queue-title h2,
+.assurance-queue-title h3 {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0;
+  line-height: 1.3;
+  color: #173e34;
+}
+.assurance-queue-title p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #587567;
+  margin: 7px 0 0;
+  max-width: 700px;
+}
+.assurance-run-dates {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: #668073;
+  white-space: nowrap;
+}
+.assurance-workflow-row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  border-top: 1px solid #dde9e3;
+  margin: 0;
+  padding: 20px 24px;
+  gap: 22px;
+}
+.assurance-workflow-row > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0;
+  background: none;
+}
+.workflow-symbol {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #fff0c9;
+  color: #976800;
+}
+.review .workflow-symbol {
+  background: #eee5ff;
+  color: #7143b6;
+}
+.recorded .workflow-symbol {
+  background: #d8f7e9;
+  color: #087b51;
+}
+.assurance-workflow-row > header h3 {
+  font-size: 16px;
+  font-weight: 650;
+  color: #204638;
+  line-height: 1.4;
+  margin: 1px 0 0;
+}
+.assurance-workflow-row > header h3 b {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #eef3f0;
+  color: #567568;
+  margin-left: 7px;
+}
+.assurance-workflow-row > header p {
+  font-size: 12px;
+  color: #779083;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+.assurance-workflow-items {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+.assurance-compact-issue {
+  border: 1px solid #d8e5de;
+  border-left: 3px solid #e8b53f;
+  background: #fffdf7;
+  border-radius: 10px;
+  padding: 17px;
+  min-width: 0;
+}
+.assurance-compact-issue.green {
+  border-left-color: #1dac7a;
+  background: #f7fcf9;
+}
+.assurance-compact-issue.red {
+  border-left-color: #ef5d61;
+  background: #fff9f8;
+}
+.assurance-compact-issue.purple {
+  border-left-color: #9c78dc;
+  background: #fcfaff;
+}
+.compact-issue-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  justify-content: space-between;
+}
+.compact-issue-title h3,
+.compact-issue-title h4 {
+  font-size: 16px;
+  font-weight: 650;
+  color: #1d4336;
+  line-height: 1.4;
+  margin: 0;
+}
+.compact-issue-title .issue-flag {
+  font-size: 10px;
+  padding: 5px 8px;
+  white-space: nowrap;
+  margin: 0;
+}
+.assurance-compact-issue > p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5c7367;
+  margin: 8px 0 11px;
+}
+.compact-issue-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 13px;
+}
+.compact-issue-bottom details {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+.compact-issue-bottom summary,
+.check-support > summary {
+  color: #007f78;
+  cursor: pointer;
+  font-size: 12px;
+}
+.compact-issue-bottom p {
+  font-size: 12px;
+  color: #5c7367;
+  margin: 8px 0;
+}
+.compact-issue-bottom small {
+  display: block;
+  font-size: 11px;
+  color: #708879;
+  line-height: 1.5;
+}
+.compact-issue-bottom .issue-action {
+  font-size: 12px;
+  padding: 9px 12px;
+  min-height: 38px;
+}
+.workflow-empty {
+  font-size: 13px;
+  color: #6a8476;
+  padding: 12px 0;
+  margin: 0;
+}
+.assurance-three-rows .clear-request {
+  padding: 15px 0;
+  gap: 12px;
+  align-items: flex-start;
+}
+.assurance-three-rows .clear-request:first-child {
+  padding-top: 0;
+}
+.assurance-three-rows .clear-request-icon {
+  width: 33px;
+  height: 33px;
+  border-radius: 9px;
+}
+.assurance-three-rows .clear-request-copy h4 {
+  font-size: 15px;
+}
+.assurance-three-rows .clear-request-copy > p {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.assurance-three-rows .clear-request-cta {
+  font-size: 12px;
+  padding: 9px 12px;
+  min-height: 38px;
+  margin-top: 2px;
+}
+.assurance-three-rows .clear-request-meta {
+  font-size: 10px;
+}
+.assurance-three-rows .show-requests,
+.assurance-workflow-items .show-requests {
+  font-size: 12px;
+  margin: 5px 0 0;
+  text-align: left;
+}
+.request-context {
+  background: #f2f7f4;
+  border: 1px solid #dce7df;
+  border-radius: 8px;
+  padding: 11px 13px;
+  margin-top: 12px;
+  color: #547466;
+}
+.request-purpose {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.request-purpose strong {
+  font-size: 11px;
+  font-weight: 650;
+  color: #345f4c;
+}
+.request-purpose > span {
+  margin-left: auto;
+  font-size: 10px;
+  color: #72897c;
+}
+.request-months {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+.request-months > span {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  font-size: 8px;
+  color: #8da195;
+  line-height: 1;
+}
+.request-months i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: #dce7df;
+  border-radius: 50%;
+}
+.request-months .in-period {
+  color: #007f78;
+  font-weight: 700;
+}
+.request-months .in-period i {
+  background: #008d7d;
+  box-shadow: 0 0 0 3px #d0eee2;
+}
+.request-context > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #007f78;
+  margin-top: 10px;
+}
+.request-context.compact {
+  padding: 9px 10px;
+  margin-top: 10px;
+}
+.assurance-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 0 24px 24px;
+}
+.assurance-check-grid .assurance-compact-issue {
+  display: flex;
+  flex-direction: column;
+}
+.assurance-check-grid .compact-issue-bottom {
+  margin-top: auto;
+  padding-top: 15px;
+}
+.check-support {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 6px 0 12px;
+}
+.check-support p {
+  color: #5c7367;
+  margin: 8px 0;
+}
+.check-support small {
+  display: block;
+  font-size: 11px;
+  color: #6a8274;
+}
+.check-role-hint {
+  font-size: 10px;
+  color: #82641e;
+  margin-top: 8px;
+}
+.assurance-case-dialog {
+  position: fixed;
+  z-index: 101;
+  top: 4vh;
+  bottom: 4vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1050px, calc(100vw - 40px));
+  background: #f5f8f6;
+  border: 1px solid #c5dbce;
+  border-radius: 16px;
+  padding: 30px;
+  overflow: auto;
+  box-shadow: 0 30px 100px #09251e55;
+}
+.assurance-case-dialog > .drawer-close {
+  position: sticky;
+  top: 0;
+  margin-left: auto;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #cdded3;
+}
+.assurance-case-dialog .case-heading {
+  padding-top: 0;
+}
+.case-response-tabs {
+  display: flex;
+  gap: 7px;
+  margin: 12px 0;
+}
+.case-response-tabs button {
+  flex: 1;
+  font-size: 12px;
+  padding: 9px;
+  border: 1px solid #d1ded6;
+  border-radius: 8px;
+  background: #fff;
+  color: #557466;
+}
+.case-response-tabs button[aria-pressed="true"] {
+  background: #e0f4eb;
+  border-color: #56b193;
+  color: #056a54;
+}
+.case-unavailable-form {
+  display: grid;
+  gap: 13px;
+}
+.case-unavailable-form small {
+  font-size: 11px;
+  color: #7c6b3c;
+  line-height: 1.5;
+}
+.case-unavailable-form select {
+  padding: 10px;
+  border: 1px solid #c8dbd0;
+  border-radius: 7px;
+  background: white;
+}
+.availability-record {
+  border-left: 3px solid #e5ae32;
+  background: #fff9eb;
+  padding: 12px;
+  margin: 12px 0;
+}
+.availability-record p {
+  font-size: 12px;
+}
+.case-document-link {
+  margin: 12px 0 18px;
+  padding: 15px;
+  background: #eef8f3;
+  border: 1px solid #c3dfcf;
+  border-radius: 10px;
+}
+.case-document-link h5 {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 8px;
+}
+.case-document-link p,
+.case-document-link small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.case-document-link small {
+  display: block;
+  margin: 9px 0;
+  color: #637e70;
+}
+.case-document-link fieldset {
+  border: 0;
+  padding: 0;
+  margin: 12px 0;
+}
+.case-document-link .case-checkbox {
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #d3e5da;
+  border-radius: 7px;
+}
+.case-document-link .case-checkbox span {
+  font-size: 12px;
+}
+.case-document-link button {
+  margin-top: 5px;
+}
+.case-response-grid.role-focused {
+  grid-template-columns: 1fr;
+}
+.case-source-options {
+  max-height: 245px;
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+.case-panel .case-source-options .case-checkbox {
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #d3e2d9;
+  border-radius: 8px;
+  background: #f8fbf9;
+  margin: 0;
+  min-height: 44px;
+}
+.case-source-options input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.submission-passage {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 13px;
+  border-left: 3px solid #56ac8c;
+  padding: 10px 13px;
+  background: #fff;
+  color: #365c4d;
+}
+.case-document-link .submission-date-hint {
+  color: #8c6420;
+  background: #fff7e3;
+  border-radius: 6px;
+  padding: 9px;
+}
+.case-response-grid.role-focused > section > h4 {
+  font-size: 18px;
+}
+.case-document-link .case-checkbox {
+  min-height: 42px;
+}
+.assurance-history h2 {
+  font-size: 24px;
+}
+.assurance-history .as-events {
+  margin-top: 20px;
+}
+.assurance-health :is(button, a):focus-visible,
+.assurance-workflow-row :is(button, a):focus-visible,
+.assurance-check-section :is(button, a):focus-visible {
+  outline: 3px solid #9877df;
+  outline-offset: 3px;
+}
+@media (max-width: 1150px) {
+  .assurance-workflow-row {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .health-light-label {
+    font-size: 14px;
+  }
+  .health-lights {
+    gap: 10px;
+  }
+  .assurance-unified .health-light {
+    padding: 15px 13px;
+  }
+  .assurance-check-grid {
+    grid-template-columns: 1fr;
+  }
+  .assurance-three-rows .clear-request {
+    flex-wrap: wrap;
+  }
+  .assurance-three-rows .clear-request-copy {
+    flex-basis: calc(100% - 48px);
+  }
+  .assurance-three-rows .clear-request-cta {
+    margin-left: 45px;
+  }
+  .assurance-queue-title {
+    flex-wrap: wrap;
+  }
+  .assurance-run-dates {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .request-purpose > span {
+    margin-left: 0;
+  }
+}
+@media (max-width: 700px) {
+  .assurance-unified .as-heading h1 {
+    font-size: 28px;
+  }
+  .assurance-unified .assurance-main-tabs {
+    display: flex;
+  }
+  .assurance-unified .assurance-main-tabs > a {
+    flex: 1;
+    font-size: 13px;
+    min-width: 0;
+  }
+  .assurance-health > .workspace-section-header,
+  .assurance-three-rows > .workspace-section-header {
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+  .workspace-section-header h2 {
+    font-size: 23px;
+  }
+  .assurance-health .assurance-run {
+    width: 100%;
+    justify-content: center;
+  }
+  .health-meta {
+    padding: 12px 17px;
+    font-size: 10px;
+    gap: 8px 13px;
+  }
+  .health-lights {
+    grid-template-columns: 1fr;
+    padding: 15px;
+    gap: 9px;
+  }
+  .assurance-unified .health-light {
+    grid-template-columns: 34px 38px 1fr;
+    gap: 5px 9px;
+    padding: 13px;
+    border-top-width: 1px;
+    border-left: 4px solid #1cad79;
+  }
+  .health-light.red {
+    border-left-color: #ef5d61;
+  }
+  .health-light.amber {
+    border-left-color: #edb537;
+  }
+  .health-light-icon {
+    width: 30px;
+    height: 30px;
+    grid-row: 1/3;
+  }
+  .health-light-icon svg {
+    width: 18px;
+  }
+  .health-light > strong {
+    font-size: 27px;
+    grid-row: 1/3;
+  }
+  .health-light-label {
+    grid-column: 3;
+    margin: 0;
+    font-size: 14px;
+  }
+  .health-light > small {
+    grid-column: 3;
+    font-size: 10px;
+    min-height: 0;
+    margin: 0;
+  }
+  .health-light-preview {
+    display: none;
+  }
+  .health-coverage {
+    padding: 0 17px 16px;
+  }
+  .health-coverage > p {
+    font-size: 11px;
+  }
+  .assurance-queue-title {
+    padding: 18px 17px;
+    gap: 12px;
+  }
+  .assurance-queue-title h2,
+  .assurance-queue-title h3 {
+    font-size: 20px;
+  }
+  .assurance-queue-title p {
+    font-size: 12px;
+  }
+  .assurance-workflow-row {
+    grid-template-columns: 1fr;
+    padding: 17px;
+    gap: 12px;
+  }
+  .assurance-workflow-row > header {
+    align-items: center;
+  }
+  .assurance-workflow-row > header p {
+    font-size: 11px;
+    margin-top: 3px;
+  }
+  .assurance-workflow-row > header h3 {
+    font-size: 16px;
+  }
+  .assurance-workflow-items {
+    padding-left: 0;
+  }
+  .assurance-compact-issue {
+    padding: 14px;
+  }
+  .compact-issue-title {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .compact-issue-title h3,
+  .compact-issue-title h4 {
+    font-size: 15px;
+    flex-basis: 100%;
+  }
+  .compact-issue-bottom {
+    align-items: start;
+  }
+  .compact-issue-bottom .issue-action {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+  .request-context.compact .request-months {
+    gap: 3px;
+  }
+  .request-months > span {
+    font-size: 7px;
+  }
+  .request-months i {
+    width: 6px;
+    height: 6px;
+  }
+  .request-purpose {
+    font-size: 10px;
+  }
+  .request-purpose strong {
+    font-size: 10px;
+  }
+  .assurance-check-grid {
+    padding: 0 15px 15px;
+    gap: 12px;
+  }
+  .assurance-case-dialog {
+    top: 12px;
+    bottom: 12px;
+    width: calc(100vw - 20px);
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+  .assurance-case-dialog .case-response-grid {
+    grid-template-columns: 1fr;
+  }
+  .assurance-case-dialog .case-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+  .assurance-three-rows .clear-request-cta {
+    margin-left: 45px;
+  }
+  .assurance-run-dates {
+    font-size: 10px;
+  }
+  .assurance-search {
+    width: 100%;
+  }
+}
+
+/* Compact assurance workspace: shared action sizing without changing check states. */
+.assurance-unified :is(.as-button, .as-primary, .issue-action, .assurance-run),
+.assurance-unified.as-workspace > nav.assurance-main-tabs > a,
+.assurance-unified .assurance-program-bar > button,
+.program-setup-dialog button:not(.setup-close),
+.assurance-three-rows.assurance-simple > .workspace-section-header > a,
+.assurance-three-rows .clear-request-cta,
+.assurance-workflow-items .show-requests,
+.clarification-case :is(button, .as-primary, .as-button),
+.clear-request-drawer :is(.assurance-primary, .request-secondary) {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.assurance-unified :is(.issue-action, .assurance-run, .as-primary),
+.assurance-three-rows .clear-request-cta,
+.clarification-case .case-panel button.as-primary {
+  border: 1px solid #007f78;
+  background: #007f78;
+  color: #fff;
+}
+.assurance-unified
+  :is(.issue-action, .assurance-run, .as-primary):hover:not(:disabled),
+.assurance-three-rows .clear-request-cta:hover,
+.clarification-case .case-panel button.as-primary:hover:not(:disabled) {
+  background: #09675e;
+}
+.assurance-unified.as-workspace > nav.assurance-main-tabs {
+  display: flex;
+  margin: 12px 0;
+}
+.assurance-unified .as-heading {
+  margin-bottom: 12px;
+}
+.assurance-unified .as-heading p {
+  margin-top: 5px;
+}
+.assurance-health,
+.assurance-unified-queue,
+.assurance-check-section {
+  margin-bottom: 14px;
+}
+.assurance-health > .workspace-section-header {
+  padding: 17px 22px;
+}
+.health-meta {
+  padding: 10px 22px;
+}
+.health-lights {
+  padding: 15px 22px 12px;
+  gap: 10px;
+}
+.assurance-unified .health-light {
+  padding: 14px;
+}
+.health-light-label {
+  margin-top: 8px;
+}
+.health-light > small {
+  min-height: 0;
+  margin-top: 4px;
+}
+.health-light-preview {
+  margin-top: 8px;
+  padding-top: 8px;
+  gap: 4px;
+}
+.health-coverage {
+  padding: 0 22px 14px;
+}
+.assurance-queue-title {
+  padding: 16px 22px;
+  gap: 12px;
+}
+.assurance-queue-title p {
+  margin-top: 4px;
+}
+.assurance-workflow-row {
+  padding: 14px 22px;
+  gap: 16px;
+}
+.assurance-workflow-row > header p {
+  margin-top: 4px;
+}
+.assurance-workflow-items {
+  gap: 8px;
+}
+.assurance-compact-issue {
+  padding: 13px;
+}
+.assurance-compact-issue > p {
+  margin: 6px 0 8px;
+}
+.compact-issue-bottom {
+  margin-top: 9px;
+  gap: 10px;
+  align-items: center;
+}
+.workflow-empty {
+  padding: 4px 0;
+  align-self: center;
+}
+.assurance-three-rows .clear-request {
+  padding: 11px 0;
+  gap: 11px;
+}
+.assurance-three-rows .clear-request-copy > p {
+  margin: 5px 0;
+}
+.assurance-three-rows .clear-request .late-tag {
+  display: inline-block;
+  font-size: 11px;
+}
+.request-context,
+.request-context.compact {
+  margin-top: 8px;
+  padding: 9px 11px;
+}
+.request-purpose {
+  gap: 6px;
+}
+.request-purpose strong {
+  font-size: 12px;
+}
+.request-purpose > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  min-height: 28px;
+  font-size: 12px;
+  color: #007f78;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.request-dates {
+  display: flex;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #5d796c;
+  line-height: 1.5;
+}
+.request-months {
+  margin-top: 8px;
+}
+.request-months > span {
+  font-size: 9px;
+  gap: 4px;
+}
+.request-context-note {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+}
+.assurance-check-grid {
+  padding: 0 22px 17px;
+  gap: 10px;
+}
+.assurance-check-grid .compact-issue-bottom {
+  padding-top: 10px;
+}
+.check-support {
+  margin: 5px 0 8px;
+}
+.assurance-case-dialog {
+  padding: 20px;
+}
+.assurance-case-dialog > .drawer-close {
+  width: 44px;
+  height: 44px;
+}
+.clarification-case {
+  gap: 12px;
+}
+.clarification-case .case-heading {
+  padding: 17px;
+  gap: 8px;
+}
+.clarification-case .case-heading h2 {
+  margin-top: 5px;
+}
+.clarification-case .case-next {
+  padding: 13px 15px;
+}
+.clarification-case .case-panel {
+  padding: 17px;
+}
+.clarification-case :is(.case-evidence-grid, .case-response-grid) {
+  gap: 12px;
+}
+.clarification-case .case-panel h3 {
+  margin-bottom: 11px;
+}
+.clarification-case .case-panel label {
+  gap: 5px;
+  margin: 9px 0;
+}
+.clarification-case .case-panel p {
+  margin: 7px 0;
+}
+.clarification-case .case-panel textarea {
+  min-height: 80px;
+}
+.clarification-case .case-document-link {
+  padding: 12px;
+  margin: 9px 0 12px;
+}
+.clarification-case .case-round {
+  padding: 13px;
+  margin-top: 10px;
+}
+.assurance-history .as-events {
+  margin-top: 12px;
+}
+@media (min-width: 1250px) {
+  .assurance-unified-queue .assurance-workflow-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .assurance-unified-queue
+    .assurance-workflow-items
+    > :is(.show-requests, .workflow-empty) {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 700px) {
+  .assurance-unified .assurance-main-tabs > a {
+    font-size: 14px;
+  }
+  .assurance-workflow-row {
+    padding: 13px 15px;
+    gap: 9px;
+  }
+  .assurance-queue-title {
+    padding: 14px 15px;
+  }
+  .assurance-unified .health-light {
+    padding: 11px;
+  }
+  .health-lights {
+    padding: 12px 15px;
+  }
+  .assurance-check-grid {
+    padding: 0 15px 14px;
+  }
+  .assurance-compact-issue {
+    padding: 12px;
+  }
+  .compact-issue-bottom {
+    flex-wrap: wrap;
+  }
+  .request-purpose strong {
+    flex: 1;
+    min-width: 100px;
+  }
+  .request-purpose > a {
+    margin-left: 0;
+  }
+  .request-months > span {
+    font-size: 8px;
+  }
+  .request-dates {
+    font-size: 11px;
+  }
+  .assurance-case-dialog {
+    padding: 12px;
+  }
+  .clarification-case .case-panel {
+    padding: 13px;
+  }
+  .clarification-case .case-response-tabs {
+    flex-wrap: wrap;
+  }
+}

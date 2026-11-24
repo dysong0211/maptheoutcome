@@ -1,0 +1,102 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next-aligned-review/types/**/*.ts",
+    ".next-alignment/types/**/*.ts",
+    ".next-brand-green/types/**/*.ts",
+    ".next-camera/types/**/*.ts",
+    ".next-chat-in-evidence/types/**/*.ts",
+    ".next-clean-ai-final/types/**/*.ts",
+    ".next-clean-ai/types/**/*.ts",
+    ".next-compact-demo-final/types/**/*.ts",
+    ".next-compact-demo/types/**/*.ts",
+    ".next-crisp/types/**/*.ts",
+    ".next-deliverable-blocks/types/**/*.ts",
+    ".next-deliverable-final/types/**/*.ts",
+    ".next-demo/types/**/*.ts",
+    ".next-design-final/types/**/*.ts",
+    ".next-design/types/**/*.ts",
+    ".next-document-final/types/**/*.ts",
+    ".next-document-insights/types/**/*.ts",
+    ".next-evidence-cards/types/**/*.ts",
+    ".next-final-palette/types/**/*.ts",
+    ".next-gantt/types/**/*.ts",
+    ".next-green/types/**/*.ts",
+    ".next-home-only/types/**/*.ts",
+    ".next-hybrid-home/types/**/*.ts",
+    ".next-install/types/**/*.ts",
+    ".next-layout-final/types/**/*.ts",
+    ".next-layout-revision/types/**/*.ts",
+    ".next-light-overview/types/**/*.ts",
+    ".next-lime/types/**/*.ts",
+    ".next-live-ai-final/types/**/*.ts",
+    ".next-live-ai-ready/types/**/*.ts",
+    ".next-live-ai/types/**/*.ts",
+    ".next-mint/types/**/*.ts",
+    ".next-outcome-support/types/**/*.ts",
+    ".next-outcome-trail-final/types/**/*.ts",
+    ".next-outcome-trail/types/**/*.ts",
+    ".next-overview-restored/types/**/*.ts",
+    ".next-product-final/types/**/*.ts",
+    ".next-product-revision/types/**/*.ts",
+    ".next-program-refinement/types/**/*.ts",
+    ".next-qa-dev/types/**/*.ts",
+    ".next-readable/types/**/*.ts",
+    ".next-reference-pass-final/types/**/*.ts",
+    ".next-reference-pass/types/**/*.ts",
+    ".next-refined/types/**/*.ts",
+    ".next-refinement-final/types/**/*.ts",
+    ".next-reporting/types/**/*.ts",
+    ".next-review-polish-final/types/**/*.ts",
+    ".next-review-polish/types/**/*.ts",
+    ".next-simple-pages-final/types/**/*.ts",
+    ".next-simple-pages/types/**/*.ts",
+    ".next-simple/types/**/*.ts",
+    ".next-source-clarity/types/**/*.ts",
+    ".next-source-workflow-final/types/**/*.ts",
+    ".next-source-workflow/types/**/*.ts",
+    ".next-tech-lime/types/**/*.ts",
+    ".next-tight-overview/types/**/*.ts",
+    ".next-transparency-final/types/**/*.ts",
+    ".next-transparency/types/**/*.ts",
+    ".next-visual-tabs-final/types/**/*.ts",
+    ".next-visual-tabs/types/**/*.ts",
+    ".next-workbench/types/**/*.ts",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    ".next-product-release/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

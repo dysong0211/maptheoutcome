@@ -1,0 +1,37 @@
+require('./test-evidence.cjs');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {useTodo}=require('../src/stores/followup-store.ts');
+const {useDemoStore}=require('../src/stores/demo-store.ts');
+useTodo.getState().reset();
+useDemoStore.getState().setRole('program');
+useTodo.getState().toggle('mobile-test',true);
+assert.equal(useTodo.getState().done['mobile-test'],true);
+const saved=localStorage.getItem('maptoc-document-followups-v1');
+useTodo.getState().reset();
+assert.deepEqual(useTodo.getState().done,{});
+localStorage.setItem('maptoc-document-followups-v1',saved);
+useTodo.persist.rehydrate();
+assert.equal(useTodo.getState().done['mobile-test'],true);
+useDemoStore.getState().setRole('funder');
+useTodo.getState().toggle('mobile-test',false);
+assert.equal(useTodo.getState().done['mobile-test'],true);
+useDemoStore.getState().setRole('program');
+useTodo.getState().toggle(' ',true);
+assert.equal(Object.hasOwn(useTodo.getState().done,' '),false);
+useTodo.getState().reset();
+assert.deepEqual(useTodo.getState().done,{});
+const home=fs.readFileSync('src/components/program/intelligence-home.tsx','utf8');
+assert.ok(home.includes('max-width: 700px'));
+assert.ok(home.includes('mobile ? <MobileHome /> : <DesktopHome />'));
+const mobile=fs.readFileSync('src/components/program/mobile-program-home.tsx','utf8');
+for(const value of ['Upload','Review','Summary','live AI is off','Save document only','hasReview&&']) {
+  assert.ok(mobile.includes(value),value);
+}
+assert.ok(!mobile.includes('<ProgramTimeline'));
+assert.ok(!mobile.includes('<DesktopHome'));
+const shell=fs.readFileSync('src/components/layout/app-shell.tsx','utf8');
+assert.ok(shell.includes('Keep my work'));
+assert.ok(shell.includes('Delete local data & reset'));
+assert.ok(shell.includes('useTodo.getState().reset()'));
+console.log('Mobile workflow passed: follow-up reset/rehydration/role guards; static contracts for three-step lightweight entry, honest demo state and reset confirmation. Browser behavior is tested separately.');

@@ -1,0 +1,17 @@
+require('./test-evidence.cjs');
+const assert = require('node:assert/strict');
+const { useDemoStore: roles } = require('../src/stores/demo-store.ts');
+const { useOutputStore: store } = require('../src/stores/output-intelligence-store.ts');
+store.getState().reset();
+const id = store.getState().tasks[0].id;
+roles.getState().setRole('funder');
+store.getState().setTaskDone(id, true);
+assert.equal(store.getState().tasks[0].completedAt, undefined);
+roles.getState().setRole('program');
+store.getState().setTaskDone(id, true);
+assert.ok(store.getState().tasks[0].completedAt);
+store.persist.rehydrate();
+assert.ok(store.getState().tasks[0].completedAt);
+store.getState().setTaskDone(id, false);
+assert.equal(store.getState().tasks[0].completedAt, undefined);
+console.log('Timeline completion: role guard, persistence and reopening passed.');

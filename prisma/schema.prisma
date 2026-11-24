@@ -1,0 +1,390 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrganizationType {
+  FUNDER
+  GOVERNMENT
+  GRANTEE
+}
+
+enum OrganizationRole {
+  FUNDER_ADMIN
+  PROGRAM_MANAGER
+  AUDITOR
+  VIEWER
+}
+
+enum ProgramStatus {
+  DRAFT
+  ACTIVE
+  AT_RISK
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  DEFERRED
+}
+
+enum OutcomeStatus {
+  PLANNED
+  IN_PROGRESS
+  ON_TRACK
+  AT_RISK
+  ACHIEVED
+  NOT_ACHIEVED
+}
+
+enum OutcomeType {
+  OUTPUT
+  SHORT_TERM
+  INTERMEDIATE
+  LONG_TERM
+}
+
+enum MetricValueType {
+  NUMBER
+  PERCENTAGE
+  CURRENCY
+  BOOLEAN
+  TEXT
+  DATE
+}
+
+enum MetricDirection {
+  INCREASE
+  DECREASE
+  MAINTAIN
+  NONE
+}
+
+enum EvidenceType {
+  DOCUMENT
+  DATASET
+  IMAGE
+  VIDEO
+  AUDIO
+  LINK
+  OTHER
+}
+
+enum EvidenceStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  NEEDS_CONTEXT
+  ARCHIVED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  EVIDENCE_SUBMITTED
+  EVIDENCE_LINKED
+  MEMBER_ROLE_CHANGED
+}
+
+model User {
+  /// Matches the UUID issued by Supabase Auth (auth.users.id).
+  id          String                   @id @db.Uuid
+  email       String                   @unique
+  displayName String?                  @map("display_name")
+  avatarUrl   String?                  @map("avatar_url")
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships OrganizationMembership[]
+  observations MetricObservation[]     @relation("ObservationRecorder")
+  evidence     Evidence[]              @relation("EvidenceUploader")
+  auditEntries AuditLog[]              @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Organization {
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  slug         String                   @unique
+  type         OrganizationType
+  metadata     Json                     @default("{}")
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships  OrganizationMembership[]
+  ownedPrograms Program[]               @relation("ProgramOwner")
+  fundedPrograms Program[]              @relation("ProgramFunder")
+  auditEntries AuditLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationMembership {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  role           OrganizationRole
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, role])
+  @@map("organization_memberships")
+}
+
+model Program {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerOrganizationId String        @map("owner_organization_id") @db.Uuid
+  funderOrganizationId String?      @map("funder_organization_id") @db.Uuid
+  name               String
+  code               String?
+  description        String?
+  overarchingGoal    String         @map("overarching_goal")
+  status             ProgramStatus  @default(DRAFT)
+  startDate          DateTime?      @map("start_date") @db.Date
+  endDate            DateTime?      @map("end_date") @db.Date
+  awardedAmount      Decimal?       @map("awarded_amount") @db.Decimal(19, 4)
+  currency           String?        @db.VarChar(3)
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  ownerOrganization  Organization   @relation("ProgramOwner", fields: [ownerOrganizationId], references: [id], onDelete: Restrict)
+  funderOrganization Organization?  @relation("ProgramFunder", fields: [funderOrganizationId], references: [id], onDelete: SetNull)
+  goals              ProgramGoal[]
+  milestones         Milestone[]
+  activities         Activity[]
+  outcomes           Outcome[]
+  metrics            MetricDefinition[]
+  evidence           Evidence[]
+  auditEntries       AuditLog[]
+
+  @@unique([ownerOrganizationId, code])
+  @@index([ownerOrganizationId, status])
+  @@index([funderOrganizationId, status])
+  @@map("programs")
+}
+
+model ProgramGoal {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId   String    @map("program_id") @db.Uuid
+  title       String
+  description String?
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program     Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  outcomes    Outcome[]
+
+  @@index([programId, sortOrder])
+  @@map("program_goals")
+}
+
+model Milestone {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId      String          @map("program_id") @db.Uuid
+  title          String
+  description    String?
+  status         MilestoneStatus @default(NOT_STARTED)
+  targetDate     DateTime?       @map("target_date") @db.Date
+  completedAt    DateTime?       @map("completed_at") @db.Timestamptz(6)
+  plannedSpend   Decimal?        @map("planned_spend") @db.Decimal(19, 4)
+  actualSpend    Decimal?        @map("actual_spend") @db.Decimal(19, 4)
+  sortOrder      Int             @default(0) @map("sort_order")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program        Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  outcomeLinks   OutcomeMilestone[]
+  evidenceLinks EvidenceMilestone[]
+
+  @@index([programId, status, targetDate])
+  @@map("milestones")
+}
+
+model Activity {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId   String    @map("program_id") @db.Uuid
+  title       String
+  description String?
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program     Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  outcomeLinks ActivityOutcome[]
+
+  @@index([programId, sortOrder])
+  @@map("activities")
+}
+
+model Outcome {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId       String        @map("program_id") @db.Uuid
+  goalId          String?       @map("goal_id") @db.Uuid
+  parentOutcomeId String?       @map("parent_outcome_id") @db.Uuid
+  title           String
+  description     String?
+  type            OutcomeType
+  status          OutcomeStatus @default(PLANNED)
+  targetDate      DateTime?     @map("target_date") @db.Date
+  sortOrder       Int           @default(0) @map("sort_order")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program         Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  goal            ProgramGoal?  @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  parentOutcome   Outcome?      @relation("OutcomeHierarchy", fields: [parentOutcomeId], references: [id], onDelete: SetNull)
+  childOutcomes   Outcome[]     @relation("OutcomeHierarchy")
+  activityLinks   ActivityOutcome[]
+  milestoneLinks  OutcomeMilestone[]
+  metrics         MetricDefinition[]
+  evidenceLinks   EvidenceOutcome[]
+
+  @@index([programId, status, type])
+  @@index([parentOutcomeId])
+  @@map("outcomes")
+}
+
+model ActivityOutcome {
+  activityId String   @map("activity_id") @db.Uuid
+  outcomeId  String   @map("outcome_id") @db.Uuid
+  rationale  String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  outcome    Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, outcomeId])
+  @@map("activity_outcomes")
+}
+
+model OutcomeMilestone {
+  outcomeId   String    @map("outcome_id") @db.Uuid
+  milestoneId String    @map("milestone_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  outcome     Outcome   @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@id([outcomeId, milestoneId])
+  @@map("outcome_milestones")
+}
+
+model MetricDefinition {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId   String          @map("program_id") @db.Uuid
+  outcomeId   String?         @map("outcome_id") @db.Uuid
+  name        String
+  description String?
+  valueType   MetricValueType @map("value_type")
+  direction   MetricDirection @default(NONE)
+  unit        String?
+  targetValue Json?           @map("target_value")
+  schema      Json            @default("{}")
+  isRequired  Boolean         @default(false) @map("is_required")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program     Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  outcome     Outcome?        @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  observations MetricObservation[]
+
+  @@index([programId, outcomeId])
+  @@map("metric_definitions")
+}
+
+model MetricObservation {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  metricId    String           @map("metric_id") @db.Uuid
+  recordedById String          @map("recorded_by_id") @db.Uuid
+  value       Json
+  periodStart DateTime?        @map("period_start") @db.Date
+  periodEnd   DateTime?        @map("period_end") @db.Date
+  notes       String?
+  recordedAt  DateTime         @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  metric      MetricDefinition @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  recordedBy  User             @relation("ObservationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([metricId, recordedAt])
+  @@map("metric_observations")
+}
+
+model Evidence {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId    String         @map("program_id") @db.Uuid
+  uploadedById String         @map("uploaded_by_id") @db.Uuid
+  title        String
+  description  String?
+  type         EvidenceType
+  status       EvidenceStatus @default(DRAFT)
+  storageBucket String?       @map("storage_bucket")
+  storagePath  String?        @map("storage_path")
+  externalUrl  String?        @map("external_url")
+  mimeType     String?        @map("mime_type")
+  sizeBytes    BigInt?        @map("size_bytes")
+  metadata     Json           @default("{}")
+  capturedAt   DateTime?      @map("captured_at") @db.Timestamptz(6)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program      Program        @relation(fields: [programId], references: [id], onDelete: Cascade)
+  uploadedBy   User           @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  outcomeLinks EvidenceOutcome[]
+  milestoneLinks EvidenceMilestone[]
+
+  @@unique([storageBucket, storagePath])
+  @@index([programId, status, createdAt])
+  @@map("evidence")
+}
+
+model EvidenceOutcome {
+  evidenceId String   @map("evidence_id") @db.Uuid
+  outcomeId  String   @map("outcome_id") @db.Uuid
+  relevance  String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  outcome    Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@id([evidenceId, outcomeId])
+  @@map("evidence_outcomes")
+}
+
+model EvidenceMilestone {
+  evidenceId  String    @map("evidence_id") @db.Uuid
+  milestoneId String    @map("milestone_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  evidence    Evidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@id([evidenceId, milestoneId])
+  @@map("evidence_milestones")
+}
+
+model AuditLog {
+  id             BigInt        @id @default(autoincrement())
+  organizationId String        @map("organization_id") @db.Uuid
+  programId      String?       @map("program_id") @db.Uuid
+  actorId        String?       @map("actor_id") @db.Uuid
+  action         AuditAction
+  entityType     String        @map("entity_type")
+  entityId       String        @map("entity_id") @db.Uuid
+  before         Json?
+  after          Json?
+  context        Json          @default("{}")
+  occurredAt     DateTime      @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  program        Program?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  actor          User?         @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, occurredAt(sort: Desc)])
+  @@index([programId, occurredAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

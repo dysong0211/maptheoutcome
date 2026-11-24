@@ -1,0 +1,17 @@
+require("./test-evidence.cjs");
+const assert=require("node:assert/strict");
+const {deriveLogframe}=require("../src/lib/logframe-intelligence.ts");
+const {initialRecords,initialSources,incomingSource,preparedProposals}=require("../src/lib/program-memory.ts");
+const metrics=deriveLogframe(initialRecords,initialSources);
+assert.equal(metrics[0].actual,1240);assert.equal(metrics[0].delta,-260);
+assert.equal(metrics[1].actual,18);assert.equal(metrics[1].delta,-6);
+assert.equal(metrics[2].actual,42000);assert.equal(metrics[2].target,30000);assert.equal(metrics[2].delta,12000);
+assert.equal(metrics[3].actual,null);
+assert.ok(deriveLogframe([],initialSources).every(metric=>metric.actual===null));
+assert.ok(deriveLogframe(initialRecords,[]).every(metric=>metric.actual===null));
+const missingFinance=deriveLogframe(initialRecords,initialSources.filter(source=>source.id!=="finance-v1"));
+assert.equal(missingFinance[2].actual,null);assert.equal(missingFinance[0].actual,1240);
+const corrupted=initialRecords.map(record=>({...record,citation:{...record.citation,quote:"fabricated quote"}}));
+assert.ok(deriveLogframe(corrupted,initialSources).every(metric=>metric.actual===null));
+assert.deepEqual(deriveLogframe(initialRecords,[...initialSources,incomingSource]),metrics,"Capturing an unreviewed document does not change reported values");
+console.log("LogFrame tests passed: source-linked extraction, actual/target variance, absent and invalid evidence, no unreviewed promotion.");

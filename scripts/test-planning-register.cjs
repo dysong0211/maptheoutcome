@@ -1,0 +1,18 @@
+require('./test-evidence.cjs');
+const assert=require('node:assert/strict');
+const {useOutputStore:store}=require('../src/stores/output-intelligence-store.ts');
+const {useDemoStore:roles}=require('../src/stores/demo-store.ts');
+roles.getState().setRole('program');store.getState().reset();
+const task=store.getState().tasks[0];
+const plan={plannedBudget:0,currency:'USD',activity:'Outreach',fundingLabel:'Unrestricted planned use'};
+assert.equal(store.getState().setTaskPlanning(task.id,plan),true);
+assert.equal(store.getState().tasks[0].plannedBudget,0);
+assert.equal(store.getState().setTaskPlanning(task.id,{...plan,plannedBudget:-1}),false);
+assert.equal(store.getState().setTaskPlanning(task.id,{...plan,plannedBudget:NaN}),false);
+assert.equal(store.getState().setTaskPlanning(task.id,{...plan,currency:'US'}),false);
+assert.equal(store.getState().setTaskPlanning('missing',plan),false);
+store.persist.rehydrate();assert.equal(store.getState().tasks[0].activity,'Outreach');
+roles.getState().setRole('funder');assert.equal(store.getState().setTaskPlanning(task.id,{...plan,plannedBudget:500}),false);
+roles.getState().setRole('program');assert.equal(store.getState().setTaskPlanning(task.id,{...plan,plannedBudget:undefined}),true);
+assert.equal(store.getState().tasks[0].plannedBudget,undefined);
+console.log('Planning register passed: zero/missing budget, validation, persistence, role guard, stable task identity.');
