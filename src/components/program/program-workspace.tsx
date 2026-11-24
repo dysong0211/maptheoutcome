@@ -707,7 +707,7 @@ export function FileDropZone({
           documentId: id.slice(0, -3),
           title: file.name.replace(/\.[^.]+$/, ""),
           version: 1,
-          author: "Captured by Maya Chen · Program manager",
+          author: "Captured in program-manager mode · identity not verified",
           sourceDate: documentDate ? `${documentDate}T00:00:00.000Z` : new Date(file.lastModified || Date.now()).toISOString(),
           capturedAt: occurredAt,
           type: extension,
