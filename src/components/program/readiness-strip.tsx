@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { localDay } from "@/lib/local-date";
 import { useTracking, conditionStatus } from "@/stores/tracking-store";
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { useClarifications } from "./use-clarifications";
@@ -15,7 +16,7 @@ export function ReadinessStrip() {
   const conditions = t.conditions.filter((c) => c.programId === programId);
   const atRisk = conditions.filter((c) => conditionStatus(c) === "At risk").length;
   const unknown = conditions.filter((c) => conditionStatus(c) === "Not enough evidence").length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDay();
   const upcoming = [
     ...t.dates.filter((d) => d.programId === programId).map((d) => ({ type: d.type, due: d.due })),
     ...(program?.agreementEnd ? [{ type: "Agreement end", due: program.agreementEnd }] : []),
