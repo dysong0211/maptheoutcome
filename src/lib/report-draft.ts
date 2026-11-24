@@ -40,12 +40,17 @@ export function reportRecords(
       const date = recordDate(record.eventDate);
       return (
         date &&
+        record.eventDateBasis !== "document-date" &&
         date >= from &&
         date <= to &&
         citationMatchesSource(record.citation, sources)
       );
     })
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+}
+/** Approved findings whose event date is unknown. They are left out of dated reports until a date is confirmed. */
+export function undatedReportRecords(records: ProgramRecord[], sources: SourceVersion[]) {
+  return records.filter((r) => r.eventDateBasis === "document-date" && citationMatchesSource(r.citation, sources));
 }
 export function reportEvidenceKey(
   records: ProgramRecord[],
@@ -87,10 +92,14 @@ export function createPeriodReport({
   if (from > to)
     throw Error("The end date must be on or after the start date.");
   const chosen = reportRecords(records, sources, from, to);
+  const undated = undatedReportRecords(records, sources);
+  const undatedText = undated.length
+    ? `\n\nDATE NOT CONFIRMED (not part of this period's results)\nThese approved findings do not state when the event happened. Confirm the event date in Review before relying on them.\n${undated.map((r, i) => `${i + 1}. ${r.title}\nSource: ${sources.find((s) => s.id === r.citation.versionId)?.title ?? "Source"}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(r.citation.versionId)}`).join("\n\n")}`
+    : "";
   const content = chosen
     .map(
       (record, index) =>
-        `${index + 1}. ${record.title}\n${record.statement}\nEvent date: ${record.eventDate}\nSource: ${sources.find((source) => source.id === record.citation.versionId)!.title}\nOriginal passage: “${record.citation.quote}”\nLimit: ${record.limitation || "No additional limitation recorded."}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(record.citation.versionId)}`,
+        `${index + 1}. ${record.title}\n${record.statement}\nEvent date: ${record.eventDateBasis === "document-date" ? "not confirmed" : record.eventDate.slice(0, 10)}\nSource: ${sources.find((source) => source.id === record.citation.versionId)!.title}\nOriginal passage: “${record.citation.quote}”\nLimit: ${record.limitation || "No additional limitation recorded."}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(record.citation.versionId)}`,
     )
     .join("\n\n");
   const undpSections: Record<Exclude<typeof reportKind, "program-update">, string> = {
@@ -153,8 +162,16 @@ export function createPeriodReport({
     to,
     count: chosen.length,
     text: reportKind === "program-update"
-      ? `${title.trim() || "Program update"}\n${programName}\nReporting window: ${from} – ${to}\n\n${chosen.length} reviewed records in this event-date window.\n\n${content || "No reviewed source-linked findings for this period. Review documents before reporting progress."}\n\nDRAFT — assembled from reviewed records. Review scope and completeness before sharing.`
-      : `${title.trim() || "UNDP programme report"}\n${programName}\nProgramme / evidence window: ${from} – ${to}\n\nDraft structure with ${chosen.length} reviewed source-linked findings available for this period. Complete prompts with authorized programme knowledge; verify each claim and protect interview participants.\n\n${reflectionOutline}\n\nDRAFT — this is a writing aid, not a verified final report. Review evidence, consent, attribution and disclosure before sharing.`,
+      ? `${title.trim() || "Program update"}\n${programName}\nReporting window: ${from} – ${to}\n\n${chosen.length} reviewed records in this event-date window.\n\n${content || "No reviewed source-linked findings for this period. Review documents before reporting progress."}${undatedText}\n\nDRAFT — assembled from reviewed records. Review scope and completeness before sharing.`
+      : `${title.trim() || "UNDP programme report"}\n${programName}\nProgramme / evidence window: ${from} – ${to}\n\nDraft structure with ${chosen.length} reviewed source-linked findings available for this period. Complete prompts with authorized programme knowledge; verify each claim and protect interview participants.\n\n${reflectionOutline}${undatedText}\n\nDRAFT — this is a writing aid, not a verified final report. Review evidence, consent, attribution and disclosure before sharing.`,
     filename: `MapToc-${reportKind === "program-update" ? "update" : "undp-report"}-${from}-${to}.txt`,
   };
+}
+
+/** Identifies one exact draft: window, title, current text and the evidence behind it. A sign-off applies only to this key. */
+export function draftVersionKey(ctx: { from: string; to: string; title: string }, text: string, evidenceKey: string) {
+  let h = 5381;
+  const s = `${text}\u0000${evidenceKey}`;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return `${ctx.from}:${ctx.to}:${ctx.title}:${h.toString(36)}`;
 }
