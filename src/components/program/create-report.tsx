@@ -152,7 +152,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
               setDraftContext(null);
               if (next !== "program-update") {
                 setFrom(period.first);
-                setTo(program?.periodEnd || period.to);
+                setTo(period.to);
               } else {
                 setFrom(period.from);
                 setTo(period.to);
