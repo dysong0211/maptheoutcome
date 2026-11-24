@@ -19,12 +19,12 @@ export const aiSourceSchema = z.object({
 });
 export const aiRequestSchema = z
   .object({
-    mode: z.enum(["ask", "analyze"]),
+    mode: z.enum(["ask", "analyze", "requirements"]),
     question: z.string().trim().min(1).max(2000),
     sources: z.array(aiSourceSchema).min(1).max(40),
   })
   .superRefine((value, ctx) => {
-    if (value.mode === "analyze" && value.sources.length !== 1)
+    if ((value.mode === "analyze" || value.mode === "requirements") && value.sources.length !== 1)
       ctx.addIssue({
         code: "custom",
         message: "Analyze one document at a time.",
@@ -45,7 +45,18 @@ export const documentSummarySchema = z.object({
   summary: z.string().min(1).max(900),
   suggestedConnection: z.string().max(300).nullable(),
 });
+export const aiRequirementSchema = z.object({
+  statement: z.string().min(1).max(200),
+  comparator: z.enum(["min", "max"]),
+  threshold: z.number().finite(),
+  unit: z.string().max(12),
+  sourceId: z.string().min(1).max(200),
+  passageId: z.string().max(200),
+  quote: z.string().trim().min(1).max(1500),
+  locator: z.string().min(1).max(300),
+});
 export const aiOutputSchema = z.object({
+  requirements: z.array(aiRequirementSchema).max(8).optional(),
   document: documentSummarySchema.nullable().optional(),
   findings: z
     .array(
@@ -64,6 +75,7 @@ export const aiOutputSchema = z.object({
         sourceId: z.string().min(1).max(200),
         passageId: z.string().max(200),
         quote: z.string().trim().min(1).max(3000),
+        eventDate: z.string().max(20).nullable().optional(),
         locator: z.string().min(1).max(300),
       }),
     )
@@ -73,6 +85,7 @@ export const aiOutputSchema = z.object({
 // New provider responses must include the document field; old saved responses remain readable.
 export const aiProviderOutputSchema = aiOutputSchema.extend({
   document: documentSummarySchema.nullable(),
+  requirements: z.array(aiRequirementSchema).max(8),
 });
 export type AIOutput = z.infer<typeof aiOutputSchema>;
 export type AIResult = AIOutput & {
@@ -115,6 +128,21 @@ export function validateAIOutput(
         );
       finding.locator = passage.locator;
     }
+  }
+  if (request.mode !== "requirements" && output.requirements?.length)
+    throw new Error("Requirements are only returned in requirements mode.");
+  if (request.mode === "requirements" && output.findings.length)
+    throw new Error("Requirements mode returns requirements, not findings.");
+  // Drop any suggestion whose quote or number cannot be checked against the source text.
+  if (output.requirements) {
+    output.requirements = output.requirements.filter((req) => {
+      const source = request.sources.find((s) => s.id === req.sourceId);
+      const passage = source?.passages.find((p) => p.id === req.passageId);
+      if (!source || !passage || !passage.text.includes(req.quote)) return false;
+      if (!req.quote.replace(/,/g, "").includes(String(req.threshold))) return false;
+      req.locator = passage.locator;
+      return true;
+    });
   }
   return output;
 }
