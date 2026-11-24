@@ -1,5 +1,6 @@
 "use client";
 
+import { eventDateText } from "@/lib/event-date";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Flag, Sparkles } from "lucide-react";
@@ -8,6 +9,8 @@ import { useMemoryStore } from "@/stores/program-memory-store";
 import { useAssurance } from "@/stores/assurance-store";
 import { resolveCitation } from "@/lib/program-memory";
 import { assuranceInbox, summarizeChecks } from "@/lib/assurance-overview";
+import { SummaryThemes } from "./summary-themes";
+import { ReadinessStrip } from "./readiness-strip";
 import { AssuranceInbox } from "./assurance-inbox";
 import { AssuranceBirdseye } from "./assurance-birdseye";
 
@@ -46,7 +49,7 @@ const themes: Record<string, string> = { Result: "Delivery", Change: "Spending &
 export function AssuranceWatch() { return <AssuranceBirdseye/>; }
 
 export function ProgramIntelligence() {
-  const {reach,cost,covered,total,elapsed,days,open,stale,workspace,tasks,sources,now} = useProgramSnapshot();
+  const {records,reach,cost,covered,total,elapsed,days,open,stale,workspace,tasks,sources,now} = useProgramSnapshot();
   if(workspace.program&&workspace.program.id!=="cambodia-demo")return <ConfiguredProgramSummary/>;
   const today = now === null ? "" : new Date(now).toISOString().slice(0,10);
   const overdue = tasks.filter(t=>!t.completedAt && today && t.due<today);
@@ -68,7 +71,9 @@ export function ProgramIntelligence() {
   const delivery = reach.actual === null ? "Delivery evidence is still needed." : `${reach.actual.toLocaleString()} women reached—${reachPercent}% of August’s target.`;
   const context = stale ? "New evidence needs rechecking." : open.length ? `${open.length} evidence question${open.length===1?" needs":"s need"} a response.` : workspace.runs.length ? "See assurance checks for current evidence support." : cost.delta !== null && cost.delta > 0 ? `Transport spending is $${cost.delta.toLocaleString()} above the original plan; review the explanation.` : "Explore the records behind delivery and spending.";
   return <><section id="program-summary" className="v1-program-intelligence lean-glance visual-summary" aria-label="Program Summary">
-    <header className="workspace-section-header"><div><span className="v1-positioning">PROGRAM AT A GLANCE</span><h2>Program Summary</h2><p>Maternal care access · Cambodia · July 2026–June 2027</p></div><Link href="/program">Open program ↗</Link></header>
+    <header className="workspace-section-header"><div><span className="v1-positioning">PROGRAM AT A GLANCE</span><h2>Program Summary</h2><p>Maternal care access · Cambodia · July 2026–June 2027 · Sample figures, illustrative only</p></div><Link href="/program">Open program ↗</Link></header>
+    <SummaryThemes records={records} lines={{progress:reach.actual===null?undefined:`${reach.actual.toLocaleString()} reached${reachPercent===null?"":` · ${reachPercent}% of target`}`,finance:cost.actual===null?undefined:`$${cost.actual.toLocaleString()} of $60,000 · demo figures, not verified`,challenges:`${overdue.length} overdue · ${total-covered} documents missing`}} />
+      <ReadinessStrip />
     <div className="lean-metrics">{tiles.map(tile => <article key={tile.label} className="metric-assurance-card"><Link href={tile.href} className="lean-metric" aria-label={`${tile.label}: open details`}>
       <span>{tile.label} <span aria-hidden="true">↗</span></span><strong>{tile.value}</strong><small>{tile.detail}</small>
       {tile.label === "People reached" ? <div className="summary-ring" role="img" aria-label={reachPercent===null?"Delivery evidence needed":`${reachPercent}% of attendance target reached`}><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48" className="ring-track"/><circle cx="60" cy="60" r="48" pathLength="100" className="ring-value" strokeDasharray={`${Math.max(0,Math.min(100,reachPercent??0))} 100`}/></svg><span><b>{reachPercent===null?"—":`${reachPercent}%`}</b><small>of target</small></span></div>
@@ -100,7 +105,7 @@ export function LivingProgramRecord() {
     <header><h2>Living program record</h2><p>Activities, decisions, spending, results, and lessons—each with its date, context, and original source.</p></header>
     <div className="v1-record-filters"><label>Search records<input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search the program story…" /></label><label>Theme<select value={theme} onChange={e => setTheme(e.target.value)}><option value="All">All themes</option>{Object.entries(themes).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
     <ol>{selected.map(record => { const citation = resolveCitation(record.citation,sources); return <li key={record.id}>
-      <div className="v1-record-date"><time>{record.eventDate}</time><span className="v1-theme">{themes[record.kind] ?? record.kind}</span></div>
+      <div className="v1-record-date"><time>{eventDateText(record)}</time><span className="v1-theme">{themes[record.kind] ?? record.kind}</span></div>
       <div><h3>{record.title}</h3><p>{record.statement}</p><small>Document: {citation.source?.title ?? "Source unavailable"} · {citation.source?.sourceDate ?? "Date not recorded"}</small><details><summary>Original passage & context</summary>{citation.valid ? <blockquote>{record.citation.quote}</blockquote> : <p>The cited passage is unavailable.</p>}<p>{record.limitation}</p><Link href={`/record?item=${encodeURIComponent(record.id)}`}>Explore connected record ↗</Link></details></div>
     </li>; })}</ol>
     {!selected.length && <p className="v1-record-empty">{theme === "Lesson" ? "No reviewed lessons recorded yet. Capture a reflection to preserve what the team learned." : "No records match this view."} <Link href="/sources#observation">Add a field update ↗</Link></p>}

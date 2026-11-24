@@ -93,8 +93,29 @@ export function ProgramAssuranceSetup({
     [error, setError] = useState(""),
     [newKind, setNewKind] = useState("blank"),
     [newName, setNewName] = useState(""),
+    [newProgramRef, setNewProgramRef] = useState(""),
+    [newGrantRef, setNewGrantRef] = useState(""),
     [newMethod, setNewMethod] = useState<CheckMethod>("budget-approval");
+  const idsOf = (p: ProgramConfiguration) => ({
+    programRef: p.programRef ?? "",
+    grantRef: p.grantRef ?? "",
+    donor: p.donor ?? "",
+    agreementStart: p.agreementStart ?? "",
+    agreementEnd: p.agreementEnd ?? "",
+  });
+  const [idDraft, setIdDraft] = useState(idsOf(program));
   useEffect(()=>{setDraft(clone(program));setError("");},[program.id]);
+  useEffect(() => {
+    setIdDraft(idsOf(program));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    program.id,
+    program.programRef,
+    program.grantRef,
+    program.donor,
+    program.agreementStart,
+    program.agreementEnd,
+  ]);
   const documents = allEvidence(workspace, sources).filter(
     (s) => !s.id.startsWith("configured-inputs:"),
   );
@@ -191,6 +212,10 @@ export function ProgramAssuranceSetup({
   };
   const create = () => {
     try {
+      if (newKind === "blank" && !newName.trim()) {
+        setError("Enter a program name to continue.");
+        return;
+      }
       if (newKind !== "blank") add(newKind);
       else {
         const id = `program-${crypto.randomUUID()}`,
@@ -201,7 +226,9 @@ export function ProgramAssuranceSetup({
         // edits them in Program setup after creating the program.
         add("blank", {
           ...p,
-          name: newName.trim() || "New development program",
+          name: newName.trim(),
+          programRef: newProgramRef.trim(),
+          grantRef: newGrantRef.trim(),
           country: "",
           theme: "Development program",
           donor: "",
@@ -331,12 +358,134 @@ export function ProgramAssuranceSetup({
                     />
                   </label>
                 )}
+                {newKind === "blank" && (
+                  <>
+                    <label>
+                      Program ID (optional)
+                      <input
+                        value={newProgramRef}
+                        maxLength={60}
+                        onChange={(e) => setNewProgramRef(e.target.value)}
+                        placeholder="Your organisation's program or project number"
+                      />
+                    </label>
+                    <label>
+                      Grant ID (optional)
+                      <input
+                        value={newGrantRef}
+                        maxLength={60}
+                        onChange={(e) => setNewGrantRef(e.target.value)}
+                        placeholder="Donor grant or agreement number"
+                      />
+                    </label>
+                  </>
+                )}
                 <button className="issue-action" onClick={create}>
                   Create program
                 </button>
               </div>
             ) : (
               <>
+                <fieldset className="setup-ids" disabled={readonly}>
+                  <div className="setup-fields">
+                    <label>
+                      Program ID
+                      <input
+                        aria-label="Program ID"
+                        value={idDraft.programRef}
+                        maxLength={60}
+                        onChange={(e) =>
+                          setIdDraft({ ...idDraft, programRef: e.target.value })
+                        }
+                        placeholder="e.g. project number"
+                      />
+                    </label>
+                    <label>
+                      Grant ID
+                      <input
+                        aria-label="Grant ID"
+                        value={idDraft.grantRef}
+                        maxLength={200}
+                        onChange={(e) =>
+                          setIdDraft({ ...idDraft, grantRef: e.target.value })
+                        }
+                        placeholder="Several grants? Separate with commas"
+                      />
+                    </label>
+                    <label>
+                      Donor / funder
+                      <input
+                        aria-label="Donor"
+                        value={idDraft.donor}
+                        onChange={(e) =>
+                          setIdDraft({ ...idDraft, donor: e.target.value })
+                        }
+                      />
+                    </label>
+                    <span />
+                    <label>
+                      Agreement start
+                      <input
+                        type="date"
+                        aria-label="Agreement start"
+                        value={idDraft.agreementStart}
+                        onChange={(e) =>
+                          setIdDraft({
+                            ...idDraft,
+                            agreementStart: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Agreement end
+                      <input
+                        type="date"
+                        aria-label="Agreement end"
+                        value={idDraft.agreementEnd}
+                        onChange={(e) =>
+                          setIdDraft({
+                            ...idDraft,
+                            agreementEnd: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={
+                      readonly ||
+                      JSON.stringify(idDraft) === JSON.stringify(idsOf(program))
+                    }
+                    onClick={() => {
+                      try {
+                        const next = {
+                          ...clone(program),
+                          programRef: idDraft.programRef.trim(),
+                          grantRef: idDraft.grantRef.trim(),
+                          donor: idDraft.donor.trim(),
+                          agreementStart: idDraft.agreementStart,
+                          agreementEnd: idDraft.agreementEnd,
+                        };
+                        configure(next);
+                        setDraft((d) => ({
+                          ...d,
+                          programRef: next.programRef,
+                          grantRef: next.grantRef,
+                          donor: next.donor,
+                          agreementStart: next.agreementStart,
+                          agreementEnd: next.agreementEnd,
+                        }));
+                        setError("");
+                      } catch (e) {
+                        setError((e as Error).message);
+                      }
+                    }}
+                  >
+                    Save details
+                  </button>
+                </fieldset>
                 <DocumentProgramSetup
                   key={program.id}
                   program={draft}
@@ -1063,4 +1212,4 @@ export function ProgramAssuranceSetup({
       </Dialog.Root>
     </>
   );
-}
+    }

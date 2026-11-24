@@ -100,3 +100,15 @@ export async function analyzeSource(source: SourceVersion) {
     );
   return result;
 }
+
+/** Ask the AI for explicit numeric agreement requirements. Suggestions only; a reviewer must confirm each one. */
+export async function suggestRequirements(source: SourceVersion) {
+  if (!source.passages.some((p) => p.text.trim()))
+    throw new Error("This document has no readable text in the browser yet. Analyze it first, then suggest requirements.");
+  return requestAI({
+    mode: "requirements",
+    sources: [aiSource(source)],
+    question:
+      "List the explicit, measurable requirements or conditions in this agreement as requirements, each with an exact quotation. Do not list anything without a stated number.",
+  });
+}

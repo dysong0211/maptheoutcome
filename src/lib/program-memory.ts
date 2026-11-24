@@ -44,9 +44,30 @@ export interface Finding {
   statement: string;
   limitation: string;
   eventDate: string;
+  /** 'stated' = taken from the source text, 'confirmed' = set by a person, 'document-date' = fallback not confirmed. */
+  eventDateBasis?: "stated" | "confirmed" | "document-date";
   location: string;
   citation: Citation;
   level?: "Output" | "Outcome signal";
+  /** Optional tracking tags added at review. */
+  outputCode?: string;
+  activityCode?: string;
+  partner?: string;
+  /** Optional free-text label, e.g. "Q3 2026". Not tied to a grant structure. */
+  reportingPeriod?: string;
+}
+export type FindingTags = Partial<
+  Pick<Finding, "outputCode" | "activityCode" | "partner" | "reportingPeriod" | "location" | "eventDate">
+>;
+export function cleanTags(tags?: FindingTags): FindingTags {
+  const out: FindingTags = {};
+  for (const key of ["outputCode", "activityCode", "partner", "reportingPeriod", "location"] as const) {
+    const v = tags?.[key];
+    if (typeof v === "string" && v.trim()) out[key] = v.trim().slice(0, 80);
+  }
+  const d = typeof tags?.eventDate === "string" ? tags.eventDate.trim().slice(0, 10) : "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))) out.eventDate = d;
+  return out;
 }
 export interface ProgramRecord extends Finding {
   reviewedAt: string;

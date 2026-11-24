@@ -1,5 +1,6 @@
 "use client";
 
+import { eventDateText } from "@/lib/event-date";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -26,6 +27,11 @@ export function InsightsWorkspace({
   const [observationsOpen, setObservationsOpen] = useState(false);
   const [recordQuery, setRecordQuery] = useState("");
   const [theme, setTheme] = useState("All");
+  const [code, setCode] = useState("All");
+  const [partner, setPartner] = useState("All");
+  const [rperiod, setRperiod] = useState("All");
+  const [place, setPlace] = useState("All");
+  const [period, setPeriod] = useState("All");
   useEffect(() => {
     const reveal = () => {
       if (window.location.hash === "#living-record" || view === "record")
@@ -40,11 +46,32 @@ export function InsightsWorkspace({
   useEffect(() => {
     setRecordQuery("");
     setTheme("All");
+    setCode("All");
+    setPartner("All");
+    setPlace("All");
+    setPeriod("All");
   }, [programId]);
+  const distinct = (values: (string | undefined)[]) =>
+    [...new Set(values.map((v) => v?.trim()).filter(Boolean) as string[])].sort();
+  const codes = distinct(records.flatMap((r) => [r.outputCode, r.activityCode]));
+  const partners = distinct(records.map((r) => r.partner));
+  const rperiods = distinct(records.map((r) => r.reportingPeriod));
+  const places = distinct(records.map((r) => r.location));
   const selected = records
     .filter(
       (record) =>
         (theme === "All" || record.kind === theme) &&
+        (code === "All" ||
+          record.outputCode === code ||
+          record.activityCode === code) &&
+        (partner === "All" || record.partner === partner) &&
+        (rperiod === "All" || record.reportingPeriod === rperiod) &&
+        (place === "All" || record.location === place) &&
+        (period === "All" ||
+          (Boolean(program?.periodStart) &&
+            record.eventDateBasis !== "document-date" &&
+            record.eventDate >= (program?.periodStart ?? "") &&
+            record.eventDate <= (program?.periodEnd ?? ""))) &&
         `${record.title} ${record.statement}`
           .toLowerCase()
           .includes(recordQuery.toLowerCase()),
@@ -58,7 +85,7 @@ export function InsightsWorkspace({
             <Sparkles size={22} /> Program insights
           </h1>
           <p>
-            See the result, what may explain it, and the evidence still needed.
+            Explore reviewed findings by topic, each with its source.
           </p>
         </div>
         <Link href="/review" className="memory-action memory-secondary">
@@ -137,19 +164,107 @@ export function InsightsWorkspace({
                   ))}
                 </select>
               </label>
+              {program?.periodStart && (
+                <label>
+                  Period
+                  <select
+                    className="memory-input"
+                    value={period}
+                    onChange={(event) => setPeriod(event.target.value)}
+                  >
+                    <option value="All">All dates</option>
+                    <option value="current">
+                      Reporting period {program.periodStart} to{" "}
+                      {program.periodEnd}
+                    </option>
+                  </select>
+                </label>
+              )}
+              {codes.length > 0 && (
+                <label>
+                  Output / activity code
+                  <select
+                    className="memory-input"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                  >
+                    <option value="All">All codes</option>
+                    {codes.map((value) => (
+                      <option key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {partners.length > 0 && (
+                <label>
+                  Implementing partner
+                  <select
+                    className="memory-input"
+                    value={partner}
+                    onChange={(event) => setPartner(event.target.value)}
+                  >
+                    <option value="All">All partners</option>
+                    {partners.map((value) => (
+                      <option key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {rperiods.length > 0 && (
+                <label>
+                  Reporting period label
+                  <select className="memory-input" value={rperiod} onChange={(event) => setRperiod(event.target.value)}>
+                    <option value="All">All periods</option>
+                    {rperiods.map((value) => (
+                      <option key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {places.length > 1 && (
+                <label>
+                  Location
+                  <select
+                    className="memory-input"
+                    value={place}
+                    onChange={(event) => setPlace(event.target.value)}
+                  >
+                    <option value="All">All locations</option>
+                    {places.map((value) => (
+                      <option key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
             <ol>
               {selected.map((record) => {
                 const citation = resolveCitation(record.citation, sources);
                 return (
                   <li key={record.id}>
-                    <time>{record.eventDate}</time>
+                    <time>{eventDateText(record)}</time>
                     <div>
                       <span className="theme-chip" data-kind={record.kind}>
                         {record.kind}
                       </span>
                       <h3>{record.title}</h3>
                       <p>{record.statement}</p>
+                      {(record.outputCode ||
+                        record.activityCode ||
+                        record.partner ||
+                        record.reportingPeriod) && (
+                        <p className="record-tags">
+                          {[
+                            record.outputCode && `Output ${record.outputCode}`,
+                            record.activityCode &&
+                              `Activity ${record.activityCode}`,
+                            record.partner && `Partner ${record.partner}`,
+                            record.reportingPeriod && `Period ${record.reportingPeriod}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                       <details>
                         <summary>Original passage & context</summary>
                         <blockquote>

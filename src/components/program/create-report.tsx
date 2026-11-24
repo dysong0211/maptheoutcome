@@ -1,4 +1,5 @@
 "use client";
+import { programIdLine } from "@/lib/program-ids";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -9,9 +10,13 @@ import {
   defaultReportPeriod,
   reportEvidenceKey,
   reportRecords,
+  draftVersionKey,
+  undatedReportRecords,
 } from "@/lib/report-draft";
 import { MapTocLogo } from "@/components/maptoc-logo";
 import { useProgramEvidence } from "./use-program-evidence";
+import { BeforeYouSend } from "./before-you-send";
+import { useTracking } from "@/stores/tracking-store";
 
 const OutputsWorkspace = dynamic(() =>
   import("./output-workspace").then((module) => module.OutputsWorkspace),
@@ -72,6 +77,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     setFrom(period.from);
   }, [programId]);
   const matchingRecords = reportRecords(records, sources, from, to);
+  const undatedRecords = undatedReportRecords(records, sources);
   const evidenceKey = reportEvidenceKey(records, sources);
   const evidenceChanged =
     !!draftContext && draftContext.evidenceKey !== evidenceKey;
@@ -85,7 +91,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
       const result = createPeriodReport({
         title: prompt,
         reportKind,
-        programName: program?.name ?? "Maternal Health Program (demo)",
+        programName: (program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : ""),
         from,
         to,
         records,
@@ -109,8 +115,10 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
       !draft.trim()
     )
       return;
+    const so = useTracking.getState().signoffs.find((x) => x.programId === programId && x.draftKey === draftVersionKey(draftContext, draft, evidenceKey));
+    const status = so?.stage === "signed" ? `Signed off by ${so.name} (recorded name, not a verified identity) on ${so.at.slice(0, 10)}.` : so?.stage === "ready" ? `Ready for review (marked by ${so.name}). Not signed off.` : "Draft. Not signed off.";
     const url = URL.createObjectURL(
-      new Blob([draft], { type: "text/plain;charset=utf-8" }),
+      new Blob([`${draft}\n\n---\nStatus: ${status}\nFindings are approved by a reviewer, not independently verified.\n`], { type: "text/plain;charset=utf-8" }),
     );
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -128,7 +136,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
             <h1>
               <FileText size={22} /> Reports
             </h1>
-            <p>Choose a report format and prepare a draft from reviewed program records.</p>
+            <p>Turn reviewed findings into a draft report with source links.</p>
           </div>
           <span className="insights-program-scope">
             {program?.name ?? "Maternal Health Program"}
@@ -271,6 +279,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           <textarea
             className="memory-input report-draft"
             aria-label="Report draft"
+            ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight + 4}px`; } }}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
           />
@@ -288,6 +297,9 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
             Download draft (.txt)
           </button>
         </section>
+      )}
+      {draft && draftContext?.programId === programId && (
+        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={matchingRecords} undated={undatedRecords} sources={sources} />
       )}
       {isDefault && (
         <>

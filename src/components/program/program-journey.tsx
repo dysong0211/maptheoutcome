@@ -10,6 +10,7 @@ import {
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { useSearchParams } from "next/navigation";
 import { ProgramSummaryMetrics } from "./program-summary-metrics";
+import { TimelineChain } from "./timeline-chain";
 import { EvidenceAsk } from "./evidence-lens";
 import { EvidenceSchedule, OutputsWorkspace } from "./output-workspace";
 import { InputChecklist } from "@/components/program/output-workspace";
@@ -309,6 +310,7 @@ export function ProgramJourney({ compact = false }: { compact?: boolean }) {
                       </li>
                     ))}
                   </ul>
+                  <TimelineChain taskId={task.id} title={task.title} start={task.start} due={task.due} planned={task.plannedBudget === undefined ? undefined : `${task.currency ?? "USD"} ${task.plannedBudget.toLocaleString()}`} />
                   {task.designSourceId && (
                     <Link
                       className="text-sm text-[#007f78]"
@@ -420,7 +422,7 @@ export function ProgramProgress() {
       <div>
         <h1 className="text-xl font-semibold">Program</h1>
         <p className="mt-1 text-xs text-slate-500">
-          Connect program progress, decisions, evidence, and lessons across the lifecycle.
+          Track progress, funding and findings for this program.
         </p>
       </div>
       <nav className="progress-tabs" aria-label="Program views">{[["timeline","Progress & timeline"],["record","Living record"],["sites","Study sites"],["deliverables","Deliverables & uploads"],["outputs","Outputs & reports"]].map(([id,label])=><Link key={id} href={`/program?view=${id}`} aria-current={view===id?"page":undefined}>{label}</Link>)}</nav>

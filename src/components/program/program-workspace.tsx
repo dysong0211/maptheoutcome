@@ -216,7 +216,7 @@ function SourceInspector({ finding }: { finding?: Finding }) {
             source ? `v${source.version} · ${passage?.locator}` : "Unavailable",
           ],
           ["Source date", source ? date(source.sourceDate) : "Unknown"],
-          ["Event date", date(finding.eventDate)],
+          ["Event date", finding.eventDateBasis === "document-date" ? "Not confirmed" : date(finding.eventDate)],
           ["Location", finding.location],
         ].map(([label, value]) => (
           <div key={label} className="grid grid-cols-[75px_1fr] gap-2 py-2.5">
@@ -311,7 +311,7 @@ function RecordRows({
             <p className="mt-2 text-[10px] text-slate-500">
               {sources.find((source) => source.id === record.citation.versionId)
                 ?.title ?? "Source unavailable"}{" "}
-              · {date(record.eventDate)}
+              · {record.eventDateBasis === "document-date" ? "Event date not confirmed" : date(record.eventDate)}
               {record.level && ` · ${record.level}`}
             </p>
           </div>
@@ -1223,13 +1223,22 @@ export function ReviewForm({ proposal }: { proposal: EvidenceProposal }) {
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
   const [sourceChecked, setSourceChecked] = useState(false);
+  const [tags, setTags] = useState({
+    outputCode: proposal.outputCode ?? "",
+    activityCode: proposal.activityCode ?? "",
+    partner: proposal.partner ?? "",
+    reportingPeriod: proposal.reportingPeriod ?? "",
+    location: proposal.location ?? "",
+    eventDate: (proposal.eventDate ?? "").slice(0, 10),
+  });
+  const dismissed = proposal.triage === "dismissed";
   const editable =
     (role === "reviewer" || pilotSingleOperator) &&
     ["pending", "flagged"].includes(proposal.status);
   function decide(decision: "approved" | "rejected" | "flagged") {
     const result = useMemoryStore
       .getState()
-      .review(proposal.id, decision, statement, reason, sourceChecked);
+      .review(proposal.id, decision, statement, reason, sourceChecked, tags);
     setNotice(
       result
         ? `Finding ${decision}.${decision === "approved" ? " Added to the living record." : " Not added to the living record."}`
@@ -1288,6 +1297,55 @@ export function ReviewForm({ proposal }: { proposal: EvidenceProposal }) {
               onChange={(event) => setReason(event.target.value)}
             />
           </label>
+          <label className="mt-4 block text-xs font-medium">
+            Event date
+            <input
+              type="date"
+              className="memory-input mt-1 sm:max-w-[14rem]"
+              value={tags.eventDate}
+              onChange={(event) => setTags({ ...tags, eventDate: event.target.value })}
+            />
+            <span className="mt-1 block font-normal text-slate-500">
+              {proposal.eventDateBasis === "stated"
+                ? "Taken from the date written in the source passage. Change it if that is wrong."
+                : proposal.eventDateBasis === "document-date"
+                  ? "The source does not state when this happened. Until you set the event date, this finding is left out of dated reports and period filters."
+                  : "Reports use this date, not the upload date."}
+            </span>
+          </label>
+          {dismissed && (
+            <p className="maptoc-alert mt-3 text-xs">
+              This suggestion was dismissed. It cannot be approved. Reject it to close it, or flag it for context.
+            </p>
+          )}
+          <details className="mt-4 text-xs">
+            <summary className="cursor-pointer font-medium">
+              Tracking tags <span className="text-slate-400">(optional)</span>
+            </summary>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ["outputCode", "Output code"],
+                  ["activityCode", "Activity code"],
+                  ["partner", "Implementing partner"],
+                  ["reportingPeriod", "Reporting period (e.g. Q3 2026)"],
+                  ["location", "Location"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block">
+                  {label}
+                  <input
+                    className="memory-input mt-1"
+                    maxLength={80}
+                    value={tags[key]}
+                    onChange={(event) =>
+                      setTags({ ...tags, [key]: event.target.value })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+          </details>
           <div className="mt-5 flex flex-wrap gap-2">
             {proposal.generation?.transcription && (
               <label className="flex w-full items-start gap-2 text-sm">
@@ -1303,7 +1361,7 @@ export function ReviewForm({ proposal }: { proposal: EvidenceProposal }) {
               disabled={
                 !statement.trim() ||
                 !reason.trim() ||
-                Boolean(proposal.generation?.transcription && !sourceChecked)
+                dismissed || Boolean(proposal.generation?.transcription && !sourceChecked)
               }
               onClick={() => decide("approved")}
               className="memory-action"
@@ -1736,7 +1794,7 @@ export function ReportsView({ embedded = false }: { embedded?: boolean } = {}) {
                       {record.title}
                     </h3>
                     <p className="mt-2 text-[10px] text-slate-500">
-                      Event date: {date(record.eventDate)}
+                      Event date: {record.eventDateBasis === "document-date" ? "not confirmed" : date(record.eventDate)}
                     </p>
                     <p className="mt-2 text-sm leading-7">
                       {record.statement}{" "}
@@ -1805,4 +1863,4 @@ export function TransparencyView() {
       <TransparencyLedger />
     </>
   );
-}
+                          }

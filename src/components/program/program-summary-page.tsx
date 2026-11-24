@@ -1,4 +1,6 @@
 "use client";
+import { eventDateText } from "@/lib/event-date";
+import { programIdLine, agreementLine } from "@/lib/program-ids";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -9,6 +11,7 @@ import { useClarifications } from "./use-clarifications";
 import { allEvidence } from "@/lib/assurance";
 import { overviewRecords } from "@/lib/overview-summary";
 import { resolveCitation } from "@/lib/program-memory";
+import { ProgramCommitments } from "./program-commitments";
 import { StudySites } from "./study-sites";
 import { ScopedProgramTool } from "./scoped-program-tool";
 import {
@@ -50,7 +53,7 @@ export function ProgramSummaryPage() {
         <div>
           <p className="v1-positioning">PROGRAM INTELLIGENCE</p>
           <h1>Program</h1>
-          <p>Summary, planning, funding and reports — together.</p>
+          <p>Track progress, funding and findings for this program.</p>
         </div>
         <Link href="/assurance">
           Run assurance <ArrowUpRight size={16} />
@@ -61,6 +64,12 @@ export function ProgramSummaryPage() {
           <div>
             <span>PROGRAM AT A GLANCE</span>
             <h2>{p?.name || "Maternal health program"}</h2>
+            {programIdLine(p) && (
+              <p className="program-id-line">{programIdLine(p)}</p>
+            )}
+            {agreementLine(p) && (
+              <p className="program-id-line">{agreementLine(p)}</p>
+            )}
             <p>
               {p?.objective ||
                 "Connect delivery, decisions and original evidence."}
@@ -190,7 +199,7 @@ function ProgramSummaryContent() {
                         <small>
                           {themes.find((t) => t.kind === r.kind)?.label ||
                             r.kind}{" "}
-                          · {r.eventDate}
+                          · {eventDateText(r)}
                         </small>
                         <strong>{r.title}</strong>
                         <span>
@@ -301,6 +310,7 @@ function ProgramSummaryContent() {
           )}
         </aside>
       </div>
+      <ProgramCommitments />
     </>
   );
 }

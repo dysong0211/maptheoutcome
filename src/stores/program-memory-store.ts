@@ -1,4 +1,5 @@
 "use client";
+import { extractEventDate, cleanDate } from "@/lib/event-date";
 import { syncBrowserStore } from "@/lib/cross-tab-store";
 
 import { create } from "zustand";
@@ -12,6 +13,7 @@ import {
   incomingSource,
   preparedProposals,
   resolveCitation,
+  cleanTags,
 } from "@/lib/program-memory";
 import type {
   SourceVersion,
@@ -23,6 +25,7 @@ import type {
   BriefDraft,
   ProposalStatus,
   Submission,
+  FindingTags,
 } from "@/lib/program-memory";
 
 interface MemoryState {
@@ -59,12 +62,22 @@ interface MemoryState {
     statement: string,
     reason: string,
     sourceChecked?: boolean,
+    tags?: FindingTags,
   ) => boolean;
   saveBrief: (recordIds: string[], note: string) => boolean;
   submitBrief: () => boolean;
   requestContext: (note: string) => boolean;
   acceptSubmission: (note: string) => boolean;
   reset: () => void;
+}
+function stated(finding: { eventDate?: string | null; quote: string; statement: string }, source: { sourceDate: string }): string {
+  const year = Number.isFinite(Date.parse(source.sourceDate)) ? new Date(source.sourceDate).getUTCFullYear() : new Date().getUTCFullYear();
+  const fromQuote = extractEventDate(finding.quote, year);
+  if (fromQuote) return fromQuote;
+  const ai = cleanDate(finding.eventDate);
+  // Trust a model date only if the date's day and month appear in the quote or statement.
+  if (ai && extractEventDate(`${finding.quote} ${finding.statement}`, year) === ai) return ai;
+  return "";
 }
 const seed = () => ({
   trashSources: [] as SourceVersion[],
@@ -304,10 +317,15 @@ export const useMemoryStore = create<MemoryState>()(
             kind: finding.kind,
             title: finding.title,
             statement: finding.statement,
-            limitation: `${finding.limitation} Source date shown; event date requires confirmation.${result.transcription ? " Check the AI-transcribed quotation against the original document." : ""}`,
-            eventDate: Number.isFinite(Date.parse(source.sourceDate))
-              ? source.sourceDate
-              : result.generatedAt,
+            limitation: `${finding.limitation}${stated(finding, source) ? "" : " Event date not stated in the source: the document date is shown until you confirm it."}${result.transcription ? " Check the AI-transcribed quotation against the original document." : ""}`,
+            eventDate:
+              stated(finding, source) ||
+              (Number.isFinite(Date.parse(source.sourceDate))
+                ? source.sourceDate.slice(0, 10)
+                : result.generatedAt.slice(0, 10)),
+            eventDateBasis: stated(finding, source)
+              ? ("stated" as const)
+              : ("document-date" as const),
             location: "See source document",
             status: "pending",
             citation: {
@@ -402,7 +420,7 @@ export const useMemoryStore = create<MemoryState>()(
         }));
         return true;
       },
-      review: (id, decision, statement, reason, sourceChecked = false) => {
+      review: (id, decision, statement, reason, sourceChecked = false, tags) => {
         const state = get();
         const proposal = state.proposals.find((item) => item.id === id);
         if (
@@ -415,6 +433,7 @@ export const useMemoryStore = create<MemoryState>()(
           !reason.trim()
         )
           return false;
+        if (decision === "approved" && proposal.triage === "dismissed") return false;
         if (
           decision === "approved" &&
           !resolveCitation(proposal.citation, state.sources).valid
@@ -434,6 +453,11 @@ export const useMemoryStore = create<MemoryState>()(
         const record: ProgramRecord = {
           ...finding,
           id: `record-${id}`,
+          ...cleanTags(tags),
+          eventDateBasis:
+            cleanTags(tags).eventDate && cleanTags(tags).eventDate !== proposal.eventDate.slice(0, 10)
+              ? ("confirmed" as const)
+              : proposal.eventDateBasis,
           statement: statement.trim(),
           proposalId: id,
           reviewedAt: occurredAt,
