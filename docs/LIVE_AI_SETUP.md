@@ -1,36 +1,32 @@
-# Live AI connection
+# Live AI setup
 
-The local Next.js app can call OpenAI for document analysis, evidence questions and section summaries. The integration is implemented; a real provider response still needs verification after an API key is configured.
+Use the hosted pilot for synthetic testing, or run the same server app locally. A static GitHub Pages export cannot run server AI or protect a secret key.
 
-## Activate locally
+## Local Gemini setup
 
-1. Add an OpenAI API key to `OPENAI_API_KEY` in the ignored root `.env.local`. Do not paste it into chat, a browser field, or a `NEXT_PUBLIC_*` variable.
-2. Keep `MAPTOC_AI_ENABLED="true"`. `OPENAI_MODEL` defaults to `gpt-5-mini` and can be changed to a model your API project supports.
-3. Restart the Next.js server. The app reads the key at runtime; no rebuild is needed just to change the key.
-4. Open Overview. Live AI should show as configured. Ask a question using the synthetic evidence first and inspect the returned quotations.
-5. In Documents, open an uploaded file and select **Analyze document**, or enable **Analyze uploads with AI** before choosing files. Analysis sends that document to OpenAI. Generated findings remain pending in **Review suggestions** until an M&E Reviewer approves them.
+1. Install Node 20.9+ and run `npm ci`.
+2. Copy `.env.example` to `.env.local`. Keep all actual secrets out of git, ZIP files and chat.
+3. Set `AI_PROVIDER=gemini`, `MAPTOC_AI_ENABLED=true`, `GEMINI_API_KEY` to your project key and `GEMINI_MODEL` to a model your project supports. The example model is the current pilot configuration, not an availability guarantee.
+4. Run `npm run dev`. Open the local app. A configured status is not proof of a successful provider request.
+5. With synthetic material only, explicitly analyse a document. Check each suggested quotation and limitation, review before approving, then create a report draft. Do not enable automatic paid usage to clear an error.
 
-## Supported workflows
+OpenAI is an alternative: use `AI_PROVIDER=openai`, `OPENAI_API_KEY` and `OPENAI_MODEL`. Neither provider's secret belongs in a `NEXT_PUBLIC_*` variable. Environment changes require server restart or hosting redeploy.
 
-- Questions: explicit source selection, up to 40 readable source versions / 160,000 serialized characters per request. Larger scopes are rejected with guidance to reduce the selection. There is no silent truncation of question context.
-- Documents: existing browser text for TXT/CSV/JSON; file inputs for PDF, Word and Excel; image inputs for PNG/JPEG/WebP. Existing local capture exposes at most the first 50,000 characters of text, as labeled in its locator. File analysis is bounded by 15 MB per file; provider format/model limits can still reject a file.
-- Replies: up to six cited findings with limitations and four suggested next steps. A missing or mismatched text quotation rejects the response. Citation matching establishes the quotation exists; human review still evaluates what it means.
-- File-derived quotations: saved as **AI transcription**, separate from original bytes. Approval requires the reviewer to confirm checking the original. Re-analysis retains this requirement. Extraction can omit or misread file content; empty extraction never establishes absence of an outcome.
-- Review: retains original suggestions, model, generation time, source version and review history. Live findings are not assigned arbitrary relationships from the sample program.
-- Failure: API configuration, quota, refusal/incomplete output, invalid citations, connection errors and timeouts produce visible errors. No sample result is substituted for a failed live request.
+## Hosted shared-code pilot
 
-## Hosting and data
+Set `MAPTOC_APP_ORIGIN` to the single exact HTTPS app origin. Enable `MAPTOC_ACCESS_CODE_ENABLED`, `NEXT_PUBLIC_MAPTOC_ACCESS_CODE_ENABLED` and `MAPTOC_REQUIRE_AUTH`. Set a private access code and a separate strong `MAPTOC_ACCESS_SESSION_SECRET`. Use hosting secret settings, not source files. Keep the existing code/session secret when deploying code-only fixes. See `PILOT_ACCESS_CODE_SETUP.md`.
 
-The API key stays on the server. Requests use the fixed OpenAI Responses endpoint with `store:false`; this setting does not constitute a zero-retention agreement. No source content or provider errors are printed to server logs by this integration. Existing browser data remains local until the user invokes an AI action.
+The shared code and selectable demo roles are not per-person accounts, tenant isolation or RBAC. Data stays in browser storage, not a shared server repository. Use synthetic material until data governance, storage, access controls and provider terms are approved. Do not assume free-tier data has paid-tier privacy or retention terms.
 
-The current demo has no real authentication or tenant isolation. The AI endpoint therefore permits localhost requests only, checks the request origin and host, accepts Next's direct-loopback forwarding headers and rejects external forwarding addresses. It limits each process to two concurrent calls / ten starts per minute. Run the server bound to `127.0.0.1`; do not expose it through a tunnel or proxy. This is a local development boundary, not production authentication. Public hosted AI requires authenticated access, tenant checks and durable rate/spend controls before enabling remote traffic.
+## Errors and verification
 
-The static GitHub Pages package retains the sample experience and shows live AI as unavailable. The website export script excludes server API routes only from its temporary build copy. A static page cannot keep an API key secret or run this server endpoint.
+- Gemini 429: quota or rate limit. Stop retries and inspect the provider project; do not assume buying credit is the fix.
+- Gemini 503: temporary busy response. A bounded paused retry can be appropriate; never hammer the service.
+- 400/403: check key, model and permissions. Do not print credentials or raw provider bodies.
+- Invalid citation/incomplete response: no finding is accepted as valid just because the API answered. Inspect the original and reduce scope if needed.
 
-## Verification
+`npm run test:ai` runs mocked OpenAI and Gemini adapter tests without network or credits. Gemini checks provider selection, request/schema, cited output validation, quota/busy/rejected/incomplete and connection failures. These tests do not establish real-model quality. The synthetic hosted text-bundle run on24Nov2026 reached live Gemini analysis, same-person demo review and an on-screen three-finding report draft after one busy failure/retry. It did not validate direct CSV analysis, independent review, financial reconciliation or complete donor narrative generation. Recheck any changed model/version with an explicitly approved bounded synthetic live test.
 
-`node scripts/test-live-ai.cjs` uses mocked provider responses, never real documents or API credit. It checks configuration and local access, provider request shape, bad citations, incomplete/error responses, result provenance, role checks, retained sample/live proposals, review of file transcriptions and persistence.
+## Scope
 
-Remaining activation gate: one successful real request using synthetic text and one file analysis after a key is configured. No real provider call is claimed before that gate passes.
-
-API references: [Structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [file inputs](https://developers.openai.com/api/docs/guides/file-inputs), [GPT-5 mini](https://developers.openai.com/api/docs/models/gpt-5-mini).
+Text sources include TXT/CSV/JSON; file/image routes have format/model limits. Every finding needs source and meaning checks. Reports are writing prompts and reviewed records, not final reporting packages. Source links refer to this browser's local dataset and do not give another device access. Offline tests do not spend API credit, and no sample response replaces a failed live request.
