@@ -89,6 +89,13 @@ export type ProgramConfiguration = {
   followups: ProgramFollowup[];
   activities: ProgramActivity[];
   sample: boolean;
+  /** Optional official program ID (e.g. a UNDP project number). */
+  programRef?: string;
+  /** Optional grant, agreement or award ID from the donor. */
+  grantRef?: string;
+  /** Optional dates of the funding agreement (YYYY-MM-DD). */
+  agreementStart?: string;
+  agreementEnd?: string;
 };
 export const validDate = (s: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(s) &&
@@ -155,6 +162,20 @@ export function validateProgram(p: ProgramConfiguration) {
     p.name.length > 140
   )
     throw Error("Add a program name and valid identifier.");
+  if (
+    p.programRef !== undefined &&
+    (typeof p.programRef !== "string" || p.programRef.trim().length > 60)
+  )
+    throw Error("Program ID must be 60 characters or fewer.");
+  if (
+    p.grantRef !== undefined &&
+    (typeof p.grantRef !== "string" || p.grantRef.trim().length > 200)
+  )
+    throw Error("Grant ID must be 200 characters or fewer.");
+  for (const d of [p.agreementStart, p.agreementEnd])
+    if (d && !validDate(d)) throw Error("Use valid agreement dates.");
+  if (p.agreementStart && p.agreementEnd && p.agreementStart > p.agreementEnd)
+    throw Error("The agreement end date must be after its start date.");
   if (
     !/^[A-Z]{3}$/.test(p.currency) ||
     !Number.isInteger(p.decimals) ||
