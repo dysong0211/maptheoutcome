@@ -6,36 +6,27 @@ Version 1 now uses five primary sections: Overview, Program, Insights, Evidence,
 
 ## Combined website and demo
 
-Latest design: five primary sections, with the extensive record retained in **Documents & repository**. Browse documents, findings, LogFrame mappings, funding, deliverables, outputs, program data, relationships and history there. Overview shows decision-focused actual/target comparisons and source-linked funding context. Known-sample extraction is rule-based and review-gated; arbitrary file uploads do not invoke a live AI service.
+Latest design: five primary sections, with the extensive record retained in **Documents & repository**. Browse documents, findings, LogFrame mappings, funding, deliverables, outputs, program data, relationships and history there. Overview shows decision-focused actual/target comparisons and source-linked funding context. Known-sample extraction is rule-based and review-gated; uploads invoke live AI only when explicitly selected and configured.
 
 The supplied website is in `website/`. Run `npm run build:website` to export the interactive demo at `/demo/` alongside the website in `dist/website`. Run `npm run preview:website` to view the combined result on port 4173. Upload the complete output to the existing website's publishing folder; keep `.nojekyll` and `demo/_next/`. See [publishing instructions](website/PUBLISHING.md).
 
-The [active development plan](docs/WEBSITE_ALIGNMENT_PLAN.md) contains the latest product decisions. Five sections: Overview, Evidence Insight, Program Progress, Documents and Finances. Overview combines a brief AI summary with high-level timeline, risk and finance visuals. Evidence Insight consolidates analysis, risks and report preparation. Program Progress shows the program arc and important reports, not granular task lists. Documents supports upload, observation capture and search without a default inventory. Officer insights retain source, date and timestamp. AI synthesis uses prepared rules, not live document analysis; shared server storage remains future work.
+The [active development plan](docs/WEBSITE_ALIGNMENT_PLAN.md) contains the latest product decisions. Five sections: Overview, Evidence Insight, Program Progress, Documents and Finances. Overview combines a brief AI summary with high-level timeline, risk and finance visuals. Evidence Insight consolidates analysis, risks and report preparation. Program Progress shows the program arc and important reports, not granular task lists. Documents supports upload, observation capture and search without a default inventory. Officer insights retain source, date and timestamp. Prepared views coexist with explicitly invoked live AI; shared server storage remains future work.
 
 The investor demo is under active development. The delivery sequence, completed stages, current status, and next implementation slice are maintained in [the development pipeline](docs/DEVELOPMENT_PIPELINE.md).
 
 The beta's domain language, role permissions, workflow states, and product claims are defined in [the product contract](docs/PRODUCT_CONTRACT.md).
 
-## Local setup
+## Local setup and current pilot
 
-1. Install Node.js 20.9 or later.
-2. Copy `.env.example` to `.env.local` and provide the required development credentials.
-3. Install dependencies with `npm install`.
-4. Generate the Prisma client with `npm run db:generate`.
-5. Start the application with `npm run dev`.
+1. Install Node.js20.9 or later and run `npm ci`.
+2. Copy the included `.env.example` to `.env.local`; keep real secrets out of source and ZIPs.
+3. Follow [Gemini or OpenAI setup](docs/LIVE_AI_SETUP.md). AI is off by default in the example.
+4. Run `npm run dev`. Production: `npm run build`, then `npm start`.
 
-Database policies and migrations are not complete yet. Do not use the current scaffold with real program or evidence data.
+The Next.js server supports Gemini and OpenAI. The static website export does not provide live AI. Some historical design documents describe earlier prepared-only demos and are not current setup instructions. The hosted pilot uses a shared access-code gate and synthetic evidence only. Selectable roles are demonstration modes, not authentication or RBAC.
 
-## Current website-aligned demo
+Evidence bytes and records remain in this browser, not shared server storage. Source-linked AI suggestions require human review. Report formats assemble writing prompts and approved records within a date window; they do not certify expenditure, establish causal impact or automatically write a finished donor report or investment case. Do not upload confidential programme or personal data.
 
-The main workspace uses the maternal-health example and design structures from [maptheoutcome.org](https://maptheoutcome.org/). Start at `/dashboard`. The earlier EV prototype is retained at `/legacy` with its metadata in a separate browser store.
+`npm test` runs offline regression tests. `npm run test:ai` covers mocked OpenAI and Gemini requests, schema and error handling without provider calls or credits. `npm run typecheck` and `npm run build` check compilation. Live provider quality must be tested separately with an approved bounded synthetic request. Do not buy credits merely to address a busy error or missing documentation.
 
-The active scope, completed sections and next work are in [the website-alignment plan](docs/WEBSITE_ALIGNMENT_PLAN.md). The demo itself does not need Supabase or model credentials: it uses synthetic source text, prepared extraction and browser-local Zustand persistence.
-
-Demo path: Program Manager → Source library → Load sample update → M&E Reviewer → Review inbox → approve/edit/reject/flag → Evidence record → Reports → build a cited draft. Funder/Viewer is read-only. Role switching is not authentication.
-
-Run `npm test` for the real-store evidence and program-memory regression suites. Run `npm run build` for production compilation/type checks. To keep a production preview separate from an active dev server, use `MAPTOC_BUILD_DIR=.next-demo npm run build` and `MAPTOC_BUILD_DIR=.next-demo npm run start -- --hostname 127.0.0.1 --port 3003`.
-
-No live AI, server-side uploads, tenant security, report submission or cryptographic audit guarantee is implemented in this demo. Downloads are text drafts, not final reporting packages.
-
-The Source library now accepts local demo files through drag/drop or multi-file selection. Bytes remain in browser IndexedDB and are cleared by Reset demo; metadata is persisted separately. Do not use real or sensitive program information. This is browser-local capture, not a production upload service: it has no server retention policy, malware scan, OCR, access control or backup.
+Browser-local stores refresh from persisted data before actions and listen for other-tab changes, reducing stale-tab overwrites. This is not a database transaction or multi-user collaboration guarantee. Prefer one editing tab, keep exports/backups, and do not use the prototype as the sole copy of programme evidence. Existing historical demo attribution is not rewritten as authenticated identity; new uploads/actions use neutral role labels.
