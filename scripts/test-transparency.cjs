@@ -1,3 +1,4 @@
+process.env.TZ = "UTC"; // day filters use the local calendar day; pin it so the test is deterministic
 require("./test-evidence.cjs");
 const assert = require("node:assert/strict");
 const {
