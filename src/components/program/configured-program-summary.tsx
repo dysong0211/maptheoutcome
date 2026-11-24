@@ -4,12 +4,15 @@ import { useMemoryStore } from "@/stores/program-memory-store";
 import { useClarifications } from "./use-clarifications";
 import { allEvidence } from "@/lib/assurance";
 import { presentCheck } from "@/lib/assurance-presentation";
+import { SummaryThemes } from "./summary-themes";
+import { ReadinessStrip } from "./readiness-strip";
 import { AssuranceBirdseye } from "./assurance-birdseye";
 import { ProgramAssuranceTimeline } from "./program-assurance-timeline";
 
 export function ConfiguredProgramSummary() {
   const state = useClarifications(),
     sources = useMemoryStore((s) => s.sources),
+    allRecords = useMemoryStore((s) => s.records),
     p = state.program;
   if (!p) return null;
   const budget = p.rules.find((r) => r.method === "budget-approval"),
@@ -83,6 +86,8 @@ export function ConfiguredProgramSummary() {
         </div>
         <Link href="/assurance">Program setup & checks ↗</Link>
       </header>
+      <SummaryThemes records={allRecords.filter((r) => sources.some((x) => x.id === r.citation.versionId && (x.programId || "cambodia-demo") === p.id))} />
+      <ReadinessStrip />
       <div className="lean-metrics">
         {fields.map((f) => {
           const checks = state.controls
