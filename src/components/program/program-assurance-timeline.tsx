@@ -1,4 +1,5 @@
 "use client";
+import { localDay } from "@/lib/local-date";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -282,6 +283,6 @@ export function ProgramAssuranceTimeline({ today }: { today: string }) {
 
 export function ProgramTimelinePage() {
   const [today, setToday] = useState("");
-  useEffect(() => setToday(new Date().toISOString().slice(0, 10)), []);
+  useEffect(() => setToday(localDay()), []);
   return <ProgramAssuranceTimeline today={today} />;
 }
