@@ -528,13 +528,15 @@ export function chronologyChart(sections: PackSection[]): Chart | null {
 }
 
 /** Summary table: the first reviewed statements under each theme, each with its reference number. Limits are in the Limitations section. Ideas to test are never included. */
-export function headline(sections: PackSection[], from: string, to: string, sourceCount: number, counts?: { findings: number; insights: number }) {
+export function headline(sections: PackSection[], from: string, to: string, sourceCount: number, counts?: { findings: number; insights: number }, excludedUndated = 0) {
   const total = sections.reduce((n, x) => n + x.items.length, 0);
   if (!total) return { sentence: "", html: "", blocks: [] as SummaryBlock[], rows: [] as SummaryRow[], more: 0, note: "", wins: [] as string[], base: "" };
   const rows: SummaryRow[] = [];
-  for (const sc of sections) for (const it of sc.items.slice(0, ROWS_PER_AREA)) rows.push({ ref: it.ref ?? 0, area: sc.title, level: it.level ?? "", text: itemSentence(it) });
+  for (const sc of sections) for (const it of sc.items.slice(0, ROWS_PER_AREA)) rows.push({ ref: it.ref ?? 0, area: sc.title, level: it.level ?? "", text: itemSentence(it) + (it.kind === "finding" && !it.date ? " (event date not confirmed)" : "") });
   const more = total - rows.length;
-  const note = "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes. See Limitations. " + THEME_NOTE;
+  const undatedIn = sections.reduce((n, x) => n + x.items.filter((i) => i.kind === "finding" && !i.date).length, 0);
+  const dateNote = (undatedIn ? ` ${undatedIn} ${undatedIn === 1 ? "finding is" : "findings are"} included with the event date not confirmed; they are not counted as inside ${from} to ${to}.` : "") + (excludedUndated ? ` ${excludedUndated} approved ${excludedUndated === 1 ? "finding" : "findings"} with no confirmed event date ${excludedUndated === 1 ? "is" : "are"} left out, so this period's picture is not complete.` : "");
+  const note = "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes. See Limitations." + dateNote + " " + THEME_NOTE;
   const lines = rows.map((r) => `- ${r.area}${r.level ? ` (${r.level})` : ""}: ${r.text} [${r.ref}]`);
   const emptyThemes = sections.filter((x) => !x.items.length).map((x) => x.title);
   const sentenceText = `${lines.join("\n")}${more > 0 ? `\n(${more} more reviewed ${more === 1 ? "statement" : "statements"} in the sections below.)` : ""}${emptyThemes.length ? `\nNothing reviewed yet: ${emptyThemes.join(", ")}.` : ""}\n${note}`;
