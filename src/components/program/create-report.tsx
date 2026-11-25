@@ -110,7 +110,8 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
   const undatedRecords = undatedReportRecords(records, sources);
   const [includeUndated, setIncludeUndated] = useState(true);
   const [dateDrafts, setDateDrafts] = useState<Record<string, string>>({});
-  const [packUndated, setPackUndated] = useState(false);
+  const packUndated = includeUndated;
+  const setPackUndated = (_v: boolean) => {};
   const evidenceKey = reportEvidenceKey(records, sources, reflections);
   const evidenceChanged =
     !!draftContext && draftContext.evidenceKey !== evidenceKey;
@@ -287,7 +288,8 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           )}
           {undatedRecords.length > 0 && (
             <p role="status" className="report-draft-scope">
-              {undatedRecords.length} approved {undatedRecords.length === 1 ? "finding has" : "findings have"} no confirmed event date, so {undatedRecords.length === 1 ? "it is" : "they are"} not in this draft. They still appear in Insights and Program. To count {undatedRecords.length === 1 ? "it" : "them"} in a period, enter the date the source states (no re-analysis needed).
+              {undatedRecords.length} approved {undatedRecords.length === 1 ? "finding has" : "findings have"} no exact event date. {includeUndated ? "They are included in the report as \"event date not confirmed\"." : "They are left out of the report."} Adding a date is optional.
+              <details style={{ marginTop: 6 }}><summary style={{ cursor: "pointer" }}>Add dates (optional)</summary>
               <ul style={{ margin: "8px 0", paddingLeft: 0, listStyle: "none" }}>
                 {undatedRecords.map((r) => (
                   <li key={r.id} style={{ marginBottom: 6 }}>
@@ -311,6 +313,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
                   </li>
                 ))}
               </ul>
+              </details>
               <label style={{ display: "block", marginTop: 6 }}>
                 <input type="checkbox" checked={includeUndated} onChange={(e) => setIncludeUndated(e.target.checked)} />{" "}
                 Also show {undatedRecords.length === 1 ? "it" : "them"} in the report pack as "event date not confirmed" (never counted as inside the period)
