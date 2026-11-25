@@ -20,6 +20,7 @@ import {
 import { MapTocLogo } from "@/components/maptoc-logo";
 import { useProgramEvidence } from "./use-program-evidence";
 import { BeforeYouSend } from "./before-you-send";
+import { ReportPack } from "./report-pack";
 import { useTracking } from "@/stores/tracking-store";
 import { useReflectionStore } from "@/stores/reflection-store";
 
@@ -298,8 +299,20 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
         </section>
       </>}
       {draft && draftContext?.programId === programId && (
+        <ReportPack
+          title={prompt}
+          programName={(program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : "")}
+          from={draftContext.from}
+          to={draftContext.to}
+          records={reportRecords(records, sources, draftContext.from, draftContext.to)}
+          insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)}
+          sources={sources}
+          disabled={evidenceChanged}
+        />
+      )}
+      {draft && draftContext?.programId === programId && (
         <section className="memory-card report-draft-panel" aria-live="polite">
-          <h2>Your draft</h2>
+          <h2>Text draft (editable)</h2>
           <p className="report-draft-scope">
             {draftContext?.from}–{draftContext?.to}
             {selectionChanged &&
