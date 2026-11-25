@@ -117,7 +117,7 @@ function List() {
   useEffect(() => {
     for (const p of proposals)
       if (p.status === "pending" && p.triage === "kept" && sources.find((x) => x.id === p.citation.versionId)?.reviewDisposition === "saved")
-        review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Kept and saved by the program manager during upload review.", false, undefined, true);
+        review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Kept and saved earlier during upload review. Recorded automatically when this page opened (migration), not a new review.", false, undefined, true);
   }, [proposals, sources, review]);
   // Rows stay in place after an action: the list is fixed from the proposals pending when the page opened.
   const initial = useRef<string[] | null>(null);
