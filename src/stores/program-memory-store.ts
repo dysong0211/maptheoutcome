@@ -43,6 +43,8 @@ interface MemoryState {
   ) => boolean;
   /** Sets the event date of an approved record without re-analysing the document. Marked as confirmed by a person. */
   confirmRecordEventDate: (recordId: string, date: string) => boolean;
+  /** Corrects the wording of an approved finding. The quotation and source are not changed. Logged. */
+  editRecordStatement: (recordId: string, statement: string) => boolean;
   sources: SourceVersion[];
   records: ProgramRecord[];
   proposals: EvidenceProposal[];
@@ -194,6 +196,27 @@ export const useMemoryStore = create<MemoryState>()(
               actor: "Program manager · identity not verified",
               occurredAt: new Date().toISOString(),
               detail: `Event date set to ${clean} for an approved finding. The finding and its source passage were not changed.`,
+              href: "/insights",
+            },
+            ...state.events,
+          ],
+        });
+        return true;
+      },
+      editRecordStatement: (recordId, statement) => {
+        const text = statement.trim();
+        const state = get();
+        const rec = state.records.find((r) => r.id === recordId);
+        if (!text || text.length > 1500 || !rec || useDemoStore.getState().role === "funder" || rec.statement === text) return false;
+        set({
+          records: state.records.map((r) => (r.id === recordId ? { ...r, statement: text } : r)),
+          events: [
+            {
+              id: crypto.randomUUID(),
+              action: "FINDING_EDITED",
+              actor: "Program manager · identity not verified",
+              occurredAt: new Date().toISOString(),
+              detail: `${rec.title}. Wording corrected after approval. Before: ${rec.statement} After: ${text} The quotation and source were not changed.`,
               href: "/insights",
             },
             ...state.events,
