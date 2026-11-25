@@ -80,7 +80,7 @@ export const aiOutputSchema = z.object({
         locator: z.string().min(1).max(300),
       }),
     )
-    .max(6),
+    .max(12),
   nextSteps: z.array(z.string().min(1).max(500)).max(4),
 });
 // New provider responses must include the document field; old saved responses remain readable.
