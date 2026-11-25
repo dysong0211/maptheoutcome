@@ -786,6 +786,11 @@ export function FileDropZone({
       <section className="compact-capture">
         <DocumentInsightsDrawer sourceIds={insightIds} open={insightsOpen} onOpenChange={setInsightsOpen} analyzingId={analyzingId} error={analysisError} />
         {!inlineInsights && !onCaptureState && !!insightIds.length && <button className="memory-action memory-secondary mb-3" onClick={() => setInsightsOpen(true)}><Sparkles size={16} />Document insights</button>}
+        {role !== "program" && (
+          <p role="status" className="mb-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+            Uploading and AI analysis are turned off for this role. Switch the role in the top bar to Program Manager to add or analyse documents. Reviewing and approving needs Assurance reviewer.
+          </p>
+        )}
         {!overview && !transcriptCapture && <CameraCapture disabled={role !== "program" || capturing} onCapture={capture} />}
         {!transcriptCapture && !overview && process.env.NEXT_PUBLIC_WEBSITE_HOME !== "/" && (
           <label className="mb-2 flex items-center gap-2 text-xs text-slate-600">
