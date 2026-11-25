@@ -202,7 +202,7 @@ export function ConnectedOutcomeTrail({
       if (first) recenter(first.id);
     }
   }
-  function node(record: ProgramRecord, detail?: string) {
+  function node(record: ProgramRecord, detail?: string, sentence = false) {
     return (
       <button
         key={record.id}
@@ -211,11 +211,12 @@ export function ConnectedOutcomeTrail({
         aria-pressed={activeId === record.id}
         onClick={() => inspect(record.id)}
         aria-controls="trail-inspector"
+        aria-label={sentence ? `${record.title}. ${record.statement}` : undefined}
       >
         <span className="theme-chip" data-kind={record.kind}>
           {themes[record.kind]}
         </span>
-        <strong>{record.title}</strong>
+        <strong className={sentence ? "og-sentence" : undefined}>{sentence ? record.statement : record.title}</strong>
         <small>{detail ?? record.eventDate}</small>
         <ArrowUpRight size={14} />
       </button>
@@ -525,12 +526,12 @@ export function ConnectedOutcomeTrail({
                         </button>
                       }
                       items={linked.flatMap(({ record, relation }) =>
-                        record
+                        record && BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group !== "dates"
                           ? [
                               {
                                 id: record.id,
-                                dashed: ["ai", "dates"].includes(BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group),
-                                node: node(record, relation.label),
+                                dashed: ["ai"].includes(BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group),
+                                node: node(record, relation.label, true),
                               },
                             ]
                           : [],
@@ -748,14 +749,22 @@ function OutcomeGraph({
   const shown = items.slice(0, 12);
   const n = shown.length;
   const leftN = Math.ceil(n / 2);
-  const left = shown.filter((_, i) => i % 2 === 0);
-  const right = shown.filter((_, i) => i % 2 === 1);
-  const col = (list: typeof shown, side: "l" | "r") =>
-    list.map((item) => (
-      <div key={item.id} className={"og-item og-" + side} data-dashed={item.dashed ? "1" : "0"}>
-        {item.node}
-      </div>
-    ));
+  const col = (side: "l" | "r") =>
+    shown.flatMap((item, i) =>
+      (i % 2 === 0) === (side === "l")
+        ? [
+            <div
+              key={item.id}
+              className={"og-item og-" + side}
+              data-dashed={item.dashed ? "1" : "0"}
+              data-last={i === n - 1 ? "1" : undefined}
+              style={{ "--o": i } as React.CSSProperties}
+            >
+              {item.node}
+            </div>,
+          ]
+        : [],
+    );
   return (
     <div className="og-wrap" data-testid="outcome-graph">
       <style>{`
@@ -763,33 +772,39 @@ function OutcomeGraph({
         .og-c{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,210px) minmax(0,1fr);column-gap:40px;align-items:center}
         .og-col{display:flex;flex-direction:column;gap:12px;min-width:0}
         .og-mid{position:relative}
-        .og-mid::before,.og-mid::after{content:"";position:absolute;top:50%;width:20px;border-top:3px solid #6b8f84}
-        .og-mid::before{right:100%}
-        .og-mid::after{left:100%}
+        .og-mid::before,.og-mid::after{content:"";position:absolute;top:calc(50% - 4px);width:24px;height:8px;background:linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-mid::before{right:calc(100% - 4px);background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-mid::after{left:calc(100% - 4px);background:radial-gradient(circle at 4px 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
         .og-item{position:relative;min-width:0}
-        .og-item .trail-node{width:100%;min-height:0;padding:10px}
-        .og-item::after{content:"";position:absolute;top:50%;width:20px;border-top:3px solid #6b8f84}
-        .og-l::after{left:100%}
-        .og-r::after{right:100%}
-        .og-item[data-dashed="1"]::after{border-top-style:dashed}
-        .og-item:not(:last-child)::before{content:"";position:absolute;top:50%;height:calc(100% + 12px);border-left:3px solid #6b8f84}
-        .og-l::before{left:calc(100% + 20px)}
-        .og-r::before{right:calc(100% + 20px)}
+        .og-item .trail-node{width:100%;min-height:0;padding:10px;gap:5px}
+        .og-item .trail-node .theme-chip{order:1}
+        .og-item .trail-node small{order:2}
+        .og-item .trail-node strong{order:3}
+        .og-sentence{font-size:13px!important;font-weight:600;line-height:1.35!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+        .og-item::after{content:"";position:absolute;top:calc(50% - 4px);width:24px;height:8px}
+        .og-l::after{left:calc(100% - 4px);background:radial-gradient(circle at 4px 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-r::after{right:calc(100% - 4px);background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-item[data-dashed="1"]::after{opacity:.75}
+        .og-item:not(:last-child)::before{content:"";position:absolute;top:50%;height:calc(100% + 12px);border-left:2px solid #bcd3cb;border-radius:2px}
+        .og-l::before{left:calc(100% + 19px)}
+        .og-r::before{right:calc(100% + 19px)}
         .og-legend{font-size:12px;color:#64748b;margin:10px 0 0}
         @media(max-width:860px){
-          .og-c{grid-template-columns:minmax(0,1fr);row-gap:12px}
-          .og-mid{order:-1}
+          .og-c{grid-template-columns:minmax(0,1fr);display:flex;flex-direction:column;align-items:stretch;row-gap:12px;padding-left:16px}
+          .og-col{display:contents}
+          .og-mid{order:-1;margin-left:-16px}
           .og-mid::before,.og-mid::after{display:none}
-          .og-col{padding-left:22px;border-left:3px solid #6b8f84}
-          .og-item::before{display:none}
-          .og-l::after,.og-r::after{left:-22px;right:auto;width:20px}
+          .og-item{order:var(--o)}
+          .og-item::before,.og-item:not(:last-child)::before{content:"";display:block;position:absolute;left:-15px;right:auto;top:-12px;height:calc(100% + 12px);border-left:2px solid #bcd3cb;border-radius:2px}
+          .og-item[data-last="1"]::before{height:calc(50% + 12px)}
+          .og-l::after,.og-r::after{left:-15px;right:auto;width:19px;background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
         }
       `}</style>
       {n > 0 ? (
         <div className="og-c">
-          <div className="og-col">{col(left, "l")}</div>
+          <div className="og-col">{col("l")}</div>
           <div className="og-mid">{focus}</div>
-          <div className="og-col">{col(right, "r")}</div>
+          <div className="og-col">{col("r")}</div>
         </div>
       ) : (
         focus
@@ -798,7 +813,7 @@ function OutcomeGraph({
         <p className="connection-explainer">No connected findings for this result yet.</p>
       ) : (
         <p className="og-legend">
-          Lines show related context, not proof of cause. Dashed: AI suggestion or dates close together.
+          Lines show related context, not proof of cause. Faded: AI suggestion. Links based only on timing are not shown here.
           {items.length > n ? " Showing " + n + " of " + items.length + "; see the full list below." : ""}
         </p>
       )}
