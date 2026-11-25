@@ -256,7 +256,7 @@ export function EvidenceAsk({
           {chat ? "Chat settings" : "Settings"} {showSettings ? "−" : "+"}
         </button>
       )}
-      {chat && mode === "live" && status.ready && <p className="mt-2 text-sm text-slate-500">Sending shares selected source text with OpenAI.</p>}
+      {chat && mode === "live" && status.ready && <p className="mt-2 text-sm text-slate-500">Sending shares selected source text with {aiProviderName(status.provider)}.</p>}
       {(!compactControls || showSettings) && (
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
           <label>
