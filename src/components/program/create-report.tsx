@@ -75,6 +75,13 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
   const [from, setFrom] = useState(period.first);
   const [prompt, setPrompt] = useState("Weekly program update");
   const [reportKind, setReportKind] = useState<ReportKind>("program-update");
+  // Saved evidence loads after the first render. Until the user picks dates, keep the window on all reviewed dates (incl. team insights).
+  const [datesTouched, setDatesTouched] = useState(false);
+  useEffect(() => {
+    if (datesTouched || reportKind !== "program-update") return;
+    setFrom(period.first);
+    setTo(period.to);
+  }, [datesTouched, reportKind, period.first, period.to]);
   const [draft, setDraft] = useState("");
   const [draftContext, setDraftContext] = useState<{
     from: string;
@@ -101,6 +108,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     setError("");
     setTo(period.to);
     setFrom(period.first);
+    setDatesTouched(false);
   }, [programId]);
   const matchingRecords = reportRecords(records, sources, from, to);
   const matchingInsights = reportInsights(reflections, sources, from, to);
@@ -200,9 +208,10 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
                 setFrom(longPeriod.first);
                 setTo(longPeriod.to);
               } else {
-                setFrom(period.from);
+                setFrom(period.first);
                 setTo(period.to);
               }
+              setDatesTouched(next !== "program-update");
             }}>
               <option value="program-update">Program update</option>
               <optgroup label="UNDP · previous programme pilot">
@@ -242,7 +251,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
                 aria-label="Report from"
                 type="date"
                 value={from}
-                onChange={(event) => setFrom(event.target.value)}
+                onChange={(event) => { setDatesTouched(true); setFrom(event.target.value); }}
               />
             </label>
             <label>
@@ -251,7 +260,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
                 aria-label="Report to"
                 type="date"
                 value={to}
-                onChange={(event) => setTo(event.target.value)}
+                onChange={(event) => { setDatesTouched(true); setTo(event.target.value); }}
               />
             </label>
             <button className="memory-action" onClick={generate}>
@@ -261,6 +270,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           {reportKind === "program-update" && <div className="report-date-shortcuts">
             <button
               onClick={() => {
+                setDatesTouched(true);
                 setFrom(period.from);
                 setTo(period.to);
                 setError("");
@@ -270,6 +280,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
             </button>
             <button
               onClick={() => {
+                setDatesTouched(false);
                 setFrom(period.first);
                 setTo(period.to);
                 setError("");
