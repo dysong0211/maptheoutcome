@@ -41,6 +41,8 @@ interface MemoryState {
     ids: string[],
     disposition: "saved" | "repository-only",
   ) => boolean;
+  /** Sets the event date of an approved record without re-analysing the document. Marked as confirmed by a person. */
+  confirmRecordEventDate: (recordId: string, date: string) => boolean;
   sources: SourceVersion[];
   records: ProgramRecord[];
   proposals: EvidenceProposal[];
@@ -165,6 +167,26 @@ export const useMemoryStore = create<MemoryState>()(
             s.id === id ? { ...s, category } : s,
           ),
         }));
+      },
+      confirmRecordEventDate: (recordId, date) => {
+        const clean = cleanDate(date);
+        const state = get();
+        if (!clean || useDemoStore.getState().role === "funder" || !state.records.some((r) => r.id === recordId)) return false;
+        set({
+          records: state.records.map((r) => (r.id === recordId ? { ...r, eventDate: clean, eventDateBasis: "confirmed" as const } : r)),
+          events: [
+            {
+              id: crypto.randomUUID(),
+              action: "EVENT_DATE_CONFIRMED",
+              actor: "Program manager · identity not verified",
+              occurredAt: new Date().toISOString(),
+              detail: `Event date set to ${clean} for an approved finding. The finding and its source passage were not changed.`,
+              href: "/insights",
+            },
+            ...state.events,
+          ],
+        });
+        return true;
       },
       saveSourceReviews: (ids, disposition) => {
         const state = get();
