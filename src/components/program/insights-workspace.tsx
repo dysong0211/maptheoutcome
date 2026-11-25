@@ -9,6 +9,7 @@ import { Sparkles } from "lucide-react";
 import { EvidenceAsk } from "./evidence-lens";
 import { ConnectedOutcomeTrail } from "./connected-outcome-trail";
 import { EvidenceFocus } from "./evidence-focus";
+import { CreateReport } from "./create-report";
 import { useProgramEvidence } from "./use-program-evidence";
 import { ProjectFilter, RecordProjectOverride, useProjectScope } from "./project-scope";
 import { resolveCitation } from "@/lib/program-memory";
@@ -24,6 +25,9 @@ export function InsightsWorkspace({
 }) {
   const params = useSearchParams();
   const view = params.get("view") ?? initialView;
+  const startTab = ({ outcomes: "outcomes", contribution: "contribution", gaps: "gaps", risks: "risks", brief: "brief" } as Record<string, string>)[view] ?? "trail";
+  const [tab, setTab] = useState(startTab);
+  useEffect(() => setTab(startTab), [startTab]);
   const [recordOpen, setRecordOpen] = useState(false);
   const [observationsOpen, setObservationsOpen] = useState(false);
   const [recordQuery, setRecordQuery] = useState("");
@@ -100,32 +104,98 @@ export function InsightsWorkspace({
           {program.name} · {program.periodStart}–{program.periodEnd}
         </p>
       )}
-      {view === "brief" && (
-        <p className="insights-redirect-note">
-          Reports now live in Program tools.{" "}
-          <Link href="/program?view=reports">Create a report →</Link>
-        </p>
-      )}
-      {view === "risks" && (
-        <p className="insights-redirect-note">
-          Review program issues in{" "}
-          <Link href="/assurance">Program Assurance →</Link>
-        </p>
-      )}
       <EvidenceFocus />
-      <section className="summary-connections" id="explore-connections">
-        <ConnectedOutcomeTrail initialFocus={view} />
-      </section>
-      <section
-        className="insights-ai-composer"
-        aria-label="Ask MapToc about reviewed documents"
-      >
-        <h2>
-          <Sparkles size={18} /> Ask what changed. Explore why. Check the
-          evidence.
-        </h2>
-        <EvidenceAsk compactControls />
-      </section>
+      <style>{`@media(max-width:640px){.evidence-focus .focus-grid{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px}.evidence-focus .focus-grid>*{flex:0 0 88%;scroll-snap-align:start}}`}</style>
+      <div role="tablist" aria-label="Insight sections" style={{ display: "flex", flexWrap: "nowrap", overflowX: "auto", gap: 6, margin: "12px 0", paddingBottom: 2 }}>
+        {[
+          ["trail", "Outcome trail"],
+          ["outcomes", "Outcome analysis"],
+          ["contribution", "Contributing factors"],
+          ["gaps", "Evidence gaps"],
+          ["risks", "Risks"],
+          ["brief", "Prepare a report"],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            aria-pressed={tab === id}
+            onClick={() => setTab(id)}
+            style={{
+              width: "auto",
+              flex: "0 0 auto",
+              whiteSpace: "nowrap",
+              minHeight: 36,
+              padding: "4px 14px",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              border: "1px solid " + (tab === id ? "#0f766e" : "#cfe0da"),
+              background: tab === id ? "#0f766e" : "#fff",
+              color: tab === id ? "#fff" : "#134e4a",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "trail" && (
+        <section className="summary-connections" id="explore-connections">
+          <ConnectedOutcomeTrail key="trail" initialFocus="summary" />
+        </section>
+      )}
+      {tab === "contribution" && (
+        <section className="summary-connections" id="explore-connections">
+          <ConnectedOutcomeTrail key="contribution" initialFocus="contribution" />
+        </section>
+      )}
+      {tab === "gaps" && (
+        <section className="summary-connections" id="explore-connections">
+          <ConnectedOutcomeTrail key="gaps" initialFocus="gaps" />
+        </section>
+      )}
+      {(tab === "outcomes" || tab === "risks") && (
+        <section className="memory-card" aria-label={tab === "outcomes" ? "Outcome analysis" : "Risks"} style={{ padding: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 4px" }}>{tab === "outcomes" ? "Outcome analysis" : "Risks"}</h2>
+          <p style={{ fontSize: 13, color: "#475569", margin: "0 0 12px" }}>
+            {tab === "outcomes"
+              ? "What reviewed documents report as delivered. Planned targets are not recorded in structured form yet, so this is reported delivery, not progress against targets."
+              : "Risks and delays reported in reviewed documents, each with its source."}
+          </p>
+          {(() => {
+            const list = records.filter((r) => (tab === "outcomes" ? r.kind === "Result" : r.kind === "Risk"));
+            return list.length ? (
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+                {list.map((r) => {
+                  const src = sources.find((x) => x.id === r.citation.versionId);
+                  return (
+                    <li key={r.id} style={{ border: "1px solid #d7e3de", borderRadius: 10, padding: 12 }}>
+                      <strong>{r.title}</strong>
+                      <p style={{ margin: "4px 0", fontSize: 14 }}>{r.statement}</p>
+                      <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>
+                        {tab === "outcomes" ? "Reported" : "Reported risk"} · {src?.title ?? "Source unavailable"} ·{" "}
+                        <Link href={`/record?item=${encodeURIComponent(r.id)}`}>Open evidence record ↗</Link>
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p style={{ fontSize: 14 }}>
+                No reviewed {tab === "outcomes" ? "delivery results" : "risks"} yet. <Link href="/sources">Add a document →</Link>
+              </p>
+            );
+          })()}
+        </section>
+      )}
+      {tab === "brief" && <CreateReport embedded />}
+      <details className="insights-record memory-card" aria-label="Ask MapToc">
+        <summary>Ask about the reviewed documents</summary>
+        <section className="insights-ai-composer" aria-label="Ask MapToc about reviewed documents">
+          <EvidenceAsk compactControls />
+        </section>
+      </details>
       <ProjectFilter programId={programId} shown={records.length} total={allRecords.length} />
       <details
         className="insights-record memory-card"
