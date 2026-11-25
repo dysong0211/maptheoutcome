@@ -195,3 +195,10 @@
 .pack-narrative li { margin: 6px 0; }
 .pack-cite { font-size: 0.75rem; color: #475569; }
 .pack-section-head h3 { color: #0f766e; }
+
+.pack-table-sum { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 6px 0 10px; }
+.pack-table-sum th, .pack-table-sum td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; vertical-align: top; }
+.pack-table-sum th { background: #e6f4f1; }
+.pack-refs ol { margin: 6px 0 0 22px; list-style: decimal; font-size: 0.85rem; }
+.pack-ref { margin: 8px 0; }
+.pack-limits { background: #fff7ed; border-radius: 10px; padding: 4px 12px 10px; border-top: 0; }
