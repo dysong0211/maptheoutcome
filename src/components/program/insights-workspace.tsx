@@ -11,6 +11,7 @@ import { ConnectedOutcomeTrail } from "./connected-outcome-trail";
 import { EvidenceFocus } from "./evidence-focus";
 import { SavedFindings } from "./saved-findings";
 import { useProgramEvidence } from "./use-program-evidence";
+import { ProjectFilter, useProjectScope } from "./project-scope";
 import { resolveCitation } from "@/lib/program-memory";
 
 const OfficerInsights = dynamic(() =>
@@ -42,8 +43,10 @@ export function InsightsWorkspace({
     window.addEventListener("hashchange", reveal);
     return () => window.removeEventListener("hashchange", reveal);
   }, [view]);
-  const { program, programId, records, sources, isDefault } =
+  const { program, programId, records: allRecords, sources, isDefault } =
     useProgramEvidence();
+  const projectScope = useProjectScope(programId);
+  const records = projectScope.filterRecords(allRecords);
   useEffect(() => {
     setRecordQuery("");
     setTheme("All");
@@ -125,6 +128,7 @@ export function InsightsWorkspace({
       <section className="summary-connections" id="explore-connections">
         <ConnectedOutcomeTrail initialFocus={view} />
       </section>
+      <ProjectFilter programId={programId} shown={records.length} total={allRecords.length} />
       <details
         className="insights-record memory-card"
         id="living-record"

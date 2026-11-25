@@ -9,6 +9,7 @@ import { useMemoryStore } from "@/stores/program-memory-store";
 import { useDemoStore } from "@/stores/demo-store";
 import { useOutputStore } from "@/stores/output-intelligence-store";
 import { useAssurance } from "@/stores/assurance-store";
+import { matchesProject } from "@/lib/projects";
 import { incomingSource } from "@/lib/program-memory";
 import { caseHref } from "@/lib/clarifications";
 import {
@@ -17,6 +18,7 @@ import {
   evidenceDestination,
 } from "@/lib/program-evidence-view";
 import { useProgramEvidence } from "./use-program-evidence";
+import { ProjectFilter, ProjectManager, useProjectScope } from "./project-scope";
 
 const FileDropZone = dynamic(() =>
   import("./program-workspace").then((module) => module.FileDropZone),
@@ -98,6 +100,7 @@ export function RepositoryWorkspace() {
             checklistId: legacyRequest.id,
           }
         : undefined;
+  const projectScope = useProjectScope(programId);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
@@ -141,7 +144,8 @@ export function RepositoryWorkspace() {
         .toLowerCase()
         .includes(query.trim().toLowerCase()) &&
       (type === "all" || source.type === type) &&
-      (status === "all" || sourceStatus(source.id) === status),
+      (status === "all" || sourceStatus(source.id) === status) &&
+      matchesProject(projectScope.map, source.id, projectScope.filter, projectScope.projects),
   );
   const pending = proposals.filter((proposal) =>
     ["pending", "flagged"].includes(proposal.status),
@@ -243,6 +247,8 @@ export function RepositoryWorkspace() {
           </section>
         )}
       </div>
+      <ProjectManager programId={programId} sources={sources} />
+      <ProjectFilter programId={programId} />
       <div className="evidence-filter-row">
         <label className="document-search">
           <Search size={18} />

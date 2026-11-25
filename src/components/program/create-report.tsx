@@ -19,6 +19,7 @@ import {
 } from "@/lib/report-draft";
 import { MapTocLogo } from "@/components/maptoc-logo";
 import { useProgramEvidence } from "./use-program-evidence";
+import { ProjectFilter, useProjectScope } from "./project-scope";
 import { BeforeYouSend } from "./before-you-send";
 import { ReportPack } from "./report-pack";
 import { useTracking } from "@/stores/tracking-store";
@@ -45,8 +46,11 @@ const reportTitles: Record<ReportKind, string> = {
 };
 
 export function CreateReport({ embedded = false }: { embedded?: boolean }) {
-  const { program, programId, records, sources, isDefault } =
+  const { program, programId, records: allRecords, sources, isDefault } =
     useProgramEvidence();
+  const projectScope = useProjectScope(programId);
+  const records = projectScope.filterRecords(allRecords);
+  const projectLabel = projectScope.filter === "all" ? "" : projectScope.filter === "none" ? " · Documents with no project" : ` · Project ${projectScope.projects.find((x) => x.id === projectScope.filter)?.code ?? ""} ${projectScope.projects.find((x) => x.id === projectScope.filter)?.name ?? ""}`.trimEnd();
   const reflections = useReflectionStore((state) => state.reflections);
   const approved = approvedInsights(reflections, sources);
   const uploadDays = sources
@@ -120,7 +124,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
       const result = createPeriodReport({
         title: prompt,
         reportKind,
-        programName: (program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : ""),
+        programName: (program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : "") + projectLabel,
         from,
         to,
         records,
@@ -174,6 +178,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           </span>
         </header>
       )}
+      <ProjectFilter programId={programId} shown={records.length} total={allRecords.length} />
       <section className="reference-panel">
         <header>
           <MapTocLogo className="size-7" />
@@ -339,13 +344,14 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
       {draft && draftContext?.programId === programId && (
         <ReportPack
           title={prompt}
-          programName={(program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : "")}
+          programName={(program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : "") + projectLabel}
           from={draftContext.from}
           to={draftContext.to}
           records={[...reportRecords(records, sources, draftContext.from, draftContext.to), ...(packUndated ? undatedRecords : [])]}
           insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)}
           sources={sources}
           disabled={evidenceChanged}
+          excludedUndated={packUndated ? 0 : undatedRecords.length}
         />
       )}
       {draft && draftContext?.programId === programId && (

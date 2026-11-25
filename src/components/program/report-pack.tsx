@@ -224,7 +224,9 @@ export function ReportPack({
   insights,
   sources,
   disabled = false,
+  excludedUndated = 0,
 }: {
+  excludedUndated?: number;
   title: string;
   programName: string;
   from: string;
@@ -255,7 +257,7 @@ export function ReportPack({
     { label: "source documents", value: String(sourceCount) },
   ];
   const caveat = "Findings and insights were approved by a reviewer and are not independently verified. Charts count evidence items or plot uploaded tables as given. They are not measured results. Check consent and disclosure before sharing.";
-  const head = headline(sections, from, to, sourceCount, { findings: records.length, insights: insights.length });
+  const head = headline(sections, from, to, sourceCount, { findings: records.length, insights: insights.length }, excludedUndated);
   const sumCharts = useMemo(() => [...financeCharts(sections), chronologyChart(sections)].filter((c): c is Chart => !!c), [sections]);
   const annexCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections), ...charts].filter((c): c is Chart => !!c), [sections, sourceCount, charts]);
   const allItems = sections.flatMap((x) => x.items);
