@@ -18,7 +18,13 @@ export async function extractDocument(file: File, sourceId: string): Promise<Doc
   const ext = file.name.split(".").pop()?.toLowerCase();
   try {
     if (["txt", "csv", "tsv", "md", "json"].includes(ext ?? "")) {
-      append(await file.text(), "Original text · UTF-8");
+      const text = await file.text();
+      const sample = text.slice(0, 4000);
+      const bad = (sample.match(/[\u0000-\u0008\u000E-\u001F\uFFFD]/g) ?? []).length;
+      // A renamed PDF/Office/zip file must not be treated as readable text.
+      if (/^\s*%PDF-|^PK\u0003\u0004/.test(sample) || (sample.length > 0 && bad / sample.length > 0.02))
+        return { passages, note: "Original saved \u00b7 the file content is not readable text (it may be a PDF, Office or other binary file with the wrong extension). Choose Analyze or re-export it." };
+      append(text, "Original text \u00b7 UTF-8");
     } else if (ext === "docx") {
       const mammoth = await import("mammoth/mammoth.browser");
       const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
@@ -31,7 +37,10 @@ export async function extractDocument(file: File, sourceId: string): Promise<Doc
         const cells: string[] = [];
         row.eachCell((cell) => {
           // Preserve locations and stored values. Do not calculate formulas or follow hyperlinks.
-          if (cell.text) cells.push(`${cell.address}: ${cell.text}`);
+          const v = cell.value as unknown;
+          const formula = v && typeof v === "object" && "formula" in (v as object) ? String((v as { formula?: string }).formula ?? "") : "";
+          if (cell.text) cells.push(formula ? `${cell.address}: ${cell.text} (formula =${formula})` : `${cell.address}: ${cell.text}`);
+          else if (formula) cells.push(`${cell.address}: formula =${formula} (calculated value not stored in the file; open in Excel and re-save to include it)`);
         });
         append(cells.join(" | "), `Sheet ${sheet.name} · row ${row.number}`);
       }));
