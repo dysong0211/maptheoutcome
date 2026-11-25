@@ -157,7 +157,7 @@ function fillSection(s: PackSection) {
   if (!s.items.length) return;
   s.bullets = s.items.map((it) => ({
     ref: it.ref ?? 0,
-    text: it.kind === "insight" ? `The team reports that ${it.text.replace(/^./, (c) => c.toLowerCase())}` : it.text,
+    text: it.kind === "insight" ? `The team reports: ${it.text}` : it.text,
     cite: cite(it),
     level: it.level,
     hypothesis: it.hypothesis,
@@ -416,7 +416,7 @@ export function answersChart(t: TableData, col: number, status = "not reviewed o
 export type SummaryRow = { ref: number; area: string; level: string; text: string };
 export type SummaryBlock = { label: string; lines: { text: string; caveat?: string }[] };
 const ROWS_PER_AREA = 2;
-const itemSentence = (it: PackItem) => sentence(it.kind === "insight" ? `The team reports that ${it.text.replace(/^./, (c) => c.toLowerCase())}` : it.text);
+const itemSentence = (it: PackItem) => sentence(it.kind === "insight" ? `The team reports: ${it.text}` : it.text);
 const cap = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1)}\u2026` : t);
 
 /**
