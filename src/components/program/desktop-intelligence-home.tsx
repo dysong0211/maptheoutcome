@@ -1,4 +1,5 @@
 "use client";
+import { FindingsStateSummary } from "./findings-state-summary";
 import { programIdLine } from "@/lib/program-ids";
 import { useEffect, useState } from "react";
 import { Sparkles, FileText, TriangleAlert } from "lucide-react";
@@ -286,11 +287,7 @@ export function DesktopIntelligenceHome() {
               </>
             ) : (
               <div className="ai-results-empty">
-                <FileText size={34} />
-                <h3>Your findings will appear here</h3>
-                <p>
-                  Add a document or note to see what it means for your program.
-                </p>
+                <FindingsStateSummary />
                 <div className="ai-static-preview" aria-hidden="true">
                   <i />
                   <i />
