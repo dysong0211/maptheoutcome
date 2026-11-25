@@ -7,6 +7,7 @@ import { useSynthesisStore } from "@/stores/outcome-synthesis-store";
 import { resolveCitation, type EvidenceProposal } from "@/lib/program-memory";
 import { KindBadge } from "@/components/program/program-workspace";
 import { InsightReviewPanel } from "@/components/program/insight-review";
+import { useProgramEvidence } from "@/components/program/use-program-evidence";
 
 function Row({ p, done }: { p: EvidenceProposal; done: boolean }) {
   const sources = useMemoryStore((s) => s.sources);
@@ -73,7 +74,8 @@ function Row({ p, done }: { p: EvidenceProposal; done: boolean }) {
 }
 
 function ApprovedEdit() {
-  const records = useMemoryStore((s) => s.records);
+  // Only the open program's findings: other programs' records must never be editable here.
+  const { records } = useProgramEvidence();
   const edit = useMemoryStore((s) => s.editRecordStatement);
   const [open, setOpen] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -110,7 +112,8 @@ function ApprovedEdit() {
 }
 
 function List() {
-  const proposals = useMemoryStore((s) => s.proposals);
+  // Scope to the open program so another program's findings never appear or get approved here.
+  const { proposals, programId } = useProgramEvidence();
   const review = useMemoryStore((s) => s.review);
   const sources = useMemoryStore((s) => s.sources);
   // Findings the user kept and saved before Save meant approval: approve them once, as she reviewed them.
@@ -121,6 +124,8 @@ function List() {
   }, [proposals, sources, review]);
   // Rows stay in place after an action: the list is fixed from the proposals pending when the page opened.
   const initial = useRef<string[] | null>(null);
+  const initialFor = useRef<string | null>(null);
+  if (initialFor.current !== programId) { initialFor.current = programId; initial.current = null; }
   if (initial.current === null) initial.current = proposals.filter((p) => p.status === "pending" || p.status === "flagged").map((p) => p.id);
   const ids = [...initial.current, ...proposals.filter((p) => (p.status === "pending" || p.status === "flagged") && !initial.current!.includes(p.id)).map((p) => p.id)];
   const rows = ids.map((id) => proposals.find((p) => p.id === id)).filter(Boolean) as EvidenceProposal[];
