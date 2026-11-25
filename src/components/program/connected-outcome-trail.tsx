@@ -264,7 +264,7 @@ export function ConnectedOutcomeTrail({
         >
           {[
             { id: "all", title: "All findings", sub: "Everything approved", n: records.length },
-            ...themeSummary(records, themeOverrides).map((t) => ({ id: t.id, title: t.title, sub: t.gloss, n: t.items.length })),
+            ...themeSummary(records, themeOverrides).map((t) => ({ id: t.id, title: t.title, sub: t.gloss, n: t.items.length + (t.id === "lessons" ? synth.filter((i) => i.programId === programId && i.kind === "lesson" && i.status === "accepted").length : 0) })),
             { id: "why", title: "Why it changed", sub: "Decisions & context", n: records.filter((r) => ["Decision", "Change"].includes(r.kind)).length + synth.filter((i) => i.programId === programId && i.kind === "link" && i.status === "accepted").length },
             { id: "gaps", title: "Evidence gaps", sub: "Open questions", n: records.filter((r) => ["Question", "Risk"].includes(r.kind)).length + synth.filter((i) => i.programId === programId && i.kind === "gap" && i.status === "accepted").length },
           ].map((f) => (
@@ -290,7 +290,10 @@ export function ConnectedOutcomeTrail({
                 {node(r, `${r.eventDateBasis === "document-date" ? "Event date not confirmed" : r.eventDate} · ${sources.find((x) => x.id === r.citation.versionId)?.title ?? "source"}`)}
               </div>
             ))}
-            {!records.some((r) => themeOf(r, themeOverrides) === facet) && <p className="text-xs">No approved findings under this theme yet.</p>}
+            {facet === "lessons" && synth.filter((i) => i.programId === programId && i.kind === "lesson" && i.status === "accepted").map((i) => (
+              <p key={i.id} className="text-xs" style={{ margin: "6px 0" }}><strong>AI-proposed lesson, reviewer accepted, still a hypothesis:</strong> {i.text}</p>
+            ))}
+            {!records.some((r) => themeOf(r, themeOverrides) === facet) && !(facet === "lessons" && synth.some((i) => i.programId === programId && i.kind === "lesson" && i.status === "accepted")) && <p className="text-xs">No approved findings under this theme yet.</p>}
           </div>
         )}
         {!trail ? (
@@ -506,8 +509,8 @@ export function ConnectedOutcomeTrail({
                                   {from.title}
                                 </button>
                                 <span>
-                                  <ArrowRight size={16} />
-                                  {relation.label}
+                                  {["ai", "reviewer", "recorded"].includes(String(rel.basis ?? "reviewer")) ? <ArrowRight size={16} /> : <span aria-hidden="true">{"\u2014"}</span>}
+                                  {" "}{relation.label}
                                   <small style={{ display: "block" }}>
                                     {BASIS_TEXT[rel.basis ?? "reviewer"].badge}. {rel.why}
                                   </small>

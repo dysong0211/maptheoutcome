@@ -81,6 +81,7 @@ export function AISynthesisPanel({
         return (
           <span key={id} style={{ fontSize: 12 }}>
             <button type="button" onClick={() => onFocus(id)} style={{ textDecoration: "underline" }}>{title(id)}</button>
+            {r && <small style={{ display: "block", color: "#64748b" }}>Source passage of this finding (context only; the AI did not cite it): “{r.citation.quote}”</small>}
             {r && <> (<Link href={`/sources/view?id=${encodeURIComponent(r.citation.versionId)}`}>source</Link>)</>}
           </span>
         );
