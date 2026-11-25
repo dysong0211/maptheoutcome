@@ -29,6 +29,8 @@ interface State {
   items: SynthItem[];
   addRun: (programId: string, result: ConnectResult) => number;
   decide: (id: string, status: "accepted" | "dismissed", actor: string) => void;
+  /** A finding's wording was edited: AI suggestions that cite it go back to "proposed" with a note, so they are checked again. */
+  staleForRecord: (recordId: string) => void;
 }
 export const useSynthesisStore = create<State>()(
   persist(
@@ -46,6 +48,8 @@ export const useSynthesisStore = create<State>()(
         set({ items: [...get().items.filter((x) => x.programId !== programId || x.status !== "proposed"), ...items] });
         return items.length;
       },
+      staleForRecord: (recordId) =>
+        set({ items: get().items.map((x) => (x.recordIds.includes(recordId) ? { ...x, status: "proposed" as const, decidedAt: undefined, decidedBy: undefined, note: "A finding this relies on was edited after this was suggested. Check it again." } : x)) }),
       decide: (id, status, actor) =>
         set({ items: get().items.map((x) => (x.id === id ? { ...x, status, decidedAt: new Date().toISOString(), decidedBy: actor } : x)) }),
     }),
