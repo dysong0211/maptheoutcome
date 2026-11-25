@@ -29,6 +29,12 @@ export type PackItem = {
   hypothesis?: string;
   /** Reference number shown as [n] in the summary and sections. */
   ref?: number;
+  /** Id of the finding or insight, so a reviewer can move it to another theme. */
+  id?: string;
+  /** Event date (YYYY-MM-DD) when the source states one; absent when only the document date is known. */
+  date?: string;
+  /** True when a reviewer moved this item to a different theme. */
+  moved?: boolean;
 };
 export type Bullet = { ref: number; text: string; cite: string; level?: string; caveat?: string; hypothesis?: string };
 export type PackSection = { id: string; title: string; intro: string; items: PackItem[]; /** One-line reading guide. */ lead: string; /** One bullet per reviewed statement, with its source and its own limit. */ bullets: Bullet[]; /** Limits that apply to several bullets, stated once. */ notes: string[] };
@@ -68,11 +74,18 @@ export function themeFor(item: { kind?: string; theme?: string; text?: string; t
 const monthOf = (d: string) => d.slice(0, 7);
 const sourceTitle = (sources: SourceVersion[], id: string) => sources.find((s) => s.id === id)?.title ?? "Source";
 
-export function buildSections(records: ProgramRecord[], insights: Reflection[], sources: SourceVersion[], origin: string): PackSection[] {
+export const THEME_NOTE = "Themes are assigned by rule from the item type and its wording (Finance is matched on words such as budget, spending, funding, USD). The mapping is provisional: check each item and move it if it is under the wrong theme.";
+const isTheme = (v: unknown): v is ThemeId => THEMES.some((t) => t.id === v);
+
+export function buildSections(records: ProgramRecord[], insights: Reflection[], sources: SourceVersion[], origin: string, overrides: Record<string, string> = {}): PackSection[] {
   const sec = Object.fromEntries(THEMES.map((t) => [t.id, { id: t.id, title: t.title, intro: t.gloss, items: [] as PackItem[], lead: "", bullets: [] as Bullet[], notes: [] as string[] } as PackSection])) as Record<ThemeId, PackSection>;
   for (const r of records) {
     const date = r.eventDate.slice(0, 10);
-    sec[themeFor({ kind: r.kind, text: r.statement, title: r.title })].items.push({
+    const ov = overrides[r.id];
+    sec[isTheme(ov) ? ov : themeFor({ kind: r.kind, text: r.statement, title: r.title })].items.push({
+      id: r.id,
+      moved: isTheme(ov),
+      date: r.eventDateBasis === "document-date" ? undefined : date,
       title: r.title,
       text: r.statement,
       meta: `${r.kind}${r.level ? ` · ${r.level}` : ""} · ${r.eventDateBasis === "document-date" ? "date not confirmed" : date}${r.location ? ` · ${r.location}` : ""}`,
@@ -86,7 +99,11 @@ export function buildSections(records: ProgramRecord[], insights: Reflection[], 
     });
   }
   for (const i of insights) {
-    sec[themeFor({ theme: i.theme, text: i.observation, title: i.theme })].items.push({
+    const ov = overrides[i.id];
+    sec[isTheme(ov) ? ov : themeFor({ theme: i.theme, text: i.observation, title: i.theme })].items.push({
+      id: i.id,
+      moved: isTheme(ov),
+      date: i.observedOn || undefined,
       title: i.theme,
       text: i.observation,
       hypothesis: i.implication || undefined,
@@ -445,7 +462,7 @@ export function flowChart(sections: PackSection[], sourceCount: number): Chart |
     body += box(c3.x, secY[k], c3.w, 48, `${sc.title}: ${sc.items.length}`, sc.items.length ? (outs ? `${outs} marked Output` : "as recorded") : "nothing reviewed yet", sc.items.length ? fills[k] : "#ffffff", sc.items.length ? strokes[k] : "#cbd5e1");
   });
   const svg = frame("How the summary was assembled", `${total} reviewed ${total === 1 ? "statement" : "statements"}. Numbers on arrows are item counts.`, H, body, "Provenance of reviewed items. Not a results chain; no cause or effect is implied.");
-  return { id: "flow", title: "How the summary was assembled", caption: "From source documents to reviewed evidence to the five report themes. Numbers are counts of reviewed items. This is not a results chain.", svg };
+  return { id: "flow", title: "Evidence base: how the summary was assembled", caption: "From source documents to reviewed evidence to the five report themes. Numbers are counts of reviewed items. This is not a results chain.", svg };
 }
 
 export function summaryChart(sections: PackSection[]): Chart | null {
@@ -454,10 +471,60 @@ export function summaryChart(sections: PackSection[]): Chart | null {
   const bars = sections.map((sc) => ({ label: sc.title, value: sc.items.length }));
   return {
     id: "summary-sections",
-    title: "Reviewed statements by theme",
+    title: "Evidence base: reviewed statements by theme",
     caption: "How many reviewed statements sit under each theme. A count of statements, not a measure of results or impact.",
     svg: barChart("Reviewed statements by theme", `${total} reviewed statements in this report`, bars, "Counts of reviewed statements, not results or impact"),
   };
+}
+
+const THEME_COLOR: Record<string, string> = { updates: PALETTE[5], progress: PALETTE[0], finance: PALETTE[1], challenges: PALETTE[2], lessons: PALETTE[3] };
+const moneyNum = (v: string, suffix?: string) => {
+  const n = Number(v.replace(/,/g, ""));
+  if (!Number.isFinite(n)) return null;
+  return suffix && /k/i.test(suffix) ? n * 1000 : suffix && /m/i.test(suffix) ? n * 1e6 : n;
+};
+/** Budget and reported spending, only when ONE cited passage states both. Nothing is estimated. */
+export function financeFigures(quote: string): { budget: number; actual: number; cur: string } | null {
+  const cur = "(USD|US\\$|\\$|EUR|GBP)";
+  const amt = "\\s?([\\d][\\d,]*(?:\\.\\d+)?)(\\s?[kKmM]\\b)?";
+  const b = quote.match(new RegExp(`budget(?:ed)?(?: of| was| is)?\\s*${cur}${amt}`, "i"));
+  const a = quote.match(new RegExp(`(?:expenditure|expenditures|spent|spending|actual(?: spending)?)[^.]*?${cur}${amt}`, "i"));
+  if (!a || !b || a[1].toUpperCase() !== b[1].toUpperCase()) return null;
+  const budget = moneyNum(b[2], b[3]);
+  const actual = moneyNum(a[2], a[3]);
+  if (budget === null || actual === null) return null;
+  return { budget, actual, cur: b[1].toUpperCase() };
+}
+
+export function financeCharts(sections: PackSection[]): Chart[] {
+  const out: Chart[] = [];
+  for (const it of sections.flatMap((x) => x.items)) {
+    if (it.kind !== "finding" || out.length >= 2) continue;
+    const f = (it.quote && financeFigures(it.quote)) || financeFigures(it.text);
+    if (!f) continue;
+    const diff = f.actual - f.budget;
+    const max = Math.max(f.budget, f.actual, 1);
+    const plot = 400;
+    const bar = (y: number, label: string, v: number, color: string) => `<text x="150" y="${y + 19}" font-size="12" text-anchor="end" fill="#1e293b">${esc(label)}</text><rect x="160" y="${y}" width="${Math.max(2, Math.round((v / max) * plot))}" height="28" rx="3" fill="${color}"/><text x="${160 + Math.round((v / max) * plot) + 8}" y="${y + 19}" font-size="13" font-weight="700" fill="#0f172a">${esc(f.cur)} ${fmt(v)}</text>`;
+    const body = `${bar(80, "Budget", f.budget, "#94a3b8")}${bar(122, "Reported spending", f.actual, PALETTE[1])}<text x="24" y="190" font-size="13" fill="#0f172a">${diff === 0 ? "Reported spending equals the budget." : `Reported spending is ${esc(f.cur)} ${fmt(Math.abs(diff))} ${diff > 0 ? "above" : "below"} the budget.`}</text><text x="24" y="208" font-size="11" fill="#475569">${esc(trunc(`Source: ${it.source}${it.date ? `, ${it.date}` : ""} [${it.ref}]. Figures as stated; the source's own explanation is in its passage.`, 120))}</text>`;
+    out.push({ id: `finance-${it.ref}`, title: "Budget and reported spending", caption: `Figures as stated in reference [${it.ref}] (${it.source}). Not audited accounts. The chart implies no cause for the difference.`, svg: frame("Budget and reported spending", `${it.source}${it.date ? `, ${it.date}` : ""} [${it.ref}]`, 250, body, "Figures as stated in the cited source, not audited accounts") });
+  }
+  return out;
+}
+
+/** Dated items in date order, coloured by theme. Order shows when things were recorded, not cause. */
+export function chronologyChart(sections: PackSection[]): Chart | null {
+  const rows = sections.flatMap((sc) => sc.items.filter((i) => i.date).map((i) => ({ it: i, sc })));
+  rows.sort((a, b) => (a.it.date! < b.it.date! ? -1 : a.it.date! > b.it.date! ? 1 : (a.it.ref ?? 0) - (b.it.ref ?? 0)));
+  if (rows.length < 2) return null;
+  const shown = rows.slice(0, 12);
+  const rowH = 30, top = 76;
+  const body = `<line x1="108" y1="${top - 6}" x2="108" y2="${top + shown.length * rowH - 12}" stroke="#cbd5e1" stroke-width="2"/>` + shown.map(({ it, sc }, i) => {
+    const y = top + i * rowH;
+    return `<text x="96" y="${y + 9}" font-size="11" text-anchor="end" fill="#475569">${esc(it.date)}</text><circle cx="108" cy="${y + 5}" r="6" fill="${THEME_COLOR[sc.id] ?? PALETTE[5]}"/><text x="124" y="${y + 9}" font-size="11" font-weight="700" fill="${THEME_COLOR[sc.id] ?? PALETTE[5]}">${esc(sc.title)}</text><text x="200" y="${y + 9}" font-size="12" fill="#0f172a">${esc(trunc(sentence(it.text), 74))} [${it.ref}]</text>`;
+  }).join("");
+  const h = top + shown.length * rowH + 30;
+  return { id: "chronology", title: "Documented chronology", caption: `Reviewed items with a stated date, in date order, coloured by theme${rows.length > shown.length ? ` (first ${shown.length} of ${rows.length})` : ""}. Order shows when things were recorded; it does not show that one led to another.`, svg: frame("Documented chronology", `${shown.length} dated items, oldest first`, h, body, "Dates as stated in sources. Sequence is not evidence of cause.") };
 }
 
 /** Summary table: the first reviewed statements under each theme, each with its reference number. Limits are in the Limitations section. Ideas to test are never included. */
@@ -467,7 +534,7 @@ export function headline(sections: PackSection[], from: string, to: string, sour
   const rows: SummaryRow[] = [];
   for (const sc of sections) for (const it of sc.items.slice(0, ROWS_PER_AREA)) rows.push({ ref: it.ref ?? 0, area: sc.title, level: it.level ?? "", text: itemSentence(it) });
   const more = total - rows.length;
-  const note = "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes. See Limitations.";
+  const note = "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes. See Limitations. " + THEME_NOTE;
   const lines = rows.map((r) => `- ${r.area}${r.level ? ` (${r.level})` : ""}: ${r.text} [${r.ref}]`);
   const emptyThemes = sections.filter((x) => !x.items.length).map((x) => x.title);
   const sentenceText = `${lines.join("\n")}${more > 0 ? `\n(${more} more reviewed ${more === 1 ? "statement" : "statements"} in the sections below.)` : ""}${emptyThemes.length ? `\nNothing reviewed yet: ${emptyThemes.join(", ")}.` : ""}\n${note}`;
@@ -509,4 +576,4 @@ h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin-top:32px;border-bottom
 .item{border-left:3px solid #0f766e;padding:2px 0 2px 12px;margin:12px 0}.item p{margin:2px 0}.meta{font-size:12px;color:#475569}.limit{font-size:13px;color:#7c2d12}
 figure{margin:16px 0}figure svg{max-width:100%;height:auto;border:1px solid #e2e8f0}figcaption{font-size:12px;color:#475569}blockquote{margin:6px 0;padding:4px 12px;background:#f1f5f9;border-radius:4px;font-style:italic;font-size:13px}.callout{background:#f0fdfa;border-left:4px solid #0f766e;padding:6px 16px;margin:8px 0}table.sumtable{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}.sumtable th,.sumtable td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}.sumtable th{background:#e6f4f1}details.refs{margin-top:28px;border-top:1px solid #cbd5e1;padding-top:8px;font-size:12px}details.refs li{margin:4px 0}.callout h4{color:#0f766e;margin:10px 0 2px}.lead{color:#475569;font-size:13px}.cite{color:#475569;font-size:12px}.pts li{margin:6px 0}.caveat{margin-top:32px;font-size:12px;color:#475569;border-top:1px solid #cbd5e1;padding-top:8px}
 </style></head><body><h1>${esc(opts.title)}</h1><p class="sub">${esc(opts.programName)} · Evidence window ${esc(opts.from)} to ${esc(opts.to)}</p>${opts.headline?.sentence ? `<h2>Summary</h2><div class="callout">${opts.headline.html ?? `<p>${esc(opts.headline.sentence)}</p>`}</div>${sumFigs}` : ""}<h2>Updates, progress, finance, challenges and lessons</h2>${opts.sections.map((x) => sectionHtml(x, false)).join("")}<h2>Limitations</h2>${limitationsHtml(opts.sections.flatMap((x) => x.items)).replace("<h3>Limitations</h3>", "")}${tableBlock}${opts.charts.length ? `<h2>Annex: evidence base</h2><p class="meta">${esc(opts.headline?.base ?? "")} These charts count reviewed items. They do not measure results or impact.</p>${charts}` : ""}${refsHtml(opts.sections.flatMap((x) => x.items))}<p class="caveat">${esc(opts.caveat)}</p></body></html>`;
-}
+                      }
