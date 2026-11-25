@@ -99,8 +99,8 @@ Always include the requirements array. Leave it empty unless mode is "requiremen
 In requirements mode: return findings as an empty array and nextSteps as an empty array. List up to 8 explicit, measurable commitments or conditions stated in the agreement (for example a minimum share, a maximum cost rate, a count, a deadline-independent numeric target). Each needs comparator (min for "at least", max for "no more than"), a numeric threshold exactly as written in the quote (a percentage is 40 for "40%"), a short unit such as "%" or "people" or "USD", a short statement, and an exact verbatim quote with its sourceId and passageId. Skip anything vague, unnumbered, or not stated as a requirement. Never invent a number. These are suggestions for a reviewer to confirm.`;
 
 // Convert the draft-7 zod schema to the OpenAPI subset Gemini's responseSchema accepts.
-function geminiResponseSchema(): Record<string, unknown> {
-  const raw = z.toJSONSchema(aiProviderOutputSchema, {
+export function toGeminiSchema(schema: z.ZodType): Record<string, unknown> {
+  const raw = z.toJSONSchema(schema, {
     target: "draft-7",
   }) as Record<string, unknown>;
   const typeMap: Record<string, string> = {
@@ -187,7 +187,7 @@ async function callGemini(
           contents: [{ role: "user", parts }],
           generationConfig: {
             responseMimeType: "application/json",
-            responseSchema: geminiResponseSchema(),
+            responseSchema: toGeminiSchema(aiProviderOutputSchema),
             maxOutputTokens: 6000,
           },
         }),

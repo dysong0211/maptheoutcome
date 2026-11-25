@@ -5,6 +5,7 @@ import { aiSource, type AIRequest, type AIResult } from "./ai-contract";
 import { getCapturedFile } from "./browser-file-store";
 import { useMemoryStore } from "@/stores/program-memory-store";
 import type { SourceVersion } from "./program-memory";
+import type { ConnectRequest, ConnectResult } from "./ai-connect-contract";
 
 export function aiProviderName(provider?: string) {
   return provider === "gemini" ? "Google Gemini" : "OpenAI";
@@ -111,4 +112,17 @@ export async function suggestRequirements(source: SourceVersion) {
     question:
       "List the explicit, measurable requirements or conditions in this agreement as requirements, each with an exact quotation. Do not list anything without a stated number.",
   });
+}
+
+/** One AI call over approved findings. Returns proposals only; nothing is saved until a reviewer accepts. */
+export async function requestConnections(request: ConnectRequest): Promise<ConnectResult> {
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    body: JSON.stringify(request),
+    headers: { "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(160_000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "AI request failed. Please retry.");
+  return data as ConnectResult;
 }
