@@ -15,7 +15,20 @@ export function EvidenceFocus({ finance = false }: { finance?: boolean }) {
         : ["reach", "saturday", "stock"].includes(r.id),
     )
     .slice(0, 3);
-  const display = finance ? items : items.length ? items : records.slice(0, 3);
+  const pool = records.filter((r) => !/^reference to |workbook/i.test(r.title) && !/^planned:/i.test(r.statement));
+  const rank = (k: string) => (k === "Result" ? 0 : k === "Decision" || k === "Change" ? 1 : k === "Risk" ? 2 : 3);
+  const words = (t: string) => new Set(t.toLowerCase().split(/\W+/).filter((w) => w.length > 3));
+  const chosen: typeof records = [];
+  for (const r of [...pool].sort((a, b) => rank(a.kind) - rank(b.kind))) {
+    const w = words(r.title);
+    const same = chosen.some((c) => {
+      const o = words(c.title);
+      const n = [...w].filter((x) => o.has(x)).length;
+      return n / Math.max(1, Math.min(w.size, o.size)) >= 0.5;
+    });
+    if (!same && chosen.length < 3) chosen.push(r);
+  }
+  const display = finance ? items : items.length ? items : chosen;
   return (
     <section className="evidence-focus" aria-label="Evidence highlights">
       <header>
