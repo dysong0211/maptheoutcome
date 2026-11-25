@@ -13,7 +13,6 @@ import { MapTocLogo } from "@/components/maptoc-logo";
 import { DocumentAssignment } from "./document-assignment";
 import { ProgramIntelligence } from "./program-intelligence";
 import { MapTocGuide, OverviewBridge } from "./overview-story";
-import { SavedFindings } from "./saved-findings";
 import Link from "next/link";
 import { useAssurance } from "@/stores/assurance-store";
 
@@ -102,7 +101,6 @@ export function DesktopIntelligenceHome() {
         <Link className="overview-program-tab" href="/program">{program?.name||"2026 MOH Maternal Delivery"}<span>{program?.country||"Country not set"} · {program?.sample!==false?"Demo":"Program"}{programIdLine(program)?` · ${programIdLine(program)}`:""}</span></Link>
       </header>
       <OverviewBridge />
-      <SavedFindings limit={5} />
       <section
         id="maptoc-capture"
         className="ai-workbench"
