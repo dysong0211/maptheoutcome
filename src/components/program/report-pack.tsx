@@ -1,12 +1,11 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ProgramRecord, SourceVersion } from "@/lib/program-memory";
 import type { Reflection } from "@/stores/reflection-store";
 import {
   answerColumns,
   answersChart,
   buildSections,
-  esc,
   compareChart,
   evidenceCharts,
   headline,
@@ -54,6 +53,14 @@ function svgToPng(svg: string): Promise<Blob> {
     img.onerror = () => reject(new Error("Chart could not be drawn"));
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   });
+}
+
+function blobToDataUrl(b: Blob): Promise<string> {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error("read failed")); r.readAsDataURL(b); });
+}
+/** Adds a PNG picture to each chart so Word and Docs show it (they do not draw inline SVG). */
+async function withImages(charts: Chart[]): Promise<Chart[]> {
+  return Promise.all(charts.map(async (c) => { try { return { ...c, img: await blobToDataUrl(await svgToPng(c.svg)) }; } catch { return c; } }));
 }
 
 async function copyRich(html: string, text: string): Promise<boolean> {
@@ -121,7 +128,7 @@ function ItemCard({ item, disabled, note }: { item: PackItem; disabled?: boolean
   );
 }
 
-function TableCharts({ sources, disabled, note }: { sources: SourceVersion[]; disabled?: boolean; note: (m: string) => void }) {
+function TableCharts({ sources, disabled, note, onChart }: { sources: SourceVersion[]; disabled?: boolean; note: (m: string) => void; onChart: (c: Chart | null, status: string) => void }) {
   const tables = useMemo(() => sources.map(sourceTable).filter((t): t is NonNullable<typeof t> => !!t), [sources]);
   const [sid, setSid] = useState("");
   const table = tables.find((t) => t.sourceId === sid) ?? tables[0];
@@ -129,18 +136,20 @@ function TableCharts({ sources, disabled, note }: { sources: SourceVersion[]; di
   const [labelCol, setLabelCol] = useState(0);
   const [valueCols, setValueCols] = useState<number[] | null>(null);
   const [answerCol, setAnswerCol] = useState<number | null>(null);
-  if (!table) {
-    return <p className="pack-hint">Upload a CSV (a planning or progress table, or a Google Forms export) on this page to chart it here.</p>;
-  }
-  const nums = numericColumns(table);
-  const answers = answerColumns(table);
-  const lc = labelCol < table.header.length ? labelCol : 0;
+  const nums = table ? numericColumns(table) : [];
+  const answers = table ? answerColumns(table) : [];
+  const lc = table && labelCol < table.header.length ? labelCol : 0;
   const vc = (valueCols ?? nums.filter((c) => c !== lc)).filter((c) => nums.includes(c) && c !== lc);
   const ac = answerCol !== null && answers.includes(answerCol) ? answerCol : answers[0];
   const mode = modeChoice ?? (nums.some((c) => c !== lc) || !answers.length ? "compare" : "answers");
-  const src = sources.find((x) => x.id === table.sourceId);
+  const src = table ? sources.find((x) => x.id === table.sourceId) : undefined;
   const status = src ? sourceReviewStatus(src) : "not reviewed or verified by MapToc";
-  const chart = mode === "compare" ? compareChart(table, lc, vc, status) : ac !== undefined ? answersChart(table, ac, status) : null;
+  const chart = !table ? null : mode === "compare" ? compareChart(table, lc, vc, status) : ac !== undefined ? answersChart(table, ac, status) : null;
+  const chartSvg = chart?.svg ?? "";
+  useEffect(() => { onChart(chart, status); }, [chartSvg, status]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!table) {
+    return <p className="pack-hint">Upload a CSV (a planning or progress table, or a Google Forms export) on this page to chart it here.</p>;
+  }
   return (
     <div className="pack-table">
       <p className="pack-warn" role="note">Uploaded data, not verified results. Status of this table: {status}. MapToc plots the numbers exactly as uploaded. Check them against the original before you present them as results.</p>
@@ -213,6 +222,7 @@ export function ReportPack({
   disabled?: boolean;
 }) {
   const [msg, setMsg] = useState("");
+  const [tChart, setTChart] = useState<{ chart: Chart | null; status: string }>({ chart: null, status: "" });
   const origin = typeof location === "undefined" ? "" : location.origin;
   const sections = useMemo<PackSection[]>(() => buildSections(records, insights, sources, origin), [records, insights, sources, origin]);
   const charts = useMemo(() => evidenceCharts(records, insights, sources, from, to), [records, insights, sources, from, to]);
@@ -224,8 +234,13 @@ export function ReportPack({
   ];
   const caveat = "Findings and insights were approved by a reviewer and are not independently verified. Charts count evidence items or plot uploaded tables as given. They are not measured results. Check consent and disclosure before sharing.";
   const head = headline(sections, from, to, sourceCount, { findings: records.length, insights: insights.length });
-  const fullHtml = () => reportHtml({ title, programName, from, to, stats, sections, charts, caveat, headline: head });
-  const fullText = () => [head.sentence, ...(head.wins.length ? ["Notable results:\n" + head.wins.map((w) => `- ${w}`).join("\n")] : []), ...sections.map(sectionText)].filter(Boolean).join("\n\n");
+  const fullHtml = async () => {
+    const withImg = await withImages([...(tChart.chart ? [tChart.chart] : []), ...charts]);
+    const tc = tChart.chart ? withImg[0] : null;
+    return reportHtml({ title, programName, from, to, stats, sections, charts: tChart.chart ? withImg.slice(1) : withImg, caveat, headline: head, tableChart: tc, tableStatus: tChart.status });
+  };
+  const fullText = () =>
+    [`Summary\n${head.sentence}`, ...sections.map(sectionText), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
     <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
@@ -235,11 +250,11 @@ export function ReportPack({
         <button
           className="memory-action"
           disabled={disabled || empty}
-          onClick={async () => setMsg((await copyRich(fullHtml(), fullText())) ? "Copied the whole report with formatting. Paste into Word or Google Docs." : "Copy was blocked by this browser. Use Download report.")}
+          onClick={async () => setMsg((await copyRich(await fullHtml(), fullText())) ? `Copied the whole report with formatting${tChart.chart ? ", including your uploaded-table chart" : ""}. Paste into Word or Google Docs.` : "Copy was blocked by this browser. Use Download report.")}
         >
           Copy whole report
         </button>
-        <button className="memory-action" disabled={disabled || empty} onClick={() => download(`MapToc-report-${from}-${to}.html`, new Blob([fullHtml()], { type: "text/html;charset=utf-8" }))}>
+        <button className="memory-action" disabled={disabled || empty} onClick={async () => download(`MapToc-report-${from}-${to}.html`, new Blob([await fullHtml()], { type: "text/html;charset=utf-8" }))}>
           Download report (.html, opens in Word)
         </button>
       </div>
@@ -248,8 +263,18 @@ export function ReportPack({
       {head.sentence && (
         <div className="pack-summary">
           <h3>Summary</h3>
-          <p>{head.sentence}</p>
-          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<p>${esc(head.sentence)}</p>`, head.sentence)) ? "Copied the summary." : "Copy was blocked by this browser.")}>Copy summary</button>
+          {head.blocks.map((b) => (
+            <div key={b.label}>
+              <h4>{b.label}</h4>
+              <ul>
+                {b.lines.map((l, i) => (
+                  <li key={i}>{l.text}{l.caveat && <><br /><em className="pack-limit">Limit: {l.caveat}</em></>}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {head.note && <p className="pack-hint">{head.note}</p>}
+          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<h3>Summary</h3>${head.html}`, `Summary\n${head.sentence}`)) ? "Copied the summary, with its limits." : "Copy was blocked by this browser.")}>Copy summary</button>
         </div>
       )}
       {sections.map((s) => (
@@ -257,13 +282,26 @@ export function ReportPack({
           <div className="pack-section-head">
             <div>
               <h3>{s.title} <small>({s.items.length} reviewed {s.items.length === 1 ? "item" : "items"})</small></h3>
-              <p className="pack-hint">{s.intro}</p>
+              <p className="pack-hint">{s.lead || s.intro}</p>
             </div>
             <button disabled={disabled || !s.items.length} onClick={async () => setMsg((await copyRich(sectionHtml(s), sectionText(s))) ? `Copied “${s.title}”. Paste it into your report.` : "Copy was blocked by this browser.")}>
               Copy section
             </button>
           </div>
-          {s.narrative ? <p className="pack-narrative">{s.narrative}</p> : <p className="pack-hint">Nothing reviewed yet for this section.</p>}
+          {s.items.length ? (
+            <div className="pack-narrative">
+              <ul>
+                {s.bullets.map((b, i) => (
+                  <li key={i}>
+                    {b.level && <b>[{b.level}] </b>}{b.text} <span className="pack-cite">{b.cite}</span>
+                    {b.caveat && <><br /><em className="pack-limit">Limit: {b.caveat}</em></>}
+                    {b.hypothesis && <><br /><em className="pack-limit">Idea to test (not a finding): {b.hypothesis}</em></>}
+                  </li>
+                ))}
+              </ul>
+              {s.notes.length > 0 && <p className="pack-limit"><b>Limits that apply to several items above:</b> {s.notes.join(" ")}</p>}
+            </div>
+          ) : <p className="pack-hint">Nothing reviewed yet for this section.</p>}
           {s.items.length > 0 && (
             <details className="pack-details">
               <summary>Source-linked items ({s.items.length})</summary>
@@ -273,7 +311,8 @@ export function ReportPack({
         </div>
       ))}
       <h3>Chart your data (uploaded tables)</h3>
-      <TableCharts sources={sources} disabled={disabled} note={setMsg} />
+      <TableCharts sources={sources} disabled={disabled} note={setMsg} onChart={(chart, status) => setTChart((p) => (p.chart?.svg === chart?.svg && p.status === status ? p : { chart, status }))} />
+      {tChart.chart && <p className="pack-hint">This chart is included in Copy whole report and Download report.</p>}
       {charts.length > 0 && (
         <details className="pack-details pack-base">
           <summary>Evidence base: charts of reviewed items ({charts.length})</summary>
