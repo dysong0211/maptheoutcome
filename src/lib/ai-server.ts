@@ -90,7 +90,10 @@ Separate reported output, qualitative observation, hypothesis and measured outco
 Predictions are conditional hypotheses with explicit assumptions, never certainties or invented confidence.
 Do not infer causal impact, verified compliance, equipment receipt, clinical advice or spending from mere presence of a file.
 Do not invent owners, deadlines, standards or numeric metrics. Next steps are suggestions, not established requirements.
-Return up to 6 concise findings with limitations and up to 4 specific next steps.
+Return up to 12 concise findings with limitations and up to 4 specific next steps. Spend the findings on the most decision-relevant facts, not on one long paragraph.
+If the document has a table of figures (results, indicators, targets, baselines, budget lines, counts), give each key row or group its own finding with the exact numbers, units and period, and quote the row.
+If the document says an earlier report or figure was wrong or has been corrected, make that its own finding with kind Change, quoting the correction, and name what it corrects.
+In a plan, proposal or agreement, targets and expected outcomes are plans, not results: use kind Decision, start the statement with "Planned:", and give baseline, target, unit and date only as written. Use kind Result only for what a report says actually happened.
 For analyze mode, include document: its type, a short plain-language summary of what it contains, readable, and a suggestedConnection to a program outcome area (or null if unknown). This is a suggestion, not an official framework mapping. Base it only on the document, not its filename. For ask mode use document: null.
 If the document is unreadable, set readable false, explain the issue in summary, return no findings, and request a clearer copy. Do not summarize content you cannot read.
 If evidence is insufficient, return no findings and request the missing evidence in nextSteps.
