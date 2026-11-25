@@ -361,7 +361,7 @@ export const useMemoryStore = create<MemoryState>()(
             eventDateBasis: stated(finding, source)
               ? ("stated" as const)
               : ("document-date" as const),
-            location: "See source document",
+            location: finding.placeInQuote?.trim() || "See source document",
             status: "pending",
             citation: {
               versionId: source.id,
