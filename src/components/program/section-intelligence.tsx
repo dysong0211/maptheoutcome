@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { useMemoryStore } from "@/stores/program-memory-store";
+import { useProgramEvidence } from "./use-program-evidence";
 import { aiProviderName, useAIStatus } from "@/lib/ai-client";
 import { LiveSummary } from "@/components/program/live-intelligence";
 import {
@@ -24,10 +25,7 @@ export function SectionIntelligence({
 }) {
   const [liveShown, setLiveShown] = useState(false);
   const aiStatus = useAIStatus();
-  const records = useMemoryStore((state) => state.records);
-  const sources = useMemoryStore((state) => state.sources);
-  const proposals = useMemoryStore((state) => state.proposals);
-  const relations = useMemoryStore((state) => state.relations);
+  const { records, sources, proposals, relations, isDefault } = useProgramEvidence();
   const events = useMemoryStore((state) => state.events);
   const insight = buildSectionIntelligence({
     section,
@@ -50,7 +48,7 @@ export function SectionIntelligence({
           <Sparkles className="size-4 text-[#477c69]" />
           <h2 className="text-sm font-semibold">AI summary</h2>
           <span className="rounded bg-[#e2eee6] px-1.5 py-0.5 text-[10px] text-[#477c69]">
-            {liveShown ? "Live AI result above" : "Demo synthesis"}
+            {liveShown ? "Live AI result above" : isDefault ? "Demo synthesis" : "Summary of your records"}
           </span>
         </div>
         <Link
@@ -96,8 +94,8 @@ export function SectionIntelligence({
             {liveShown
               ? `Live AI interpretation shown above · the heuristic summary below uses this view’s demo data`
               : aiStatus.ready
-                ? `Based on this view’s demo data · live ${aiProviderName(aiStatus.provider)} available on demand above`
-                : "Based on this view’s demo data · No live AI"}
+                ? `Based on this programme’s ${isDefault ? "demo " : ""}records · live ${aiProviderName(aiStatus.provider)} available on demand above`
+                : `Based on this programme’s ${isDefault ? "demo " : ""}records · No live AI`}
           </span>
           {insight.references.length > 0 && (
             <details>

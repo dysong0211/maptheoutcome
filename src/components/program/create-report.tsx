@@ -273,6 +273,11 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
               {outsideWindow} approved {outsideWindow === 1 ? "item falls" : "items fall"} outside these dates and will not appear in the draft. Widen the dates to include {outsideWindow === 1 ? "it" : "them"}.
             </p>
           )}
+          {undatedRecords.length > 0 && (
+            <p role="status" className="report-draft-scope">
+              {undatedRecords.length} approved {undatedRecords.length === 1 ? "finding has" : "findings have"} no confirmed event date, so {undatedRecords.length === 1 ? "it is" : "they are"} not in this draft. They still appear in Insights and Program. To include {undatedRecords.length === 1 ? "it" : "them"}, set the event date when approving in the review inbox.
+            </p>
+          )}
           <small>
             {reportKind === "program-update" ? "Demo: assembles reviewed findings and sources by date. No live AI." : "UNDP pilot format: creates an editable outline and inserts reviewed, source-linked findings. It does not infer impact or verify expenditure."}
           </small>

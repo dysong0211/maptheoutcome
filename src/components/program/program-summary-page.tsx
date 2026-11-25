@@ -276,8 +276,8 @@ function ProgramSummaryContent() {
               <dd>{source?.title || "No source selected"}</dd>
             </div>
             <div>
-              <dt>Date</dt>
-              <dd>{source?.sourceDate || "Not recorded"}</dd>
+              <dt>Document date</dt>
+              <dd>{source?.sourceDate ? source.sourceDate.slice(0, 10) : "Not recorded"}</dd>
             </div>
             <div>
               <dt>Program</dt>

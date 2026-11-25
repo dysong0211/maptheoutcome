@@ -114,6 +114,7 @@ export function ProgramHeader({
   description?: string;
   compact?: boolean;
 }) {
+  const headerProgram = useAssurance((state) => state.workspace.program);
   return (
     <div className={compact ? "mb-3" : "mb-6"}>
       <div
@@ -124,9 +125,9 @@ export function ProgramHeader({
       >
         <Link href="/dashboard">All programs</Link>
         <ChevronRight className="size-3" />
-        Cambodia
+        {headerProgram?.name ?? "Cambodia"}
         <span className="ml-auto rounded-full bg-[#e1f0e8] px-2 py-1 text-[#477960]">
-          Active · demo
+          {headerProgram && headerProgram.sample === false ? "Active · your program" : "Active · demo"}
         </span>
       </div>
       <div className="flex flex-wrap items-start justify-between gap-4">

@@ -49,7 +49,9 @@ export function EvidenceFocus({ finance = false }: { finance?: boolean }) {
               <time className="finding-period">
                 {["field-report-v1", "finance-v1"].includes(source?.id ?? "")
                   ? "1 Aug–31 Aug 2026 · reporting period"
-                  : `${r.eventDate} · event date`}
+                  : r.eventDateBasis === "document-date"
+                    ? "Event date not confirmed"
+                    : `${r.eventDate} · event date`}
               </time>
               <p className="finding-why">
                 <b>Why:</b>{" "}
