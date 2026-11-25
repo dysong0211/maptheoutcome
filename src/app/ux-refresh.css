@@ -152,3 +152,41 @@
 .memory-input.report-draft{height:auto;min-height:240px;overflow:hidden;resize:none}
 @media(max-width:760px){.report-draft-panel button,.report-draft-panel .memory-action,.report-period+div button,.memory-action{min-height:44px}.report-draft-panel details>summary{min-height:44px;display:flex;align-items:center}}
 @media(max-width:600px){.mobile-task-panel .summary-themes{padding:10px 0 0;grid-template-columns:1fr}.summary-themes a{min-height:44px}}
+
+/* Report pack: copyable sections and charts */
+.report-pack h3 { margin: 20px 0 6px; font-size: 1.05rem; }
+.report-pack h3 small { font-weight: 400; color: #64748b; }
+.pack-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.pack-stat { border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 14px; background: #f8fafc; min-width: 120px; }
+.pack-stat b { display: block; font-size: 1.25rem; color: #0f766e; }
+.pack-stat span { font-size: 0.75rem; color: #475569; }
+.pack-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.pack-actions button, .pack-copy, .pack-section-head > button { border: 1px solid #94a3b8; border-radius: 8px; background: #fff; padding: 5px 12px; font-size: 0.8rem; cursor: pointer; }
+.pack-actions button:hover:not(:disabled), .pack-copy:hover:not(:disabled), .pack-section-head > button:hover:not(:disabled) { background: #f0fdfa; border-color: #0f766e; }
+.pack-actions button:disabled, .pack-copy:disabled, .pack-section-head > button:disabled { opacity: 0.5; cursor: not-allowed; }
+.pack-actions.pack-top button.memory-action { border: 0; }
+.pack-msg { margin-top: 8px; font-size: 0.85rem; color: #0f766e; }
+.pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px; }
+.pack-chart { margin: 0; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; background: #fff; }
+.pack-chart-img svg { width: 100%; height: auto; display: block; }
+.pack-chart figcaption { font-size: 0.75rem; color: #475569; margin-top: 4px; }
+.pack-section { border-top: 1px solid #e2e8f0; margin-top: 18px; padding-top: 4px; }
+.pack-section-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.pack-hint { font-size: 0.8rem; color: #64748b; }
+.pack-item { border-left: 3px solid #0f766e; padding: 4px 0 4px 12px; margin: 10px 0; }
+.pack-item h4 { font-weight: 600; margin: 0 0 2px; }
+.pack-item p { margin: 2px 0; font-size: 0.9rem; }
+.pack-meta { font-size: 0.75rem !important; color: #475569; }
+.pack-limit { font-size: 0.8rem !important; color: #7c2d12; }
+.pack-copy { margin-top: 4px; }
+.pack-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; align-items: flex-end; }
+.pack-controls label, .pack-controls fieldset { font-size: 0.8rem; display: flex; flex-direction: column; gap: 2px; }
+.pack-check { flex-direction: row !important; align-items: center; gap: 6px !important; }
+.pack-summary { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 8px 14px; margin: 10px 0; }
+.pack-summary ul { margin: 2px 0 6px 18px; list-style: disc; font-size: 0.9rem; }
+.pack-quote { margin: 4px 0; padding: 4px 10px; background: #f1f5f9; border-radius: 4px; font-style: italic; font-size: 0.8rem; color: #334155; }
+.pack-narrative { background: #f8fafc; border-left: 3px solid #0f766e; padding: 8px 12px; margin: 6px 0; font-size: 0.92rem; line-height: 1.55; }
+.pack-details { margin-top: 8px; }
+.pack-details > summary { cursor: pointer; font-size: 0.85rem; color: #0f766e; font-weight: 600; }
+.pack-warn { background: #fffbeb; border: 1px solid #fcd34d; color: #78350f; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; margin-bottom: 8px; }
+.pack-base { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
