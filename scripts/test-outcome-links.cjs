@@ -1,0 +1,32 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const ts = require("typescript");
+require.extensions[".ts"] = (module, filename) => {
+  module._compile(ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, filename);
+};
+const c = require(path.resolve(__dirname, "../src/lib/ai-connect-contract.ts"));
+const l = require(path.resolve(__dirname, "../src/lib/outcome-links.ts"));
+const rec = (id, quote, src = "s1", date = "2026-09-01", extra = {}) => ({ id, title: id, kind: "Result", theme: "progress", eventDate: date, statement: "s", sourceId: src, sourceTitle: "", quote, ...extra });
+const req = { mode: "connect", programName: "p", objective: "o", records: [rec("a", "Delay caused by customs hold."), rec("b", "Stock arrived late.")] };
+const base = { gaps: [], pathways: [], lessons: [] };
+let out = c.validateConnectOutput({ ...base, links: [{ fromId: "a", toId: "b", type: "explains", explanation: "x", basis: "stated-in-sources", evidenceQuote: "customs hold" }] }, req);
+assert.equal(out.links[0].basis, "stated-in-sources");
+out = c.validateConnectOutput({ ...base, links: [{ fromId: "a", toId: "b", type: "explains", explanation: "x", basis: "stated-in-sources", evidenceQuote: "invented words" }] }, req);
+assert.equal(out.links[0].basis, "ai-hypothesis");
+assert.equal(out.links[0].evidenceQuote, "");
+out = c.validateConnectOutput({ links: [{ fromId: "a", toId: "zzz", type: "same-topic", explanation: "x", basis: "ai-hypothesis", evidenceQuote: "" }], gaps: [{ question: "q", reason: "r", relatedIds: ["nope"], missingEvidence: "m" }], pathways: [{ title: "t", stepIds: ["a", "zzz"], explanation: "e" }], lessons: [{ statement: "l", basedOnIds: ["a"], caveat: "c" }] }, req);
+assert.equal(out.links.length + out.gaps.length + out.pathways.length, 0);
+assert.equal(out.lessons.length, 1);
+// deterministic relations: shared source is context, not a relationship; far dates give nothing
+const mk = (id, src, date, extra) => ({ ...rec(id, "q", src, date, extra), reviewedAt: "", reviewedBy: "", citation: { versionId: src, passageId: "p", quote: "q" }, limitation: "", location: "", title: id });
+const recs = [mk("a", "s1", "2026-09-01"), mk("b", "s1", "2026-12-30"), mk("c", "s2", "2026-09-05"), mk("d", "s3", "2027-06-01")];
+const rels = l.deriveRelations(recs, [{ id: "s1", title: "Doc 1" }], []);
+const by = (x, y) => rels.find((r) => [r.from, r.to].sort().join() === [x, y].sort().join());
+assert.equal(by("a", "b").basis, "document");
+assert.equal(l.BASIS_TEXT.document.group, "shared");
+assert.equal(by("a", "c").basis, "context");
+assert.ok(!by("a", "d") && !by("b", "d"), "no link without support");
+const ai = l.deriveRelations(recs, [], [], {}, [{ from: "a", to: "d", label: "AI hypothesis", basis: "ai", why: "w" }]);
+assert.ok(ai.some((r) => r.basis === "ai"));
+console.log("outcome links + connect validation ok");
