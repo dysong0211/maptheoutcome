@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useSynthesisStore } from "@/stores/outcome-synthesis-store";
 import type { ProgramRecord, SourceVersion } from "@/lib/program-memory";
 import type { Reflection } from "@/stores/reflection-store";
 import {
@@ -249,6 +250,18 @@ export function ReportPack({
     try { localStorage.setItem("maptoc-theme-overrides", JSON.stringify(n)); } catch { /* ignore */ }
     return n;
   });
+  const synthAll = useSynthesisStore((st) => st.items);
+  const hyp = useMemo(() => {
+    const ids = new Set(records.map((r) => r.id));
+    return synthAll.filter((i) => i.status === "accepted" && i.recordIds.every((id) => ids.has(id)));
+  }, [synthAll, records]);
+  const hypLine = (i: (typeof hyp)[number]) => {
+    const kind = i.kind === "link" ? `Connection (${i.type ?? "link"})` : i.kind === "gap" ? "Evidence gap" : i.kind === "pathway" ? "Pathway" : "Lesson";
+    const refs = i.recordIds.map((id) => records.find((r) => r.id === id)?.title ?? id).join(" → ");
+    return `${kind}: ${i.kind === "gap" || i.kind === "pathway" ? i.title + ". " : ""}${i.text} (based on: ${refs}; AI-proposed, accepted by a reviewer, not verified)`;
+  };
+  const hypText = hyp.length ? `AI-proposed hypotheses accepted by a reviewer (not findings, not verified)\n${hyp.map((i) => "- " + hypLine(i)).join("\n")}` : "";
+  const hypHtml = hyp.length ? `<h2>AI-proposed hypotheses accepted by a reviewer</h2><p class="meta">These are not findings and are not verified.</p><ul>${hyp.map((i) => `<li>${esc(hypLine(i))}</li>`).join("")}</ul>` : "";
   const sections = useMemo<PackSection[]>(() => buildSections(records, insights, sources, origin, overrides), [records, insights, sources, origin, overrides]);
   const charts = useMemo(() => evidenceCharts(records, insights, sources, from, to), [records, insights, sources, from, to]);
   const sourceCount = new Set([...records.map((r) => r.citation.versionId), ...insights.map((i) => i.sourceId)]).size;
@@ -266,11 +279,11 @@ export function ReportPack({
     const withImg = await withImages([...sumCharts, ...(tChart.chart ? [tChart.chart] : []), ...annexCharts]);
     const sc = withImg.slice(0, sumCharts.length);
     const tc = tChart.chart ? withImg[sumCharts.length] : null;
-    return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status });
+    return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status }).replace('<h2>Limitations</h2>', hypHtml + '<h2>Limitations</h2>');
   };
   const scopeLine = `${programName} · Evidence window ${from} to ${to}`;
   const fullText = () =>
-    [title, scopeLine, `Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
+    [title, scopeLine, `Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), hypText, refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
     <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
@@ -333,6 +346,13 @@ export function ReportPack({
           ) : <p className="pack-hint">{s.id === "finance" ? "No finance statement has been reviewed yet. Figures should come from the finance system." : "Nothing reviewed yet for this theme."}</p>}
         </div>
       ))}
+      {hyp.length > 0 && (
+        <div className="pack-section" data-testid="pack-ai-hypotheses">
+          <h3>AI-proposed hypotheses accepted by a reviewer <small>({hyp.length})</small></h3>
+          <p className="pack-hint">Not findings and not verified. Each is based on the approved findings named, and was accepted by a reviewer.</p>
+          <ul>{hyp.map((i) => <li key={i.id}>{hypLine(i)}</li>)}</ul>
+        </div>
+      )}
       {!empty && (
         <div className="pack-section pack-limits">
           <div className="pack-section-head">

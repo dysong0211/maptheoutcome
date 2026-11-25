@@ -326,27 +326,34 @@ export function ConnectedOutcomeTrail({
                 Approved findings grouped by theme (assigned by rule from finding type and wording; a reviewer can move an item in the report). {awaiting > 0 && `${awaiting} more await review and are not included.`}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 8, marginTop: 8 }}>
-                {themeSummary(records, themeOverrides).map((t) => (
+                {themeSummary(records, themeOverrides).map((t) => {
+                  const kindOf = t.id === "lessons" ? "lesson" : t.id === "challenges" ? "gap" : "";
+                  const ai = kindOf ? synth.filter((i) => i.programId === programId && i.kind === kindOf && i.status === "accepted") : [];
+                  return (
                   <button
                     key={t.id}
                     type="button"
                     className="memory-card"
                     style={{ textAlign: "left", padding: 10, borderRadius: 10, border: "1px solid #d8dee4", background: "#fff" }}
-                    disabled={!t.items.length}
-                    onClick={() => t.items[0] && recenter(t.items[0].id)}
+                    disabled={!t.items.length && !ai.length}
+                    onClick={() => (t.items[0] ? recenter(t.items[0].id) : chooseFacet(t.id))}
                     data-theme-card={t.id}
                   >
-                    <strong>{t.title} · {t.items.length}</strong>
+                    <strong>{t.title} · {t.items.length}{ai.length ? ` + ${ai.length} AI hypothesis${ai.length === 1 ? "" : "es"}` : ""}</strong>
                     <small style={{ display: "block", color: "#64748b" }}>
                       {t.items.length
                         ? `${t.documents} document${t.documents === 1 ? "" : "s"}${t.latest ? ` · latest ${t.latest}` : ""}`
-                        : "No approved findings yet"}
+                        : ai.length ? "No approved findings. Reviewer-accepted AI hypotheses only, not verified." : "No approved findings yet"}
                     </small>
                     {t.items.slice(0, 2).map((r) => (
                       <span key={r.id} style={{ display: "block", fontSize: 12, marginTop: 4 }}>• {r.title}</span>
                     ))}
+                    {ai.slice(0, 1).map((i) => (
+                      <span key={i.id} style={{ display: "block", fontSize: 12, marginTop: 4, fontStyle: "italic" }}>• AI-proposed, reviewer accepted: {(i.kind === "gap" ? i.title : i.text).slice(0, 90)}</span>
+                    ))}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
             <LocationMap records={records} sources={sources} />
