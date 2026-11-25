@@ -137,8 +137,8 @@ export function AISynthesisPanel({
     ) : null;
   };
   return (
-    <section className="memory-card" aria-label="AI synthesis" data-testid="ai-synthesis" style={{ padding: "6px 0", margin: "6px 0" }}>
-      <button className="memory-action" title="One AI call. Suggestions only, never proof." disabled={busy || records.length < 2 || !ai.ready || role === "funder"} onClick={() => { if (window.confirm(`Send your ${records.length} approved findings (statements and quotes only) to AI in one call? It only suggests links. You decide what to keep.`)) run(); }}>
+    <section className="memory-card" aria-label="AI synthesis" data-testid="ai-synthesis" style={{ padding: 0, margin: "0 0 8px", border: 0, background: "transparent", boxShadow: "none" }}>
+      <button className="memory-action memory-secondary" style={{ width: "auto", minHeight: 30, padding: "3px 10px", fontSize: 13 }} title="One AI call. Suggestions only, never proof." disabled={busy || records.length < 2 || !ai.ready || role === "funder"} onClick={() => { if (window.confirm(`Send your ${records.length} approved findings (statements and quotes only) to AI in one call? It only suggests links. You decide what to keep.`)) run(); }}>
         <Sparkles size={14} style={{ display: "inline" }} /> {busy ? "Finding connections…" : "Find connections (AI)"}
       </button>
       {!ai.ready && <small style={{ marginLeft: 8 }}>{ai.message}</small>}
