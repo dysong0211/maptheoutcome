@@ -69,7 +69,7 @@ assert.ok(v.summaryChart(lim).svg.includes("Reviewed statements by theme"));
 assert.equal(v.flowChart(v.buildSections([], [], sources, "x"), 0), null);
 const rep = v.reportHtml({ title: "R", programName: "P", from: "a", to: "b", stats: [], sections: lim, charts: [], caveat: "c", headline: hl, summaryCharts: [flow], tableChart: cmp, tableStatus: "not yet reviewed" });
 assert.ok(rep.includes("Chart from uploaded data") && rep.includes("Figure 2. Planned vs Reached by Programme") && rep.includes("Figure 1. How the summary was assembled"), "figures in export");
-assert.ok(rep.includes("<h2>Limitations</h2>") && rep.includes("<details class=\"refs\" open>") && rep.includes("References (2)") && rep.includes("<li value=\"2\">"), "limitations section and references toggle in export");
+assert.ok(rep.includes("<h2>Limitations</h2>") && rep.includes("<details class=\"refs\">") && rep.includes("References (2)") && rep.includes("<li value=\"2\">"), "limitations section and references toggle in export");
 assert.ok(rep.indexOf("<h2>Limitations</h2>") > rep.indexOf("Lessons") && rep.indexOf("References (2)") > rep.indexOf("<h2>Limitations</h2>"));
 const hyp = v.buildSections([], [{ ...insights[0], implication: "Maybe transport" }], sources, "https://x");
 assert.ok(hyp[1].bullets[0].hypothesis === "Maybe transport" && v.sectionText(hyp[1]).includes("Idea to test (not a finding): Maybe transport"));

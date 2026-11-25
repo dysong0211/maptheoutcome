@@ -113,7 +113,7 @@ const cite = (it: PackItem) => `[${it.ref ?? ""}]`;
 /** One numbered reference: where the statement comes from. */
 export const refText = (it: PackItem) => `[${it.ref}] ${it.source}${shortDate(it.meta) ? `, ${shortDate(it.meta)}` : ""}. ${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}.${it.quote ? ` Source passage: \u201c${it.quote}\u201d.` : ""} ${it.link}`;
 export const refHtml = (it: PackItem) => `<li value="${it.ref}">${esc(it.source)}${shortDate(it.meta) ? `, ${esc(shortDate(it.meta))}` : ""}. ${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""}.${it.quote ? ` <i>Source passage: \u201c${esc(it.quote)}\u201d.</i>` : ""} <a href="${esc(it.link)}">${esc(it.link)}</a></li>`;
-export const refsHtml = (items: PackItem[]) => (items.length ? `<details class="refs" open><summary><b>References (${items.length})</b></summary><ol>${items.map(refHtml).join("")}</ol></details>` : "");
+export const refsHtml = (items: PackItem[]) => (items.length ? `<details class="refs"><summary><b>References (${items.length})</b></summary><ol>${items.map(refHtml).join("")}</ol></details>` : "");
 export const refsText = (items: PackItem[]) => (items.length ? `References\n${items.map(refText).join("\n")}` : "");
 
 /** Limitations, grouped so a repeated limit appears once with every reference number it applies to. */
