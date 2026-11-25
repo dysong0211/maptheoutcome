@@ -79,7 +79,7 @@ export interface EvidenceProposal extends Finding {
   draftStatement?: string;
   status: ProposalStatus;
   generation?: {
-    provider: "OpenAI";
+    provider: string;
     model: string;
     runId: string;
     generatedAt: string;
