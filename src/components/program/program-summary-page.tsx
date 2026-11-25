@@ -14,6 +14,7 @@ import { resolveCitation } from "@/lib/program-memory";
 import { ProgramCommitments } from "./program-commitments";
 import { StudySites } from "./study-sites";
 import { ScopedProgramTool } from "./scoped-program-tool";
+import { ProjectFilter, useProjectScope } from "./project-scope";
 import {
   programSections,
   programSectionHref,
@@ -147,11 +148,12 @@ function ProgramSummaryContent() {
     p = workspace.program,
     allSources = useMemoryStore((s) => s.sources),
     allRecords = useMemoryStore((s) => s.records),
-    [selected, setSelected] = useState("");
+    [selected, setSelected] = useState(""),
+    scope = useProjectScope(p?.id);
   const sources = allSources.filter(
     (s) => (s.programId || "cambodia-demo") === (p?.id || "cambodia-demo"),
   );
-  const records = overviewRecords(allRecords, sources),
+  const records = scope.filterRecords(overviewRecords(allRecords, sources)),
     evidence = allEvidence(workspace, sources).filter(
       (s) => !s.id.startsWith("configured-inputs:"),
     );
@@ -162,8 +164,10 @@ function ProgramSummaryContent() {
   const source = record
     ? resolveCitation(record.citation, sources).source
     : evidence.find((s) => s.id === selected) || evidence[0];
+  const places = [...new Set(records.map((r) => (r.location ?? "").trim()).filter((l) => l && !/^(see source document|location not specified.*|not specified|unknown|n\/a)$/i.test(l)))].slice(0, 12);
   return (
     <>
+      <ProjectFilter programId={p?.id} shown={records.length} />
       <div className="portfolio-grid">
         <div className="portfolio-main">
           <div className="portfolio-stats">
@@ -244,7 +248,18 @@ function ProgramSummaryContent() {
                   <MapPin size={32} />
                   <strong>{p.country || "Location not set"}</strong>
                   <p>{p.theme}</p>
-                  <small>No verified site coordinates supplied.</small>
+                  {places.length ? (
+                    <>
+                      <small>Places named on reviewed findings (no map pins: coordinates are not verified):</small>
+                      <ul className="flex flex-wrap gap-1 text-xs">
+                        {places.map((pl) => (
+                          <li key={pl} className="rounded-full bg-slate-100 px-2 py-0.5">{pl}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <small>No verified site coordinates supplied.</small>
+                  )}
                 </div>
               )}
               <div className="portfolio-location-foot">
