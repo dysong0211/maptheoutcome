@@ -7,6 +7,13 @@ import { useMemoryStore } from "@/stores/program-memory-store";
 import type { SourceVersion } from "./program-memory";
 import type { ConnectRequest, ConnectResult } from "./ai-connect-contract";
 
+/** A timed-out request may still have reached the AI service, so say so and do not suggest an instant retry. */
+function timeoutError(e: unknown): never {
+  if (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError"))
+    throw new Error("No answer after about 2.5 minutes. The request may still have reached the AI service and may have used some free quota. Your file is saved. Wait a few minutes, then try again once.");
+  throw e;
+}
+
 export function aiProviderName(provider?: string) {
   return provider === "gemini" ? "Google Gemini" : "OpenAI";
 }
@@ -65,7 +72,7 @@ export async function requestAI(
     body,
     headers: file ? undefined : { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(160_000),
-  });
+  }).catch(timeoutError);
   const data = await response.json();
   if (!response.ok)
     throw new Error(data.error || "AI request failed. Please retry.");
@@ -121,7 +128,7 @@ export async function requestConnections(request: ConnectRequest): Promise<Conne
     body: JSON.stringify(request),
     headers: { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(160_000),
-  });
+  }).catch(timeoutError);
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "AI request failed. Please retry.");
   return data as ConnectResult;
