@@ -9,7 +9,6 @@ import { Sparkles } from "lucide-react";
 import { EvidenceAsk } from "./evidence-lens";
 import { ConnectedOutcomeTrail } from "./connected-outcome-trail";
 import { EvidenceFocus } from "./evidence-focus";
-import { SavedFindings } from "./saved-findings";
 import { useProgramEvidence } from "./use-program-evidence";
 import { ProjectFilter, RecordProjectOverride, useProjectScope } from "./project-scope";
 import { resolveCitation } from "@/lib/program-memory";
@@ -116,7 +115,6 @@ export function InsightsWorkspace({
       <section className="summary-connections" id="explore-connections">
         <ConnectedOutcomeTrail initialFocus={view} />
       </section>
-      <SavedFindings />
       <EvidenceFocus />
       <section
         className="insights-ai-composer"
