@@ -142,7 +142,7 @@ export function InputReviewControl({ id }: { id: string }) {
       ) : (
         <p className="mt-2 text-xs text-slate-500">
           {hasSource
-            ? "An M&E Reviewer must assess this input."
+            ? "An Assurance reviewer must assess this input (switch the role in the top bar)."
             : "Upload and link a source before review."}
         </p>
       )}

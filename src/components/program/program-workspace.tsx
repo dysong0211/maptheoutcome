@@ -1436,7 +1436,7 @@ export function ReviewForm({ proposal }: { proposal: EvidenceProposal }) {
       ) : (
         <p className="mt-5 text-xs leading-6 text-slate-500">
           {role !== "reviewer" && !pilotSingleOperator
-            ? "Switch to M&E Reviewer to make a decision. Funder and Program views cannot approve findings."
+            ? "Switch the role (top bar) to Assurance reviewer to make a decision. Funder and Program views cannot approve findings."
             : "This review is complete. The original proposal remains preserved."}
         </p>
       )}
@@ -1764,7 +1764,7 @@ export function ReportsView({ embedded = false }: { embedded?: boolean } = {}) {
           </button>
           {!canDraft && (
             <p className="mt-3 text-xs text-slate-500">
-              Funder view is read-only. Program Managers and M&E Reviewers can
+              Funder view is read-only. Program Managers and Assurance reviewers can
               build a draft.
             </p>
           )}

@@ -38,7 +38,7 @@ function InsightCard({ item, title }: { item: Reflection; title: string }) {
             </div>
           </div>
         ) : (
-          <p className="mt-3 text-xs text-slate-500">Switch to M&E Reviewer to approve or reject this insight.</p>
+          <p className="mt-3 text-xs text-slate-500">Switch the role (top bar) to Assurance reviewer to approve or reject this insight.</p>
         )
       ) : (
         <p className="mt-3 text-xs text-slate-500">{item.reviewedBy} · {(item.reviewedAt ?? "").slice(0, 10)} · {item.reviewNote}</p>
