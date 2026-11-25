@@ -34,7 +34,7 @@ export function MobileProgramHome() {
   function save(skip:boolean) {
     if(!source)return;
     const ok=saveReviews([source.id],skip?"repository-only":"saved");
-    setMessage(ok?skip?"Document saved. It has not been reviewed.":"Review saved. A reviewer must approve findings before they update the summary.":"Review each suggestion first, or choose Save document only.");
+    setMessage(ok?skip?"Document saved. It has not been reviewed.":"Review saved. Kept findings are approved and now appear in Summary and Insights.":"Review each suggestion first, or choose Save document only.");
     if(ok){setSelected("");setStep("summary");setUploadOpen(false);}
   }
   return <div className="mobile-program-home">
