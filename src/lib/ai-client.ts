@@ -15,14 +15,16 @@ function timeoutError(e: unknown): never {
 }
 
 export function aiProviderName(provider?: string) {
-  return provider === "gemini" ? "Google Gemini" : "OpenAI";
+  if (provider === "gemini") return "Google Gemini";
+  if (provider === "openai") return "OpenAI";
+  return "the AI provider";
 }
 
 export function useAIStatus() {
   const [status, setStatus] = useState({
     ready: false,
     model: "",
-    provider: "openai",
+    provider: "",
     message: "Checking AI connection…",
   });
   useEffect(() => {
@@ -30,7 +32,7 @@ export function useAIStatus() {
       setStatus({
         ready: false,
         model: "",
-        provider: "openai",
+        provider: "",
         message: "Live AI requires the server app; this is the static demo.",
       });
       return;
@@ -40,14 +42,14 @@ export function useAIStatus() {
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "AI unavailable");
-        setStatus(data);
+        setStatus(data.ready ? data : { ...data, provider: "" });
       })
       .catch((error) => {
         if (!controller.signal.aborted)
           setStatus({
             ready: false,
             model: "",
-            provider: "openai",
+            provider: "",
             message: error instanceof Error ? error.message : "AI unavailable",
           });
       });
