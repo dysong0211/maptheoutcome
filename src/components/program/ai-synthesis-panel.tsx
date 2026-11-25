@@ -7,6 +7,7 @@ import { useSynthesisStore, type SynthItem } from "@/stores/outcome-synthesis-st
 import { useDemoStore, pilotSingleOperator } from "@/stores/demo-store";
 import { themeOf } from "@/lib/outcome-links";
 import type { ProgramRecord } from "@/lib/program-memory";
+import { unsupportedFigures } from "@/lib/synth-support";
 
 const LINK_TYPE: Record<string, string> = {
   explains: "may explain",
@@ -108,6 +109,14 @@ export function AISynthesisPanel({
       )}
       {i.kind === "gap" && <small style={{ display: "block", color: "#64748b" }}>Evidence that would settle it: {i.note}</small>}
       {i.kind === "lesson" && <small style={{ display: "block", color: "#64748b" }}>Not shown by the findings: {i.note}</small>}
+      {(() => {
+        const bad = unsupportedFigures(`${i.title} ${i.text} ${i.note ?? ""}`, i.recordIds.map((id) => records.find((x) => x.id === id)).filter((x): x is ProgramRecord => !!x));
+        return bad.length ? (
+          <small data-unsupported style={{ display: "block", color: "#b45309", fontWeight: 600 }}>
+            Check needed: {bad.join(", ")} {bad.length === 1 ? "was" : "were"} not found by text match in the cited findings or their source passages. It may be worded differently. Treat as unverified until checked.
+          </small>
+        ) : null;
+      })()}
       {chips(i)}
       {i.status === "proposed" && (
         <span style={{ display: "flex", gap: 8, marginTop: 6 }}>
