@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MessageSquare, Sparkles } from "lucide-react";
 import { useProgramEvidence } from "./use-program-evidence";
 import { useDemoStore } from "@/stores/demo-store";
-import { useReflectionStore } from "@/stores/reflection-store";
+import { useReflectionStore, insightStatus } from "@/stores/reflection-store";
 
 export function OfficerInsights({
   sourceId,
@@ -22,7 +22,7 @@ export function OfficerInsights({
   const role = useDemoStore((state) => state.role);
   const [selectedSource, setSource] = useState(sourceId ?? "");
   const [prompt, setPrompt] = useState(
-    "What stood out that a headcount or indicator would miss?",
+    "What went well or exceeded expectations, and what made it possible?",
   );
   const [notice, setNotice] = useState("");
   const actualSource = sourceId ?? selectedSource;
@@ -32,22 +32,24 @@ export function OfficerInsights({
       (!sourceId || item.sourceId === sourceId),
   );
   const prompts = [
-    "What did participants express or seem to feel?",
-    "What change in confidence, understanding or behavior did you notice?",
-    "What might help or prevent this learning being used later?",
-    "What unexpected detail should a future officer know?",
+    "What went well or exceeded expectations, and what made it possible?",
+    "What was harder than expected, and what conditions shaped it?",
+    "What changed for the community, including effects the figures may not show?",
+    "What continued after the programme ended, and what helped it last?",
+    "What should a future programme keep, change or avoid?",
   ];
   return (
     <section className="memory-card my-4 overflow-hidden">
       <div className="border-b p-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <MessageSquare className="size-4 text-[#477c69]" /> Officer insights &
-          qualitative evidence
+          <MessageSquare className="size-4 text-[#477c69]" /> Team insights:
+          wins, limits and lessons
         </h2>
         <p className="mt-1 text-xs text-slate-500">
-          Capture what mattered at the time: sentiment, perceived change,
-          barriers and lessons. Keep interpretation separate from measured
-          impact.
+          Capture what worked and why, what limited delivery, what changed
+          for communities and what future programmes should learn. Keep
+          interpretation separate from measured impact. A reviewer approves
+          each insight before it can appear in a report.
         </p>
       </div>
       {!readOnly && (
@@ -95,7 +97,7 @@ export function OfficerInsights({
               if (saved) {
                 event.currentTarget.reset();
                 setNotice(
-                  "Insight captured with its source, observation date and timestamp. It remains an officer interpretation for review.",
+                  "Insight captured with its source, observation date and timestamp. It is waiting in the Review inbox. It reaches reports only after a reviewer approves it.",
                 );
               } else
                 setNotice(
@@ -147,12 +149,12 @@ export function OfficerInsights({
                 Insight type
                 <select name="theme" className="memory-input mt-1">
                   {[
-                    "Sentiment",
-                    "Perceived change",
-                    "Barrier",
-                    "Unexpected finding",
-                    "Future implication",
-                    "Lesson",
+                    "What worked (a win)",
+                    "Limitation or challenge",
+                    "Change for the community",
+                    "Unexpected effect",
+                    "What lasted",
+                    "Lesson for future programmes",
                   ].map((theme) => (
                     <option key={theme}>{theme}</option>
                   ))}
@@ -166,7 +168,7 @@ export function OfficerInsights({
                 required
                 rows={3}
                 maxLength={3000}
-                placeholder="Describe what you noticed, who expressed it, and the context. Record exact words only when you have them."
+                placeholder="Describe what happened, who said or saw it, and the context. Record exact words only when you have them."
                 className="memory-input mt-1"
               />
             </label>
@@ -192,7 +194,8 @@ export function OfficerInsights({
             </p>
           </form>
           <p className="mt-2 text-[10px] text-slate-500">
-            Your observation is saved as an unreviewed team interpretation.
+            Your observation is saved as an unreviewed team interpretation and
+            sent to the Review inbox. <Link className="underline" href="/review">Open Review inbox</Link>
           </p>
         </div>
       )}
@@ -204,7 +207,12 @@ export function OfficerInsights({
           visible.map((item) => (
             <article key={item.id} className="mt-3 rounded-lg border p-3">
               <p className="text-[10px] font-semibold text-[#477c69]">
-                {item.theme} · Officer interpretation · Unreviewed
+                {item.theme} · Team interpretation ·{" "}
+                {insightStatus(item) === "approved"
+                  ? "Approved by reviewer"
+                  : insightStatus(item) === "rejected"
+                    ? "Not approved"
+                    : "Waiting for review"}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-xs leading-5">
                 {item.observation}
