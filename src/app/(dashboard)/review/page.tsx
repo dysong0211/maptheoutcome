@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMemoryStore } from "@/stores/program-memory-store";
+import { useSynthesisStore } from "@/stores/outcome-synthesis-store";
 import { resolveCitation, type EvidenceProposal } from "@/lib/program-memory";
 import { KindBadge } from "@/components/program/program-workspace";
 import { InsightReviewPanel } from "@/components/program/insight-review";
@@ -90,7 +91,7 @@ function ApprovedEdit() {
                 <textarea className="memory-input" aria-label="Edit wording" rows={3} value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", marginTop: 4 }} />
                 <blockquote style={{ margin: "4px 0", paddingLeft: 8, borderLeft: "3px solid #76ad98", fontSize: 12.5, color: "#475569" }}>“{r.citation.quote}”</blockquote>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button className="memory-action" onClick={() => { const ok = edit(r.id, text); setMsg(ok ? "Saved." : "Nothing changed."); if (ok) setOpen(null); }}>Save</button>
+                  <button className="memory-action" onClick={() => { const ok = edit(r.id, text); if (ok) useSynthesisStore.getState().staleForRecord(r.id); setMsg(ok ? "Saved. Any AI suggestion that used this finding needs checking again." : "Nothing changed."); if (ok) setOpen(null); }}>Save</button>
                   <button className="memory-action" onClick={() => setOpen(null)}>Cancel</button>
                 </div>
               </>
