@@ -50,7 +50,7 @@ const themes: Record<string, string> = {
   Result: "Delivery",
   Decision: "Program decision",
   Change: "Program change",
-  Risk: "Service risk",
+  Risk: "Risk or delay",
   Question: "Evidence gap",
   Lesson: "Learning",
 };
@@ -271,6 +271,8 @@ export function ConnectedOutcomeTrail({
             <button
               key={f.id}
               aria-pressed={facet === f.id}
+              disabled={f.n === 0 && f.id !== "all"}
+              title={f.n === 0 && f.id !== "all" ? "Nothing approved under this topic yet" : undefined}
               onClick={() => chooseFacet(f.id)}
               data-facet={f.id}
             >
@@ -283,11 +285,11 @@ export function ConnectedOutcomeTrail({
         {facet !== "all" && facet !== "why" && facet !== "gaps" && (
           <div className="facet-findings" data-testid="facet-findings" style={{ margin: "8px 0" }}>
             <p className="text-xs text-slate-600">
-              Approved findings under this theme. The theme is assigned by rule from the finding type and wording and a reviewer can change it in the report.
+              {({ updates: "What is new in the programme.", progress: "What was delivered against plans.", finance: "Money: funding, budget and spending as reported in documents.", challenges: "Problems, delays and risks reported.", lessons: "What worked or should change." } as Record<string, string>)[facet] ?? ""} These are approved findings. Click one to see its source document. Topics are matched from each finding's type and wording, and a reviewer can move an item in the report.
             </p>
             {records.filter((r) => themeOf(r, themeOverrides) === facet).map((r) => (
               <div key={r.id}>
-                {node(r, `${r.eventDateBasis === "document-date" ? "Event date not confirmed" : r.eventDate} · ${sources.find((x) => x.id === r.citation.versionId)?.title ?? "source"}`)}
+                {node(r, `${r.eventDateBasis === "document-date" ? "Event date not confirmed" : r.eventDate} · From: ${sources.find((x) => x.id === r.citation.versionId)?.title ?? "source"}`)}
               </div>
             ))}
             {facet === "lessons" && synth.filter((i) => i.programId === programId && i.kind === "lesson" && i.status === "accepted").map((i) => (
@@ -349,7 +351,7 @@ export function ConnectedOutcomeTrail({
                       <span key={r.id} style={{ display: "block", fontSize: 12, marginTop: 4 }}>• {r.title}</span>
                     ))}
                     {ai.slice(0, 1).map((i) => (
-                      <span key={i.id} style={{ display: "block", fontSize: 12, marginTop: 4, fontStyle: "italic" }}>• AI-proposed, reviewer accepted: {(i.kind === "gap" ? i.title : i.text).slice(0, 90)}</span>
+                      <span key={i.id} style={{ display: "block", fontSize: 12, marginTop: 4, fontStyle: "italic" }}>• AI-proposed, reviewer accepted: {(i.kind === "gap" ? i.title : i.text)}</span>
                     ))}
                   </button>
                   );
