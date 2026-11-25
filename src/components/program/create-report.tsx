@@ -22,6 +22,7 @@ import { useProgramEvidence } from "./use-program-evidence";
 import { BeforeYouSend } from "./before-you-send";
 import { ReportPack } from "./report-pack";
 import { useTracking } from "@/stores/tracking-store";
+import { useMemoryStore } from "@/stores/program-memory-store";
 import { useReflectionStore } from "@/stores/reflection-store";
 
 const OutputsWorkspace = dynamic(() =>
@@ -102,6 +103,9 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     records.filter((r) => { const d = recordDate(r.eventDate); return d && r.eventDateBasis !== "document-date" && (d < from || d > to); }).length +
     approved.filter((i) => i.observedOn < from || i.observedOn > to).length;
   const undatedRecords = undatedReportRecords(records, sources);
+  const [includeUndated, setIncludeUndated] = useState(false);
+  const [dateDrafts, setDateDrafts] = useState<Record<string, string>>({});
+  const [packUndated, setPackUndated] = useState(false);
   const evidenceKey = reportEvidenceKey(records, sources, reflections);
   const evidenceChanged =
     !!draftContext && draftContext.evidenceKey !== evidenceKey;
@@ -109,7 +113,8 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     !!draftContext &&
     (draftContext.from !== from ||
       draftContext.to !== to ||
-      draftContext.title !== `${reportKind}:${prompt}`);
+      draftContext.title !== `${reportKind}:${prompt}` ||
+      packUndated !== includeUndated);
   function generate() {
     try {
       const result = createPeriodReport({
@@ -125,6 +130,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
       });
       setError("");
       setDraft(result.text);
+      setPackUndated(includeUndated);
       setDraftContext({ ...result, evidenceKey, title: `${reportKind}:${prompt}`, programId });
     } catch (error) {
       setError(
@@ -275,7 +281,34 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           )}
           {undatedRecords.length > 0 && (
             <p role="status" className="report-draft-scope">
-              {undatedRecords.length} approved {undatedRecords.length === 1 ? "finding has" : "findings have"} no confirmed event date, so {undatedRecords.length === 1 ? "it is" : "they are"} not in this draft. They still appear in Insights and Program. To include {undatedRecords.length === 1 ? "it" : "them"}, set the event date when approving in the review inbox.
+              {undatedRecords.length} approved {undatedRecords.length === 1 ? "finding has" : "findings have"} no confirmed event date, so {undatedRecords.length === 1 ? "it is" : "they are"} not in this draft. They still appear in Insights and Program. To count {undatedRecords.length === 1 ? "it" : "them"} in a period, enter the date the source states (no re-analysis needed).
+              <ul style={{ margin: "8px 0", paddingLeft: 0, listStyle: "none" }}>
+                {undatedRecords.map((r) => (
+                  <li key={r.id} style={{ marginBottom: 6 }}>
+                    <strong>{r.title}</strong>{" "}
+                    <input
+                      type="date"
+                      aria-label={`Event date for ${r.title}`}
+                      value={dateDrafts[r.id] ?? ""}
+                      onChange={(e) => setDateDrafts((d) => ({ ...d, [r.id]: e.target.value }))}
+                    />{" "}
+                    <button
+                      className="memory-action memory-secondary"
+                      disabled={!dateDrafts[r.id]}
+                      onClick={() => {
+                        const ok = useMemoryStore.getState().confirmRecordEventDate(r.id, dateDrafts[r.id] ?? "");
+                        if (!ok) setError("Could not set the date. Check it and your role.");
+                      }}
+                    >
+                      Confirm event date
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <label style={{ display: "block", marginTop: 6 }}>
+                <input type="checkbox" checked={includeUndated} onChange={(e) => setIncludeUndated(e.target.checked)} />{" "}
+                Also show {undatedRecords.length === 1 ? "it" : "them"} in the report pack as "event date not confirmed" (never counted as inside the period)
+              </label>
             </p>
           )}
           <small>
@@ -309,7 +342,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           programName={(program?.name ?? "Maternal Health Program (demo)") + (programIdLine(program) ? ` (${programIdLine(program)})` : "")}
           from={draftContext.from}
           to={draftContext.to}
-          records={reportRecords(records, sources, draftContext.from, draftContext.to)}
+          records={[...reportRecords(records, sources, draftContext.from, draftContext.to), ...(packUndated ? undatedRecords : [])]}
           insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)}
           sources={sources}
           disabled={evidenceChanged}
