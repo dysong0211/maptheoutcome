@@ -68,7 +68,7 @@ assert.ok(flow.svg.includes("Progress: 2") && flow.svg.includes("Finance: 0") &&
 assert.ok(v.summaryChart(lim).svg.includes("Reviewed statements by theme"));
 assert.equal(v.flowChart(v.buildSections([], [], sources, "x"), 0), null);
 const rep = v.reportHtml({ title: "R", programName: "P", from: "a", to: "b", stats: [], sections: lim, charts: [], caveat: "c", headline: hl, summaryCharts: [flow], tableChart: cmp, tableStatus: "not yet reviewed" });
-assert.ok(rep.includes("Chart from uploaded data") && rep.includes("Figure 2. Planned vs Reached by Programme") && rep.includes("Figure 1. How the summary was assembled"), "figures in export");
+assert.ok(rep.includes("Chart from uploaded data") && rep.includes("Figure 2. Planned vs Reached by Programme") && rep.includes("Figure 1. Evidence base: how the summary was assembled"), "figures in export");
 assert.ok(rep.includes("<h2>Limitations</h2>") && rep.includes("<details class=\"refs\">") && rep.includes("References (2)") && rep.includes("<li value=\"2\">"), "limitations section and references toggle in export");
 assert.ok(rep.indexOf("<h2>Limitations</h2>") > rep.indexOf("Lessons") && rep.indexOf("References (2)") > rep.indexOf("<h2>Limitations</h2>"));
 const hyp = v.buildSections([], [{ ...insights[0], implication: "Maybe transport" }], sources, "https://x");
@@ -81,4 +81,17 @@ const tagged = [{ ...records[0], outputCode: "1.1", partner: "Hub A" }, { ...rec
 const ids2 = v.evidenceCharts(tagged, [], sources, "a", "b").map((c) => c.id);
 assert.ok(ids2.includes("by-output") && ids2.includes("by-partner"));
 assert.equal(v.headline(v.buildSections([], [], sources, "x"), "a", "b", 0).sentence, "");
+
+// finance figures only when one passage states both, same currency
+assert.deepEqual(v.financeFigures("Expenditure to date was USD 41,200 against a budget of USD 50,000."), { budget: 50000, actual: 41200, cur: "USD" });
+assert.equal(v.financeFigures("The budget of USD 50,000 was approved."), null);
+assert.equal(v.financeFigures("Spent EUR 10 against a budget of USD 50"), null);
+// reviewer override moves an item and marks it
+const ov = v.buildSections(records, insights, sources, "https://x", { a: "finance" });
+assert.equal(ov[2].items.length, 1);
+assert.equal(ov[2].items[0].moved, true);
+// chronology uses only stated dates and has no arrows
+const chron = v.chronologyChart(sections);
+assert.ok(chron && !/marker|arrow/i.test(chron.svg) && /Order shows when/.test(chron.caption));
+assert.ok(!v.flowChart(sections, 1).title.startsWith("Documented"));
 console.log("report visuals + themes ok");
