@@ -183,7 +183,7 @@ export function InsightsWorkspace({
               </ul>
             ) : (
               <p style={{ fontSize: 14 }}>
-                No reviewed {tab === "outcomes" ? "delivery results" : "risks"} yet. <Link href="/sources">Add a document →</Link>
+                No reviewed {tab === "outcomes" ? "delivery results" : "risks"} yet. {sources.length ? <Link href="/sources">Open documents →</Link> : <Link href="/sources">Add a document →</Link>}
               </p>
             );
           })()}
@@ -362,7 +362,7 @@ export function InsightsWorkspace({
             {!selected.length && (
               <p>
                 No reviewed records match this view.{" "}
-                <Link href="/sources">Add a document →</Link>
+                {sources.length ? <Link href="/sources">Open documents →</Link> : <Link href="/sources">Add a document →</Link>}
               </p>
             )}
           </div>
