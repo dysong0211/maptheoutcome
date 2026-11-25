@@ -1,3 +1,5 @@
+import { connectRequestSchema } from "@/lib/ai-connect-contract";
+import { generateConnections } from "@/lib/ai-connect-server";
 import { aiRequestSchema } from "@/lib/ai-contract";
 import {
   AIError,
@@ -111,6 +113,14 @@ export async function POST(request: Request) {
         if (error) throw new AIError(400, error);
       }
     } else raw = await body.json();
+    if ((raw as { mode?: string } | null)?.mode === "connect") {
+      const connect = connectRequestSchema.safeParse(raw);
+      if (!connect.success || file)
+        throw new AIError(400, "Select 2 to 30 approved findings to connect.");
+      return Response.json(await generateConnections(connect.data, request.signal), {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
     const parsed = aiRequestSchema.safeParse(raw);
     if (!parsed.success)
       throw new AIError(
