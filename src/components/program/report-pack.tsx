@@ -9,6 +9,9 @@ import {
   compareChart,
   evidenceCharts,
   flowChart,
+  financeCharts,
+  chronologyChart,
+  THEMES,
   headline,
   limitationsHtml,
   limitationsOf,
@@ -118,7 +121,7 @@ function ChartCard({ chart, disabled, note }: { chart: Chart; disabled?: boolean
   );
 }
 
-function RefCard({ item, disabled, note }: { item: PackItem; disabled?: boolean; note: (m: string) => void }) {
+function RefCard({ item, disabled, note, onTheme, current }: { item: PackItem; disabled?: boolean; note: (m: string) => void; onTheme?: (id: string, theme: string) => void; current?: string }) {
   return (
     <li value={item.ref} className="pack-ref">
       <b>{item.title}</b>: {item.text}
@@ -127,6 +130,13 @@ function RefCard({ item, disabled, note }: { item: PackItem; disabled?: boolean;
       <button disabled={disabled} className="pack-copy" onClick={async () => note((await copyRich(itemHtml(item), itemText(item))) ? `Copied reference [${item.ref}] with its source passage.` : "Copy was blocked by this browser.")}>
         Copy this
       </button>
+      {item.id && onTheme && (
+        <label className="pack-meta"> Theme{item.moved ? " (moved by reviewer)" : ""}:{" "}
+          <select disabled={disabled} value={current} onChange={(e) => onTheme(item.id!, e.target.value)}>
+            {THEMES.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+          </select>
+        </label>
+      )}
     </li>
   );
 }
@@ -227,7 +237,16 @@ export function ReportPack({
   const [msg, setMsg] = useState("");
   const [tChart, setTChart] = useState<{ chart: Chart | null; status: string }>({ chart: null, status: "" });
   const origin = typeof location === "undefined" ? "" : location.origin;
-  const sections = useMemo<PackSection[]>(() => buildSections(records, insights, sources, origin), [records, insights, sources, origin]);
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try { setOverrides(JSON.parse(localStorage.getItem("maptoc-theme-overrides") || "{}")); } catch { /* ignore */ }
+  }, []);
+  const setTheme = (id: string, theme: string) => setOverrides((p) => {
+    const n = { ...p, [id]: theme };
+    try { localStorage.setItem("maptoc-theme-overrides", JSON.stringify(n)); } catch { /* ignore */ }
+    return n;
+  });
+  const sections = useMemo<PackSection[]>(() => buildSections(records, insights, sources, origin, overrides), [records, insights, sources, origin, overrides]);
   const charts = useMemo(() => evidenceCharts(records, insights, sources, from, to), [records, insights, sources, from, to]);
   const sourceCount = new Set([...records.map((r) => r.citation.versionId), ...insights.map((i) => i.sourceId)]).size;
   const stats = [
@@ -237,10 +256,11 @@ export function ReportPack({
   ];
   const caveat = "Findings and insights were approved by a reviewer and are not independently verified. Charts count evidence items or plot uploaded tables as given. They are not measured results. Check consent and disclosure before sharing.";
   const head = headline(sections, from, to, sourceCount, { findings: records.length, insights: insights.length });
-  const sumCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections)].filter((c): c is Chart => !!c), [sections, sourceCount]);
+  const sumCharts = useMemo(() => [...financeCharts(sections), chronologyChart(sections)].filter((c): c is Chart => !!c), [sections]);
+  const annexCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections), ...charts].filter((c): c is Chart => !!c), [sections, sourceCount, charts]);
   const allItems = sections.flatMap((x) => x.items);
   const fullHtml = async () => {
-    const withImg = await withImages([...sumCharts, ...(tChart.chart ? [tChart.chart] : []), ...charts]);
+    const withImg = await withImages([...sumCharts, ...(tChart.chart ? [tChart.chart] : []), ...annexCharts]);
     const sc = withImg.slice(0, sumCharts.length);
     const tc = tChart.chart ? withImg[sumCharts.length] : null;
     return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status });
@@ -278,7 +298,7 @@ export function ReportPack({
             </tbody>
           </table>
           {head.more > 0 && <p className="pack-hint">{head.more} more reviewed {head.more === 1 ? "statement" : "statements"} under the themes below.</p>}
-          <p className="pack-hint">{head.note}</p>
+          <p className="pack-hint"><b>Provisional theme mapping.</b> {head.note} Use the Theme menu in References to move an item.</p>
           <div className="pack-grid">{sumCharts.map((c) => <ChartCard key={c.id} chart={c} disabled={disabled} note={setMsg} />)}</div>
           <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<h3>Summary</h3>${head.html}`, `Summary\n${head.sentence}`)) ? "Copied the summary table. Paste it into your report." : "Copy was blocked by this browser.")}>Copy summary table</button>
         </div>
@@ -330,17 +350,17 @@ export function ReportPack({
         <details className="pack-details pack-refs">
           <summary>References ({allItems.length})</summary>
           <p className="pack-hint">Numbered to match [n] above. Each shows its source, date and source passage.</p>
-          <ol>{allItems.map((it) => <RefCard key={it.ref} item={it} disabled={disabled} note={setMsg} />)}</ol>
+          <ol>{allItems.map((it) => <RefCard key={it.ref} item={it} disabled={disabled} note={setMsg} onTheme={setTheme} current={sections.find((x) => x.items.includes(it))?.id} />)}</ol>
         </details>
       )}
       <h3>Chart your data (uploaded tables)</h3>
       <TableCharts sources={sources} disabled={disabled} note={setMsg} onChart={(chart, status) => setTChart((p) => (p.chart?.svg === chart?.svg && p.status === status ? p : { chart, status }))} />
       {tChart.chart && <p className="pack-hint">This chart is included in Copy whole report and Download report.</p>}
-      {charts.length > 0 && (
+      {annexCharts.length > 0 && (
         <details className="pack-details pack-base">
-          <summary>Evidence base: charts of reviewed items ({charts.length})</summary>
+          <summary>Annex: evidence base, counts and provenance ({annexCharts.length})</summary>
           <p className="pack-hint">{head.base} These charts count items in MapToc. They do not measure results or impact, and are best kept for an annex or methods note.</p>
-          <div className="pack-grid">{charts.map((c) => <ChartCard key={c.id} chart={c} disabled={disabled} note={setMsg} />)}</div>
+          <div className="pack-grid">{annexCharts.map((c) => <ChartCard key={c.id} chart={c} disabled={disabled} note={setMsg} />)}</div>
         </details>
       )}
     </section>
