@@ -63,6 +63,8 @@ import type { SourceVersion } from "@/lib/program-memory";
 import { IntelligenceOverview } from "@/components/program/intelligence-overview";
 import { aiProviderName, analyzeSource, useAIStatus } from "@/lib/ai-client";
 import { useProgramEvidence } from "./use-program-evidence";
+import { InsightReviewPanel } from "./insight-review";
+import { parseDelimited } from "@/lib/csv-preview";
 import { citationMatchesSource } from "@/lib/program-evidence-view";
 
 const tones: Record<FindingKind, string> = {
@@ -629,6 +631,7 @@ type CaptureResult = {
   name: string;
   state: "working" | "saved" | "error";
   message: string;
+  sourceId?: string;
 };
 
 export function FileDropZone({
@@ -658,6 +661,11 @@ export function FileDropZone({
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [results, setResults] = useState<CaptureResult[]>([]);
+  const liveSources = useMemoryStore((state) => state.sources);
+  const liveMessage = (result: CaptureResult) => {
+    const disposition = result.sourceId ? liveSources.find((s) => s.id === result.sourceId)?.reviewDisposition : undefined;
+    return disposition === "repository-only" ? "Saved to repository without review" : disposition === "saved" ? "Review saved; reviewer approval is separate" : result.message;
+  };
   const [insightIds, setInsightIds] = useState<string[]>([]);
   const [insightsOpen, setInsightsOpen] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string>();
@@ -745,6 +753,7 @@ export function FileDropZone({
               ? {
                   ...item,
                   state: added ? "saved" : "error",
+                  sourceId: added ? id : undefined,
                   message: added
                     ? extraction.note + analysisMessage
                     : "Could not add source metadata",
@@ -886,7 +895,7 @@ export function FileDropZone({
                 )}
               >
                 <span className="font-semibold">{result.name}</span>
-                <span className="ml-auto text-slate-500">{result.message}</span>
+                <span className="ml-auto text-slate-500">{liveMessage(result)}</span>
               </li>
             ))}
           </ul>
@@ -1026,7 +1035,7 @@ export function FileDropZone({
               <span>
                 <strong>{result.name}</strong>
                 <span className="mt-1 block text-slate-500">
-                  {result.message}
+                  {liveMessage(result)}
                 </span>
               </span>
             </li>
@@ -1078,7 +1087,7 @@ export function SourceDetailView({ id }: { id: string }) {
               className="mt-8 border-t pt-6"
             >
               <h3 className="memory-label">{passage.locator}</h3>
-              <p className="mt-4 text-sm leading-8">{passage.text}</p>
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-8">{passage.text}</p>
             </section>
           ))}
         </article>
@@ -1096,9 +1105,13 @@ export function SourceDetailView({ id }: { id: string }) {
                 Storage: this browser only · {formatBytes(source.byteSize)}
                 <br />
                 Processing:{" "}
-                {source.processingNote ?? (source.processingStatus === "text-ready"
+                {source.reviewDisposition === "repository-only"
+                  ? "Saved to repository without review"
+                  : source.reviewDisposition === "saved"
+                    ? "Review saved; reviewer approval is separate"
+                    : (source.processingNote ?? (source.processingStatus === "text-ready"
                   ? "browser text available"
-                  : "preview only; extraction not run")}
+                  : "preview only; extraction not run"))}
               </>
             )}
           </p>
@@ -1133,10 +1146,11 @@ function CapturedFilePreview({ source }: { source: SourceVersion }) {
   const pdfPage = pageParam && /^\d{1,5}$/.test(pageParam) && Number(pageParam) > 0 ? Number(pageParam) : 1;
   const [url, setUrl] = useState("");
   const [missing, setMissing] = useState(false);
+  const [table, setTable] = useState<string[][] | null>(null);
   useEffect(() => {
     let objectUrl = "";
     let active = true;
-    setUrl("");setMissing(false);
+    setUrl("");setMissing(false);setTable(null);
     void getCapturedFile(source.id)
       .then((blob) => {
         if (!active) return;
@@ -1146,6 +1160,12 @@ function CapturedFilePreview({ source }: { source: SourceVersion }) {
         }
         objectUrl = URL.createObjectURL(blob);
         setUrl(objectUrl);
+        const lower = (source.originalFileName ?? "").toLowerCase();
+        if (lower.endsWith(".csv") || lower.endsWith(".tsv")) {
+          void blob.text().then((text) => {
+            if (active) setTable(parseDelimited(text, lower.endsWith(".tsv") ? "\t" : ","));
+          }).catch(() => undefined);
+        }
       })
       .catch(() => {if(active)setMissing(true);});
     return () => {
@@ -1203,7 +1223,30 @@ function CapturedFilePreview({ source }: { source: SourceVersion }) {
           className="mt-4 h-[560px] w-full rounded-lg border bg-white"
         />
       )}
-      {!image && !pdf && (
+      {table && table.length > 0 && (
+        <div className="mt-4 max-h-[420px] overflow-auto rounded-lg border bg-white" data-testid="csv-preview">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead>
+              <tr>
+                {table[0].map((h, i) => (
+                  <th key={i} className="sticky top-0 border-b bg-[#eef5f2] px-3 py-2 font-semibold">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.slice(1).map((r, ri) => (
+                <tr key={ri} className="border-b last:border-0">
+                  {table[0].map((_, ci) => (
+                    <td key={ci} className="px-3 py-2 align-top">{r[ci] ?? ""}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="border-t px-3 py-2 text-[11px] text-slate-500">Table preview of the first {Math.min(table.length - 1, 199)} rows. The original file is unchanged.</p>
+        </div>
+      )}
+      {!image && !pdf && !table && (
         <p className="mt-4 rounded-lg border border-dashed bg-white p-5 text-xs leading-6 text-slate-500">
           Inline preview is unavailable for this file type. Download the
           original or review the extracted browser text below when available.
@@ -1444,14 +1487,15 @@ export function ReviewView() {
         description="Check suggested interpretations against their source before accepting them."
       />
       <SectionIntelligence section="review" selectedId={proposal?.id} />
+      <InsightReviewPanel />
       {!proposal ? (
         <section className="memory-card p-10 text-center">
           <ScanEmpty />
           <h2 className="mt-4 text-xl font-semibold">
-            No findings waiting for review
+            No document findings waiting for review
           </h2>
           <p className="my-4 text-sm text-slate-500">
-            Capture the sample outreach update as a Program Manager to begin.
+            Findings from analysed documents appear here. Team insights you capture appear above.
           </p>
           <Link href="/sources" className="memory-action">
             Open source library
@@ -1863,4 +1907,4 @@ export function TransparencyView() {
       <TransparencyLedger />
     </>
   );
-                          }
+      }
