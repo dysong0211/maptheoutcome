@@ -67,6 +67,8 @@ interface MemoryState {
     sourceChecked?: boolean,
     tags?: FindingTags,
   ) => boolean;
+  addRelation: (from: string, to: string, label: string) => boolean;
+  removeRelation: (from: string, to: string) => void;
   saveBrief: (recordIds: string[], note: string) => boolean;
   submitBrief: () => boolean;
   requestContext: (note: string) => boolean;
@@ -108,6 +110,16 @@ export const useMemoryStore = create<MemoryState>()(
   persist(
     (set, get) => ({
       ...seed(),
+      addRelation: (from, to, label) => {
+        const st = get();
+        const ok = from !== to && st.records.some((r) => r.id === from) && st.records.some((r) => r.id === to) && label.trim();
+        if (!ok) return false;
+        if (st.relations.some((r) => (r.from === from && r.to === to) || (r.from === to && r.to === from))) return false;
+        set({ relations: [...st.relations, { from, to, label: label.trim().slice(0, 60) }] });
+        return true;
+      },
+      removeRelation: (from, to) =>
+        set((st) => ({ relations: st.relations.filter((r) => !(r.from === from && r.to === to)) })),
       removeSource: (id) => {
         const state = get();
         const source = state.sources.find((s) => s.id === id);
