@@ -260,7 +260,7 @@ export function ConnectedOutcomeTrail({
           className="connection-focus-tabs"
           role="group"
           aria-label="Explore connections focus"
-          style={{ flexWrap: "wrap" }}
+          style={{ display: "flex", flexWrap: "wrap", gap: 6, gridTemplateColumns: "none", margin: "8px 0" }}
         >
           {[
             { id: "all", title: "All findings", sub: "Everything approved", n: records.length },
@@ -275,10 +275,10 @@ export function ConnectedOutcomeTrail({
               title={f.n === 0 && f.id !== "all" ? "Nothing approved under this topic yet" : undefined}
               onClick={() => chooseFacet(f.id)}
               data-facet={f.id}
+              title={f.sub}
+              style={{ width: "auto", flex: "0 0 auto", minHeight: 34, padding: "4px 14px", borderRadius: 999, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              <strong>{f.title} · {f.n}</strong>
-              <span>{f.sub}</span>
-              <ArrowRight size={18} />
+              <strong style={{ fontSize: 13, fontWeight: 600 }}>{f.title} · {f.n}</strong>
             </button>
           ))}
         </div>
