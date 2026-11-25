@@ -1,5 +1,6 @@
 import { validDate } from "./program-assurance";
 import type { ProgramRecord, SourceVersion } from "./program-memory";
+import type { Reflection } from "@/stores/reflection-store";
 import { citationMatchesSource } from "./program-evidence-view";
 
 export const recordDate = (value: string) => {
@@ -15,9 +16,12 @@ export function defaultReportPeriod(
   records: ProgramRecord[],
   fallback: string,
   today: string,
+  extraDates: string[] = [],
 ) {
-  const dates = records
-    .map((record) => recordDate(record.eventDate))
+  const dates = [
+    ...records.map((record) => recordDate(record.eventDate)),
+    ...extraDates.map((d) => recordDate(d)),
+  ]
     .filter((date): date is string => date !== null)
     .sort();
   const safeToday = validDate(today) ? today : "2026-01-01";
@@ -48,6 +52,34 @@ export function reportRecords(
     })
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
 }
+/** Approved team insights (observed on a date inside the window) for sources in this program. */
+export function reportInsights(
+  insights: Reflection[],
+  sources: SourceVersion[],
+  from: string,
+  to: string,
+) {
+  if (!validDate(from) || !validDate(to) || from > to) return [];
+  return approvedInsights(insights, sources)
+    .filter((i) => i.observedOn >= from && i.observedOn <= to)
+    .sort((a, b) => a.observedOn.localeCompare(b.observedOn));
+}
+export function approvedInsights(insights: Reflection[], sources: SourceVersion[]) {
+  const ids = new Set(sources.map((s) => s.id));
+  return insights.filter((i) => i.status === "approved" && ids.has(i.sourceId) && validDate(i.observedOn));
+}
+export function insightText(
+  insights: Reflection[],
+  sources: SourceVersion[],
+  origin: string,
+) {
+  return insights
+    .map(
+      (i, index) =>
+        `${index + 1}. ${i.theme}\n${i.observation}${i.implication ? `\nFuture hypothesis: ${i.implication}` : ""}\nObserved: ${i.observedOn} · recorded by ${i.officer}\nSource: ${sources.find((s) => s.id === i.sourceId)?.title ?? "Source"}\nReviewed: ${(i.reviewedAt ?? "").slice(0, 10)} · ${i.reviewNote ?? ""}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(i.sourceId)}`,
+    )
+    .join("\n\n");
+}
 /** Approved findings whose event date is unknown. They are left out of dated reports until a date is confirmed. */
 export function undatedReportRecords(records: ProgramRecord[], sources: SourceVersion[]) {
   return records.filter((r) => r.eventDateBasis === "document-date" && citationMatchesSource(r.citation, sources));
@@ -55,8 +87,10 @@ export function undatedReportRecords(records: ProgramRecord[], sources: SourceVe
 export function reportEvidenceKey(
   records: ProgramRecord[],
   sources: SourceVersion[],
+  insights: Reflection[] = [],
 ) {
-  return JSON.stringify(
+  return JSON.stringify([
+    approvedInsights(insights, sources).map((i) => [i.id, i.status, i.observedOn, i.observation, i.implication, i.reviewedAt]),
     records.map((record) => [
       record.id,
       record.eventDate,
@@ -66,7 +100,7 @@ export function reportEvidenceKey(
       record.citation,
       sources.filter((source) => source.id === record.citation.versionId),
     ]),
-  );
+  ]);
 }
 export function createPeriodReport({
   title,
@@ -77,6 +111,7 @@ export function createPeriodReport({
   records,
   sources,
   origin,
+  insights = [],
 }: {
   title: string;
   reportKind?: "program-update" | "undp-final" | "undp-funding" | "undp-impact" | "undp-lessons";
@@ -86,6 +121,7 @@ export function createPeriodReport({
   records: ProgramRecord[];
   sources: SourceVersion[];
   origin: string;
+  insights?: Reflection[];
 }) {
   if (!validDate(from) || !validDate(to))
     throw Error("Enter a valid start and end date.");
@@ -93,6 +129,11 @@ export function createPeriodReport({
     throw Error("The end date must be on or after the start date.");
   const chosen = reportRecords(records, sources, from, to);
   const undated = undatedReportRecords(records, sources);
+  const chosenInsights = reportInsights(insights, sources, from, to);
+  const insightBlock = chosenInsights.length
+    ? `TEAM INSIGHTS (reviewer-approved interpretations by the team; not independently verified)\n${insightText(chosenInsights, sources, origin)}`
+    : "";
+  const total = chosen.length + chosenInsights.length;
   const undatedText = undated.length
     ? `\n\nDATE NOT CONFIRMED (not part of this period's results)\nThese approved findings do not state when the event happened. Confirm the event date in Review before relying on them.\n${undated.map((r, i) => `${i + 1}. ${r.title}\nSource: ${sources.find((s) => s.id === r.citation.versionId)?.title ?? "Source"}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(r.citation.versionId)}`).join("\n\n")}`
     : "";
@@ -156,14 +197,15 @@ export function createPeriodReport({
       "State actionable lessons and note whether they are supported by one or multiple sources.",
     ].join("\n\n"),
   };
-  const reflectionOutline = reportKind === "program-update" ? "" : `\n\n${undpSections[reportKind]}\n\n8. Reviewed source-linked findings\n${content || "No reviewed source-linked findings fall within this reporting window. Add or review evidence before making factual claims."}`;
+  const nextSection = reportKind === "program-update" ? 0 : (undpSections[reportKind].match(/^\d+\. /gm) ?? []).length + 1;
+  const reflectionOutline = reportKind === "program-update" ? "" : `\n\n${undpSections[reportKind]}\n\n${nextSection}. Reviewed source-linked findings\n${[content, insightBlock].filter(Boolean).join("\n\n") || "No reviewed source-linked findings or team insights fall within this reporting window. Add or review evidence before making factual claims."}`;
   return {
     from,
     to,
-    count: chosen.length,
+    count: total,
     text: reportKind === "program-update"
-      ? `${title.trim() || "Program update"}\n${programName}\nReporting window: ${from} – ${to}\n\n${chosen.length} reviewed records in this event-date window.\n\n${content || "No reviewed source-linked findings for this period. Review documents before reporting progress."}${undatedText}\n\nDRAFT — assembled from reviewed records. Review scope and completeness before sharing.`
-      : `${title.trim() || "UNDP programme report"}\n${programName}\nProgramme / evidence window: ${from} – ${to}\n\nDraft structure with ${chosen.length} reviewed source-linked findings available for this period. Complete prompts with authorized programme knowledge; verify each claim and protect interview participants.\n\n${reflectionOutline}${undatedText}\n\nDRAFT — this is a writing aid, not a verified final report. Review evidence, consent, attribution and disclosure before sharing.`,
+      ? `${title.trim() || "Program update"}\n${programName}\nReporting window: ${from} – ${to}\n\n${chosen.length} reviewed records${chosenInsights.length ? ` and ${chosenInsights.length} approved team insights` : ""} in this event-date window.\n\n${content || "No reviewed source-linked findings for this period. Review documents before reporting progress."}${insightBlock ? `\n\n${insightBlock}` : ""}${undatedText}\n\nDRAFT — assembled from reviewed records. Review scope and completeness before sharing.`
+      : `${title.trim() || "UNDP programme report"}\n${programName}\nProgramme / evidence window: ${from} – ${to}\n\nDraft structure with ${chosen.length} reviewed source-linked findings${chosenInsights.length ? ` and ${chosenInsights.length} approved team insights` : ""} available for this period. Complete prompts with authorized programme knowledge; verify each claim and protect interview participants.\n\n${reflectionOutline}${undatedText}\n\nDRAFT — this is a writing aid, not a verified final report. Review evidence, consent, attribution and disclosure before sharing.`,
     filename: `MapToc-${reportKind === "program-update" ? "update" : "undp-report"}-${from}-${to}.txt`,
   };
 }
