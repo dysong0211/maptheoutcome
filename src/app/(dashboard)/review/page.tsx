@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMemoryStore } from "@/stores/program-memory-store";
 import { resolveCitation, type EvidenceProposal } from "@/lib/program-memory";
@@ -73,6 +73,14 @@ function Row({ p, done }: { p: EvidenceProposal; done: boolean }) {
 
 function List() {
   const proposals = useMemoryStore((s) => s.proposals);
+  const review = useMemoryStore((s) => s.review);
+  const sources = useMemoryStore((s) => s.sources);
+  // Findings the user kept and saved before Save meant approval: approve them once, as she reviewed them.
+  useEffect(() => {
+    for (const p of proposals)
+      if (p.status === "pending" && p.triage === "kept" && sources.find((x) => x.id === p.citation.versionId)?.reviewDisposition === "saved")
+        review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Kept and saved by the program manager during upload review.", false, undefined, true);
+  }, [proposals, sources, review]);
   // Rows stay in place after an action: the list is fixed from the proposals pending when the page opened.
   const initial = useRef<string[] | null>(null);
   if (initial.current === null) initial.current = proposals.filter((p) => p.status === "pending" || p.status === "flagged").map((p) => p.id);
@@ -82,12 +90,12 @@ function List() {
   return (
     <>
       <header style={{ margin: "8px 0 14px" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>Review findings</h1>
-        <p style={{ color: "#475569" }}>Accept to approve. Edit to change the wording. Dismiss to leave it out. {left} to go.</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>Needs review</h1>
+        <p style={{ color: "#475569" }}>Only findings skipped during upload show here. Accept, Edit or Dismiss each one. {left} left.</p>
       </header>
       <InsightReviewPanel />
       {rows.length === 0 ? (
-        <p className="memory-card" style={{ padding: 16 }}>Nothing to review. <Link href="/sources">Add a document</Link></p>
+        <p className="memory-card" style={{ padding: 16 }}>All findings are reviewed. <Link href="/sources">Add a document</Link></p>
       ) : (
         <ul style={{ padding: 0 }}>{rows.map((p) => <Row key={p.id} p={p} done={false} />)}</ul>
       )}
