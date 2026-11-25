@@ -1901,7 +1901,10 @@ export function TransparencyView() {
         title="Transparency log"
         description="See what changed, who changed it, and the evidence behind it."
       />
-      <SectionIntelligence section="transparency" />
+      <details className="mb-4 rounded-lg border border-[#d3e1dc] bg-white p-3">
+        <summary style={{ cursor: "pointer", fontWeight: 600 }}>AI summary of this history</summary>
+        <SectionIntelligence section="transparency" />
+      </details>
       <div className="mb-5 flex items-start gap-3 rounded-lg border border-[#d3e1dc] bg-white p-4">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#52866d]" />
         <p className="text-sm leading-6 text-slate-500">
