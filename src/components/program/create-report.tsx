@@ -11,6 +11,9 @@ import {
   defaultReportPeriod,
   reportEvidenceKey,
   reportRecords,
+  reportInsights,
+  approvedInsights,
+  recordDate,
   draftVersionKey,
   undatedReportRecords,
 } from "@/lib/report-draft";
@@ -18,6 +21,7 @@ import { MapTocLogo } from "@/components/maptoc-logo";
 import { useProgramEvidence } from "./use-program-evidence";
 import { BeforeYouSend } from "./before-you-send";
 import { useTracking } from "@/stores/tracking-store";
+import { useReflectionStore } from "@/stores/reflection-store";
 
 const OutputsWorkspace = dynamic(() =>
   import("./output-workspace").then((module) => module.OutputsWorkspace),
@@ -41,10 +45,24 @@ const reportTitles: Record<ReportKind, string> = {
 export function CreateReport({ embedded = false }: { embedded?: boolean }) {
   const { program, programId, records, sources, isDefault } =
     useProgramEvidence();
+  const reflections = useReflectionStore((state) => state.reflections);
+  const approved = approvedInsights(reflections, sources);
+  const uploadDays = sources
+    .filter((source) => source.origin === "browser-upload")
+    .map((source) => recordDate(source.sourceDate.slice(0, 10)))
+    .filter((day): day is string => !!day);
   const period = defaultReportPeriod(
     records,
     program?.periodEnd ?? "",
     localDay(),
+    approved.map((i) => i.observedOn),
+  );
+  // Longer reports (interviews, final, impact) should open on a window that covers uploaded documents too.
+  const longPeriod = defaultReportPeriod(
+    records,
+    program?.periodEnd ?? "",
+    localDay(),
+    [...approved.map((i) => i.observedOn), ...uploadDays],
   );
   const [to, setTo] = useState(period.to);
   const [from, setFrom] = useState(period.from);
@@ -78,8 +96,12 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     setFrom(period.from);
   }, [programId]);
   const matchingRecords = reportRecords(records, sources, from, to);
+  const matchingInsights = reportInsights(reflections, sources, from, to);
+  const outsideWindow =
+    records.filter((r) => { const d = recordDate(r.eventDate); return d && r.eventDateBasis !== "document-date" && (d < from || d > to); }).length +
+    approved.filter((i) => i.observedOn < from || i.observedOn > to).length;
   const undatedRecords = undatedReportRecords(records, sources);
-  const evidenceKey = reportEvidenceKey(records, sources);
+  const evidenceKey = reportEvidenceKey(records, sources, reflections);
   const evidenceChanged =
     !!draftContext && draftContext.evidenceKey !== evidenceKey;
   const selectionChanged =
@@ -98,6 +120,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
         records,
         sources,
         origin: location.origin,
+        insights: reflections,
       });
       setError("");
       setDraft(result.text);
@@ -160,8 +183,8 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
               setDraft("");
               setDraftContext(null);
               if (next !== "program-update") {
-                setFrom(period.first);
-                setTo(period.to);
+                setFrom(longPeriod.first);
+                setTo(longPeriod.to);
               } else {
                 setFrom(period.from);
                 setTo(period.to);
@@ -241,9 +264,14 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
               All reviewed dates
             </button>
             <span>
-              {matchingRecords.length} source-linked findings in this period
+              {matchingRecords.length} source-linked findings{matchingInsights.length ? ` and ${matchingInsights.length} approved team insights` : ""} in this period
             </span>
           </div>}
+          {outsideWindow > 0 && (
+            <p role="status" className="report-draft-scope">
+              {outsideWindow} approved {outsideWindow === 1 ? "item falls" : "items fall"} outside these dates and will not appear in the draft. Widen the dates to include {outsideWindow === 1 ? "it" : "them"}.
+            </p>
+          )}
           <small>
             {reportKind === "program-update" ? "Demo: assembles reviewed findings and sources by date. No live AI." : "UNDP pilot format: creates an editable outline and inserts reviewed, source-linked findings. It does not infer impact or verify expenditure."}
           </small>
@@ -300,7 +328,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
         </section>
       )}
       {draft && draftContext?.programId === programId && (
-        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={reportRecords(records, sources, draftContext.from, draftContext.to)} undated={undatedRecords} sources={sources} evidenceChanged={evidenceChanged} />
+        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={reportRecords(records, sources, draftContext.from, draftContext.to)} insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)} allInsights={reflections} undated={undatedRecords} sources={sources} evidenceChanged={evidenceChanged} />
       )}
       {isDefault && (
         <>
