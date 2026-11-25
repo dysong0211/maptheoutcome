@@ -27,42 +27,52 @@ export type PackItem = {
   level?: string;
   /** A team idea to test later. Never a finding, so it is kept apart from the statement. */
   hypothesis?: string;
+  /** Reference number shown as [n] in the summary and sections. */
+  ref?: number;
 };
-export type Bullet = { text: string; cite: string; level?: string; caveat?: string; hypothesis?: string };
+export type Bullet = { ref: number; text: string; cite: string; level?: string; caveat?: string; hypothesis?: string };
 export type PackSection = { id: string; title: string; intro: string; items: PackItem[]; /** One-line reading guide. */ lead: string; /** One bullet per reviewed statement, with its source and its own limit. */ bullets: Bullet[]; /** Limits that apply to several bullets, stated once. */ notes: string[] };
 export type Chart = { id: string; title: string; caption: string; svg: string; /** PNG data URL, filled in when exporting so Word and Docs show the picture. */ img?: string };
 
 const PALETTE = ["#0f766e", "#2563eb", "#d97706", "#7c3aed", "#db2777", "#475569"];
 const WIDTH = 720;
 
-const WIN_THEMES = ["what worked (a win)", "change for the community", "what lasted"];
-const LIMIT_THEMES = ["limitation or challenge"];
+export type ThemeId = "updates" | "progress" | "finance" | "challenges" | "lessons";
+export const THEMES: { id: ThemeId; title: string; gloss: string; lead: string }[] = [
+  { id: "updates", title: "Updates", gloss: "What's new", lead: "What is new: decisions made and changes to the programme, as recorded in reviewed sources." },
+  { id: "progress", title: "Progress", gloss: "Results against plans", lead: "Results and reported change, as recorded in reviewed sources. Items marked Output describe delivery or reach. Neither Outputs nor reported community change are verified outcomes." },
+  { id: "finance", title: "Finance", gloss: "Funding, budget, spending", lead: "Funding, budget and spending as recorded in reviewed sources. MapToc does not hold accounts. Check figures against the finance system before reporting them." },
+  { id: "challenges", title: "Challenges", gloss: "Problems, delays, risks", lead: "Problems, delays, risks and open questions recorded in reviewed sources." },
+  { id: "lessons", title: "Lessons", gloss: "What worked, what to repeat or change", lead: "What worked, what did not, and what to repeat or change, as recorded in reviewed sources." },
+];
 
-export function sectionFor(item: { kind?: string; theme?: string }): "wins" | "lessons" | "limits" {
+const FINANCE_WORDS = /\b(budget|budgets|budgeted|expenditure|expenditures|spend|spending|spent|funding|funds?|financ\w*|disburse\w*|usd|us\$|invoice|invoices|salary|salaries)\b|\$\s?\d/i;
+
+/** Which of the five report themes an item belongs to. Rule-based on the reviewer's own labels and wording. */
+export function themeFor(item: { kind?: string; theme?: string; text?: string; title?: string }): ThemeId {
   if (item.theme) {
     const t = item.theme.toLowerCase();
-    if (WIN_THEMES.includes(t)) return "wins";
-    if (LIMIT_THEMES.includes(t)) return "limits";
-    return "lessons";
+    if (FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
+    if (t === "limitation or challenge") return "challenges";
+    if (t === "lesson for future programmes" || t === "what lasted") return "lessons";
+    if (t === "unexpected effect") return "updates";
+    return "progress"; // what worked (a win), change for the community
   }
-  if (item.kind === "Result") return "wins";
-  if (item.kind === "Risk" || item.kind === "Question") return "limits";
-  return "lessons";
+  if (FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
+  if (item.kind === "Risk" || item.kind === "Question") return "challenges";
+  if (item.kind === "Lesson") return "lessons";
+  if (item.kind === "Decision" || item.kind === "Change") return "updates";
+  return "progress";
 }
 
 const monthOf = (d: string) => d.slice(0, 7);
 const sourceTitle = (sources: SourceVersion[], id: string) => sources.find((s) => s.id === id)?.title ?? "Source";
 
 export function buildSections(records: ProgramRecord[], insights: Reflection[], sources: SourceVersion[], origin: string): PackSection[] {
-  const make = (id: PackSection["id"], title: string, intro: string): PackSection => ({ id, title, intro, items: [], lead: "", bullets: [], notes: [] });
-  const sec = {
-    wins: make("wins", "Wins and community results", "What worked and what changed, as recorded in reviewed evidence."),
-    lessons: make("lessons", "Lessons and changes", "What the team learned, decided or changed along the way."),
-    limits: make("limits", "Challenges, limitations and open questions", "What did not go as planned, what the evidence does not show, and what is still unresolved."),
-  };
+  const sec = Object.fromEntries(THEMES.map((t) => [t.id, { id: t.id, title: t.title, intro: t.gloss, items: [] as PackItem[], lead: "", bullets: [] as Bullet[], notes: [] as string[] } as PackSection])) as Record<ThemeId, PackSection>;
   for (const r of records) {
     const date = r.eventDate.slice(0, 10);
-    sec[sectionFor({ kind: r.kind })].items.push({
+    sec[themeFor({ kind: r.kind, text: r.statement, title: r.title })].items.push({
       title: r.title,
       text: r.statement,
       meta: `${r.kind}${r.level ? ` · ${r.level}` : ""} · ${r.eventDateBasis === "document-date" ? "date not confirmed" : date}${r.location ? ` · ${r.location}` : ""}`,
@@ -76,7 +86,7 @@ export function buildSections(records: ProgramRecord[], insights: Reflection[], 
     });
   }
   for (const i of insights) {
-    sec[sectionFor({ theme: i.theme })].items.push({
+    sec[themeFor({ theme: i.theme, text: i.observation, title: i.theme })].items.push({
       title: i.theme,
       text: i.observation,
       hypothesis: i.implication || undefined,
@@ -87,7 +97,9 @@ export function buildSections(records: ProgramRecord[], insights: Reflection[], 
       kind: "insight",
     });
   }
-  const out = [sec.wins, sec.lessons, sec.limits];
+  const out = THEMES.map((t) => sec[t.id]);
+  let n = 0;
+  for (const sct of out) for (const it of sct.items) it.ref = ++n;
   for (const sct of out) fillSection(sct);
   return out;
 }
@@ -97,47 +109,65 @@ const sentence = (t: string) => {
   return /[.!?]$/.test(x) ? x : `${x}.`;
 };
 const shortDate = (meta: string) => meta.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? "";
-const cite = (it: PackItem) => `(${it.source}${shortDate(it.meta) ? `, ${shortDate(it.meta)}` : ""})`;
-const LEADS: Record<string, string> = {
-  wins: "Results and changes as recorded in reviewed sources. Items marked Output describe delivery or reach. Reported community change is as the source states it. Neither is a verified outcome.",
-  lessons: "What the team learned, decided or changed, as recorded in reviewed sources.",
-  limits: "What did not go as planned, what the evidence does not show, and what is still open.",
+const cite = (it: PackItem) => `[${it.ref ?? ""}]`;
+/** One numbered reference: where the statement comes from. */
+export const refText = (it: PackItem) => `[${it.ref}] ${it.source}${shortDate(it.meta) ? `, ${shortDate(it.meta)}` : ""}. ${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}.${it.quote ? ` Source passage: \u201c${it.quote}\u201d.` : ""} ${it.link}`;
+export const refHtml = (it: PackItem) => `<li value="${it.ref}">${esc(it.source)}${shortDate(it.meta) ? `, ${esc(shortDate(it.meta))}` : ""}. ${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""}.${it.quote ? ` <i>Source passage: \u201c${esc(it.quote)}\u201d.</i>` : ""} <a href="${esc(it.link)}">${esc(it.link)}</a></li>`;
+export const refsHtml = (items: PackItem[]) => (items.length ? `<details class="refs" open><summary><b>References (${items.length})</b></summary><ol>${items.map(refHtml).join("")}</ol></details>` : "");
+export const refsText = (items: PackItem[]) => (items.length ? `References\n${items.map(refText).join("\n")}` : "");
+
+/** Limitations, grouped so a repeated limit appears once with every reference number it applies to. */
+export type Limitation = { text: string; refs: number[] };
+export function limitationsOf(items: PackItem[]): Limitation[] {
+  const m = new Map<string, number[]>();
+  for (const it of items) if (it.limit && it.ref) m.set(sentence(it.limit), [...(m.get(sentence(it.limit)) ?? []), it.ref]);
+  return [...m].map(([text, refs]) => ({ text, refs }));
+}
+const refList = (refs: number[]) => refs.map((r) => `[${r}]`).join(" ");
+export const STANDING_LIMIT = "All statements were approved by a reviewer and are recorded as the sources state them. They are not independently verified. Outputs and reported community change are not verified outcomes.";
+export const limitationsText = (items: PackItem[]) => {
+  const l = limitationsOf(items);
+  return `Limitations\n- ${STANDING_LIMIT}${l.map((x) => `\n- ${refList(x.refs)} ${x.text}`).join("")}`;
 };
-/** One bullet per reviewed statement. A limit that repeats across bullets is stated once under the list. Nothing is added. */
+export const limitationsHtml = (items: PackItem[]) => {
+  const l = limitationsOf(items);
+  return `<h3>Limitations</h3><p class="lead">${esc(STANDING_LIMIT)}</p>${l.length ? `<table class="sumtable"><thead><tr><th>Applies to</th><th>Limitation</th></tr></thead><tbody>${l.map((x) => `<tr><td>${esc(refList(x.refs))}</td><td>${esc(x.text)}</td></tr>`).join("")}</tbody></table>` : ""}`;
+};
+
+/** One bullet per reviewed statement. Limits are not repeated under each bullet: they sit in the Limitations section under the same reference number. */
 function fillSection(s: PackSection) {
+  s.lead = THEMES.find((t) => t.id === s.id)?.lead ?? "";
   if (!s.items.length) return;
-  const counts = new Map<string, number>();
-  for (const it of s.items) if (it.limit) counts.set(it.limit, (counts.get(it.limit) ?? 0) + 1);
-  const shared = [...counts].filter(([, n]) => n > 1).map(([l]) => l);
-  s.lead = LEADS[s.id] ?? "";
-  s.notes = shared;
   s.bullets = s.items.map((it) => ({
+    ref: it.ref ?? 0,
     text: it.kind === "insight" ? `The team reports that ${it.text.replace(/^./, (c) => c.toLowerCase())}` : it.text,
     cite: cite(it),
     level: it.level,
-    caveat: it.limit && !shared.includes(it.limit) ? it.limit : undefined,
     hypothesis: it.hypothesis,
   }));
 }
 
 const bulletText = (b: Bullet) =>
-  `- ${b.level ? `[${b.level}] ` : ""}${sentence(b.text)} ${b.cite}${b.caveat ? `\n  Limit: ${sentence(b.caveat)}` : ""}${b.hypothesis ? `\n  Idea to test (not a finding): ${sentence(b.hypothesis)}` : ""}`;
+  `- ${b.level ? `[${b.level}] ` : ""}${sentence(b.text)} ${b.cite}${b.hypothesis ? `\n  Idea to test (not a finding): ${sentence(b.hypothesis)}` : ""}`;
 const bulletHtml = (b: Bullet) =>
-  `<li>${b.level ? `<b>[${esc(b.level)}]</b> ` : ""}${esc(sentence(b.text))} <span class="cite">${esc(b.cite)}</span>${b.caveat ? `<br><em>Limit: ${esc(sentence(b.caveat))}</em>` : ""}${b.hypothesis ? `<br><em>Idea to test (not a finding): ${esc(sentence(b.hypothesis))}</em>` : ""}</li>`;
+  `<li>${b.level ? `<b>[${esc(b.level)}]</b> ` : ""}${esc(sentence(b.text))} <span class="cite">${esc(b.cite)}</span>${b.hypothesis ? `<br><em>Idea to test (not a finding): ${esc(sentence(b.hypothesis))}</em>` : ""}</li>`;
 
 export const itemText = (it: PackItem) =>
   `${it.title}\n${it.text}${it.quote ? `\nFrom the source: \u201c${it.quote}\u201d` : ""}${it.hypothesis ? `\nIdea to test (not a finding): ${it.hypothesis}` : ""}\n${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}\nSource: ${it.source}${it.limit ? `\nLimit: ${it.limit}` : ""}\nLink: ${it.link}`;
-export const sectionText = (s: PackSection) =>
+const EMPTY: Record<string, string> = { finance: "No finance statement has been reviewed yet. Figures should come from the finance system." };
+const emptyNote = (s: PackSection) => EMPTY[s.id] ?? "Nothing reviewed yet for this theme.";
+/** Copy-section text: bullets, then the limitations and references for these items. */
+export const sectionText = (s: PackSection, withRefs = true) =>
   s.items.length
-    ? `${s.title}\n${s.lead}\n\n${s.bullets.map(bulletText).join("\n")}${s.notes.length ? `\n\nLimits that apply to several items above:\n${s.notes.map((n) => `- ${sentence(n)}`).join("\n")}` : ""}\n\nSource links\n${s.items.map((it) => `- ${it.source}: ${it.link}`).join("\n")}`
-    : `${s.title}\n\nNothing reviewed yet for this section.`;
+    ? `${s.title}\n${s.lead}\n\n${s.bullets.map(bulletText).join("\n")}${withRefs ? `\n\n${limitationsText(s.items)}\n\n${refsText(s.items)}` : ""}`
+    : `${s.title}\n\n${emptyNote(s)}`;
 export const itemHtml = (it: PackItem) =>
   `<div class="item"><h4>${esc(it.title)}</h4><p>${esc(it.text)}</p>${it.quote ? `<blockquote>\u201c${esc(it.quote)}\u201d</blockquote>` : ""}${it.hypothesis ? `<p class="limit"><b>Idea to test (not a finding):</b> ${esc(it.hypothesis)}</p>` : ""}<p class="meta">${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""} \u00b7 Source: <a href="${esc(it.link)}">${esc(it.source)}</a></p>${it.limit ? `<p class="limit"><b>Limit:</b> ${esc(it.limit)}</p>` : ""}</div>`;
-export const sectionHtml = (s: PackSection) =>
+export const sectionHtml = (s: PackSection, withRefs = true) =>
   `<h3>${esc(s.title)}</h3>${
     s.items.length
-      ? `<p class="lead">${esc(s.lead)}</p><ul class="pts">${s.bullets.map(bulletHtml).join("")}</ul>${s.notes.length ? `<p class="limit"><b>Limits that apply to several items above:</b></p><ul>${s.notes.map((n) => `<li class="limit">${esc(sentence(n))}</li>`).join("")}</ul>` : ""}<p class="meta">Sources: ${[...new Map(s.items.map((it) => [it.link, it])).values()].map((it) => `<a href="${esc(it.link)}">${esc(it.source)}</a>`).join(", ")}</p>`
-      : "<p><i>Nothing reviewed yet for this section.</i></p>"
+      ? `<p class="lead">${esc(s.lead)}</p><ul class="pts">${s.bullets.map(bulletHtml).join("")}</ul>${withRefs ? `${limitationsHtml(s.items)}${refsHtml(s.items)}` : ""}`
+      : `<p><i>${esc(emptyNote(s))}</i></p>`
   }`;
 
 /* ---------- SVG charts ---------- */
@@ -366,26 +396,86 @@ export function answersChart(t: TableData, col: number, status = "not reviewed o
 
 /* ---------- headline ---------- */
 
+export type SummaryRow = { ref: number; area: string; level: string; text: string };
 export type SummaryBlock = { label: string; lines: { text: string; caveat?: string }[] };
-/** Summary built from the first reviewed statements in each section. Each keeps its own limit. Ideas to test are never included. */
-export function headline(sections: PackSection[], from: string, to: string, sourceCount: number, counts?: { findings: number; insights: number }) {
-  const [wins, lessons, limits] = sections;
+const ROWS_PER_AREA = 2;
+const itemSentence = (it: PackItem) => sentence(it.kind === "insight" ? `The team reports that ${it.text.replace(/^./, (c) => c.toLowerCase())}` : it.text);
+const cap = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1)}\u2026` : t);
+
+/**
+ * Provenance flow: sources -> reviewed findings / approved insights -> the five report themes.
+ * It shows how reviewed items were assembled into the report, with counts on every link.
+ * It is not a results chain and implies no cause.
+ */
+export function flowChart(sections: PackSection[], sourceCount: number): Chart | null {
   const total = sections.reduce((n, x) => n + x.items.length, 0);
-  if (!total) return { sentence: "", html: "", blocks: [] as SummaryBlock[], note: "", wins: [] as string[], base: "" };
-  const line = (it: PackItem) => ({
-    text: `${it.level ? `[${it.level}] ` : ""}${sentence(it.kind === "insight" ? `The team reports that ${it.text.replace(/^./, (c) => c.toLowerCase())}` : it.text)}`,
-    caveat: it.kind === "insight" ? undefined : it.limit || undefined,
+  if (!total) return null;
+  const cnt = (sc: PackSection, k: PackItem["kind"]) => sc.items.filter((i) => i.kind === k).length;
+  const nF = sections.reduce((n, sc) => n + cnt(sc, "finding"), 0);
+  const nI = sections.reduce((n, sc) => n + cnt(sc, "insight"), 0);
+  const H = 440;
+  const box = (x: number, y: number, w: number, h: number, big: string, small: string, fill: string, stroke: string) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/><text x="${x + w / 2}" y="${y + h / 2 - 2}" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">${esc(big)}</text><text x="${x + w / 2}" y="${y + h / 2 + 14}" text-anchor="middle" font-size="11" fill="#475569">${esc(small)}</text>`;
+  const edge = (x1: number, y1: number, x2: number, y2: number, label?: string, f = 0.72) => {
+    const lx = x1 + (x2 - x1) * f, ly = y1 + (y2 - y1) * f;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#64748b" stroke-width="1.5" marker-end="url(#ar)"/>${label ? `<rect x="${lx - 11}" y="${ly - 9}" width="22" height="16" rx="3" fill="#fff"/><text x="${lx}" y="${ly + 3}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">${esc(label)}</text>` : ""}`;
+  };
+  const c1 = { x: 24, w: 150 }, c2 = { x: 260, w: 170 }, c3 = { x: 540, w: 156 };
+  const fY = nF && nI ? 150 : 195, iY = nF && nI ? 250 : 195;
+  const secY = [100, 168, 236, 304, 372].map((y) => y - 10);
+  const colHead = (x: number, t: string) => `<text x="${x}" y="82" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1">${esc(t)}</text>`;
+  let body = `<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>`;
+  body += colHead(c1.x, "SOURCES") + colHead(c2.x, "REVIEWED EVIDENCE") + colHead(c3.x, "REPORT THEMES");
+  const srcY = 200;
+  const midF = fY + 30, midI = iY + 30;
+  if (nF) body += edge(c1.x + c1.w, srcY + 30, c2.x, midF, undefined);
+  if (nI) body += edge(c1.x + c1.w, srcY + 30, c2.x, midI, undefined);
+  sections.forEach((sc, k) => {
+    const ty = secY[k] + 24;
+    if (cnt(sc, "finding")) body += edge(c2.x + c2.w, midF, c3.x, ty, String(cnt(sc, "finding")), 0.8);
+    if (cnt(sc, "insight")) body += edge(c2.x + c2.w, midI, c3.x, ty, String(cnt(sc, "insight")), 0.62);
   });
-  const blocks: SummaryBlock[] = [];
-  if (wins.items.length) blocks.push({ label: "Results and wins", lines: wins.items.slice(0, 2).map(line) });
-  if (limits.items.length) blocks.push({ label: "Main limits", lines: limits.items.slice(0, 2).map(line) });
-  if (lessons.items.length) blocks.push({ label: "Lessons", lines: lessons.items.slice(0, 2).map(line) });
-  const note = wins.items.length ? "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes." : "";
-  const sentenceText = blocks.map((b) => `${b.label}: ${b.lines.map((l) => `${l.text}${l.caveat ? ` Limit: ${sentence(l.caveat)}` : ""}`).join(" ")}`).join("\n") + (note ? `\n${note}` : "");
-  const html = `${blocks.map((b) => `<h4>${esc(b.label)}</h4><ul>${b.lines.map((l) => `<li>${esc(l.text)}${l.caveat ? `<br><em>Limit: ${esc(sentence(l.caveat))}</em>` : ""}</li>`).join("")}</ul>`).join("")}${note ? `<p class="meta">${esc(note)}</p>` : ""}`;
+  body += box(c1.x, srcY, c1.w, 60, `${sourceCount} source ${sourceCount === 1 ? "document" : "documents"}`, "uploaded and cited", "#f1f5f9", "#94a3b8");
+  if (nF) body += box(c2.x, fY, c2.w, 60, `${nF} reviewed ${nF === 1 ? "finding" : "findings"}`, "approved by a reviewer", "#ecfeff", PALETTE[0]);
+  if (nI) body += box(c2.x, iY, c2.w, 60, `${nI} team ${nI === 1 ? "insight" : "insights"}`, "approved, interpretation", "#fffbeb", PALETTE[2]);
+  const fills = ["#f8fafc", "#f0fdfa", "#eff6ff", "#fff7ed", "#faf5ff"];
+  const strokes = [PALETTE[5], PALETTE[0], PALETTE[1], PALETTE[2], PALETTE[3]];
+  sections.forEach((sc, k) => {
+    const outs = sc.items.filter((i) => i.level === "Output").length;
+    body += box(c3.x, secY[k], c3.w, 48, `${sc.title}: ${sc.items.length}`, sc.items.length ? (outs ? `${outs} marked Output` : "as recorded") : "nothing reviewed yet", sc.items.length ? fills[k] : "#ffffff", sc.items.length ? strokes[k] : "#cbd5e1");
+  });
+  const svg = frame("How the summary was assembled", `${total} reviewed ${total === 1 ? "statement" : "statements"}. Numbers on arrows are item counts.`, H, body, "Provenance of reviewed items. Not a results chain; no cause or effect is implied.");
+  return { id: "flow", title: "How the summary was assembled", caption: "From source documents to reviewed evidence to the five report themes. Numbers are counts of reviewed items. This is not a results chain.", svg };
+}
+
+export function summaryChart(sections: PackSection[]): Chart | null {
+  const total = sections.reduce((n, x) => n + x.items.length, 0);
+  if (!total) return null;
+  const bars = sections.map((sc) => ({ label: sc.title, value: sc.items.length }));
+  return {
+    id: "summary-sections",
+    title: "Reviewed statements by theme",
+    caption: "How many reviewed statements sit under each theme. A count of statements, not a measure of results or impact.",
+    svg: barChart("Reviewed statements by theme", `${total} reviewed statements in this report`, bars, "Counts of reviewed statements, not results or impact"),
+  };
+}
+
+/** Summary table: the first reviewed statements under each theme, each with its reference number. Limits are in the Limitations section. Ideas to test are never included. */
+export function headline(sections: PackSection[], from: string, to: string, sourceCount: number, counts?: { findings: number; insights: number }) {
+  const total = sections.reduce((n, x) => n + x.items.length, 0);
+  if (!total) return { sentence: "", html: "", blocks: [] as SummaryBlock[], rows: [] as SummaryRow[], more: 0, note: "", wins: [] as string[], base: "" };
+  const rows: SummaryRow[] = [];
+  for (const sc of sections) for (const it of sc.items.slice(0, ROWS_PER_AREA)) rows.push({ ref: it.ref ?? 0, area: sc.title, level: it.level ?? "", text: itemSentence(it) });
+  const more = total - rows.length;
+  const note = "Results are shown as recorded in source documents. Outputs and reported community change are not verified outcomes. See Limitations.";
+  const lines = rows.map((r) => `- ${r.area}${r.level ? ` (${r.level})` : ""}: ${r.text} [${r.ref}]`);
+  const emptyThemes = sections.filter((x) => !x.items.length).map((x) => x.title);
+  const sentenceText = `${lines.join("\n")}${more > 0 ? `\n(${more} more reviewed ${more === 1 ? "statement" : "statements"} in the sections below.)` : ""}${emptyThemes.length ? `\nNothing reviewed yet: ${emptyThemes.join(", ")}.` : ""}\n${note}`;
+  const table = `<table class="sumtable"><thead><tr><th>Theme</th><th>Statement</th><th>Ref</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r.area)}${r.level ? `<br><small>${esc(r.level)}</small>` : ""}</td><td>${esc(r.text)}</td><td>[${r.ref}]</td></tr>`).join("")}</tbody></table>`;
+  const html = `${table}${more > 0 ? `<p class="meta">${more} more reviewed ${more === 1 ? "statement" : "statements"} in the sections below.</p>` : ""}${emptyThemes.length ? `<p class="meta">Nothing reviewed yet: ${esc(emptyThemes.join(", "))}.</p>` : ""}<p class="meta">${esc(note)}</p>`;
   const n = (c: number, one: string, many: string) => `${c} ${c === 1 ? one : many}`;
   const base = `Evidence base (a count of reviewed items, not a result): ${counts ? `${n(counts.findings, "reviewed finding", "reviewed findings")} and ${n(counts.insights, "approved team insight", "approved team insights")}` : n(total, "reviewed item", "reviewed items")} from ${n(sourceCount, "source document", "source documents")}, ${from} to ${to}. Approved by a reviewer, not independently verified.`;
-  return { sentence: sentenceText, html, blocks, note, wins: [] as string[], base };
+  return { sentence: sentenceText, html, blocks: [] as SummaryBlock[], rows, more, note, wins: [] as string[], base };
 }
 
 /* ---------- full formatted export ---------- */
@@ -400,6 +490,8 @@ export function reportHtml(opts: {
   charts: Chart[];
   caveat: string;
   headline?: { sentence: string; html?: string; wins: string[]; base: string };
+  /** Charts for the summary (flow, section counts). */
+  summaryCharts?: Chart[];
   /** Chart the user built from an uploaded table; included ahead of the evidence-base annex. */
   tableChart?: Chart | null;
   tableStatus?: string;
@@ -407,6 +499,7 @@ export function reportHtml(opts: {
   const stats = opts.stats.map((s) => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("");
   let fig = 0;
   const figure = (c: Chart) => `<figure>${c.img ? `<img src="${c.img}" alt="${esc(c.title)}" style="max-width:100%">` : c.svg}<figcaption>Figure ${++fig}. ${esc(c.title)}. ${esc(c.caption)}</figcaption></figure>`;
+  const sumFigs = (opts.summaryCharts ?? []).map(figure).join("");
   const tableBlock = opts.tableChart ? `<h2>Chart from uploaded data</h2><p class="limit">Uploaded data, not verified results. Status of the table: ${esc(opts.tableStatus ?? "not reviewed")}. Check the numbers against the original before presenting them as results.</p>${figure(opts.tableChart)}` : "";
   const charts = opts.charts.map(figure).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title><style>
@@ -414,6 +507,6 @@ body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:780px;margin
 h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin-top:32px;border-bottom:2px solid #0f766e;padding-bottom:4px}h3{font-size:17px;margin-top:24px}h4{font-size:14px;margin:0 0 4px}
 .sub{color:#475569;margin:0 0 16px}.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{border:1px solid #cbd5e1;border-radius:8px;padding:10px 16px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:#475569}
 .item{border-left:3px solid #0f766e;padding:2px 0 2px 12px;margin:12px 0}.item p{margin:2px 0}.meta{font-size:12px;color:#475569}.limit{font-size:13px;color:#7c2d12}
-figure{margin:16px 0}figure svg{max-width:100%;height:auto;border:1px solid #e2e8f0}figcaption{font-size:12px;color:#475569}blockquote{margin:6px 0;padding:4px 12px;background:#f1f5f9;border-radius:4px;font-style:italic;font-size:13px}.callout{background:#f0fdfa;border-left:4px solid #0f766e;padding:6px 16px;margin:8px 0}.callout h4{color:#0f766e;margin:10px 0 2px}.lead{color:#475569;font-size:13px}.cite{color:#475569;font-size:12px}.pts li{margin:6px 0}.caveat{margin-top:32px;font-size:12px;color:#475569;border-top:1px solid #cbd5e1;padding-top:8px}
-</style></head><body><h1>${esc(opts.title)}</h1><p class="sub">${esc(opts.programName)} · Evidence window ${esc(opts.from)} to ${esc(opts.to)}</p>${opts.headline?.sentence ? `<h2>Summary</h2><div class="callout">${opts.headline.html ?? `<p>${esc(opts.headline.sentence)}</p>`}</div>` : ""}<h2>Results, lessons and limits</h2>${opts.sections.map(sectionHtml).join("")}${tableBlock}${opts.charts.length ? `<h2>Annex: evidence base</h2><p class="meta">${esc(opts.headline?.base ?? "")} These charts count reviewed items. They do not measure results or impact.</p>${charts}` : ""}<p class="caveat">${esc(opts.caveat)}</p></body></html>`;
+figure{margin:16px 0}figure svg{max-width:100%;height:auto;border:1px solid #e2e8f0}figcaption{font-size:12px;color:#475569}blockquote{margin:6px 0;padding:4px 12px;background:#f1f5f9;border-radius:4px;font-style:italic;font-size:13px}.callout{background:#f0fdfa;border-left:4px solid #0f766e;padding:6px 16px;margin:8px 0}table.sumtable{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}.sumtable th,.sumtable td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}.sumtable th{background:#e6f4f1}details.refs{margin-top:28px;border-top:1px solid #cbd5e1;padding-top:8px;font-size:12px}details.refs li{margin:4px 0}.callout h4{color:#0f766e;margin:10px 0 2px}.lead{color:#475569;font-size:13px}.cite{color:#475569;font-size:12px}.pts li{margin:6px 0}.caveat{margin-top:32px;font-size:12px;color:#475569;border-top:1px solid #cbd5e1;padding-top:8px}
+</style></head><body><h1>${esc(opts.title)}</h1><p class="sub">${esc(opts.programName)} · Evidence window ${esc(opts.from)} to ${esc(opts.to)}</p>${opts.headline?.sentence ? `<h2>Summary</h2><div class="callout">${opts.headline.html ?? `<p>${esc(opts.headline.sentence)}</p>`}</div>${sumFigs}` : ""}<h2>Updates, progress, finance, challenges and lessons</h2>${opts.sections.map((x) => sectionHtml(x, false)).join("")}<h2>Limitations</h2>${limitationsHtml(opts.sections.flatMap((x) => x.items)).replace("<h3>Limitations</h3>", "")}${tableBlock}${opts.charts.length ? `<h2>Annex: evidence base</h2><p class="meta">${esc(opts.headline?.base ?? "")} These charts count reviewed items. They do not measure results or impact.</p>${charts}` : ""}${refsHtml(opts.sections.flatMap((x) => x.items))}<p class="caveat">${esc(opts.caveat)}</p></body></html>`;
 }
