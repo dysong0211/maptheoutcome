@@ -66,6 +66,7 @@ interface MemoryState {
     reason: string,
     sourceChecked?: boolean,
     tags?: FindingTags,
+    viaSave?: boolean,
   ) => boolean;
   addRelation: (from: string, to: string, label: string) => boolean;
   removeRelation: (from: string, to: string) => void;
@@ -258,6 +259,10 @@ export const useMemoryStore = create<MemoryState>()(
             ...state.events,
           ],
         });
+        if (disposition === "saved") {
+          for (const p of get().proposals.filter((x) => ids.includes(x.citation.versionId) && x.status === "pending" && x.triage === "kept"))
+            get().review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Reviewed and kept by the program manager; approved when the review was saved.", false, undefined, true);
+        }
         return true;
       },
       importSample: () => {
@@ -455,11 +460,11 @@ export const useMemoryStore = create<MemoryState>()(
         }));
         return true;
       },
-      review: (id, decision, statement, reason, sourceChecked = false, tags) => {
+      review: (id, decision, statement, reason, sourceChecked = false, tags, viaSave = false) => {
         const state = get();
         const proposal = state.proposals.find((item) => item.id === id);
         if (
-          (useDemoStore.getState().role !== "reviewer" && !pilotSingleOperator) ||
+          (useDemoStore.getState().role !== "reviewer" && !pilotSingleOperator && !(viaSave && useDemoStore.getState().role === "program")) ||
           !proposal ||
           !["pending", "flagged"].includes(proposal.status) ||
           !["approved", "rejected", "flagged"].includes(decision) ||
@@ -481,7 +486,9 @@ export const useMemoryStore = create<MemoryState>()(
         )
           return false;
         const occurredAt = new Date().toISOString();
-        const actor = pilotSingleOperator
+        const actor = viaSave
+          ? "Program manager · approved on save"
+          : pilotSingleOperator
           ? "Pilot participant · demo self-review"
           : "M&E reviewer · identity not verified";
         const { status: _status, ...finding } = proposal;
