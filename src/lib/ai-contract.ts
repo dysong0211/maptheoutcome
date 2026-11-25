@@ -76,6 +76,7 @@ export const aiOutputSchema = z.object({
         passageId: z.string().max(200),
         quote: z.string().trim().min(1).max(3000),
         eventDate: z.string().max(20).nullable().optional(),
+        placeInQuote: z.string().max(80).nullable().optional(),
         locator: z.string().min(1).max(300),
       }),
     )
@@ -117,6 +118,9 @@ export function validateAIOutput(
   if (output.document?.readable === false && output.findings.length)
     throw new Error("Unreadable documents cannot produce findings.");
   for (const finding of output.findings) {
+    // A place is kept only when those exact words appear in the quoted passage. Otherwise it is dropped, never guessed.
+    const place = (finding.placeInQuote ?? "").trim();
+    finding.placeInQuote = place && finding.quote.includes(place) ? place : null;
     const source = request.sources.find((s) => s.id === finding.sourceId);
     if (!source)
       throw new Error("The AI response referenced an unknown source.");

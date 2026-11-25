@@ -82,6 +82,7 @@ Each finding must cite an exact verbatim quote from one supplied source, with it
 For a file without supplied passages, transcribe a short exact quote and its page/section/cell locator;
 use an empty passageId. Never invent a page number or a quote. State if the file is unreadable.
 For each finding, set eventDate (YYYY-MM-DD) only when the quoted passage states the date the event happened; otherwise null. Never use the document date or today's date as eventDate.
+For each finding, set placeInQuote to a place name (village, district, city, region, country) copied exactly, character for character, from the quoted passage when the passage names where it happened; otherwise null. Never infer, translate or add a place that is not in the quote.
 Keep the original context, dates, denominators, currencies and uncertainty. Never mix sample periods.
 Passages marked ai-transcription are machine transcriptions, not checked against the original. Keep this limitation in any findings based on them.
 Use kind Risk only when the passage itself states a harm, delay, shortfall, deviation, abnormality or threat. A reported count or an ordinary event is a Result, not a Risk, unless the source says it is abnormal or harmful.
