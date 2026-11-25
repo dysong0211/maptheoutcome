@@ -134,11 +134,11 @@ function List() {
     <>
       <header style={{ margin: "8px 0 14px" }}>
         <h1 style={{ fontSize: 24, fontWeight: 700 }}>Needs review</h1>
-        <p style={{ color: "#475569" }}>Only findings skipped during upload show here. Accept, Edit or Dismiss each one. {left} left.</p>
+        <p style={{ color: "#475569" }}>Document findings skipped during upload show here. Accept, Edit or Dismiss each one. {left} document finding{left === 1 ? "" : "s"} left. Team insights are reviewed separately, below.</p>
       </header>
       <InsightReviewPanel />
       {rows.length === 0 ? (
-        <p className="memory-card" style={{ padding: 16 }}>All findings are reviewed. <Link href="/sources">Add a document</Link></p>
+        <p className="memory-card" style={{ padding: 16 }}>No document findings are waiting for review. <Link href="/sources">Add a document</Link></p>
       ) : (
         <ul style={{ padding: 0 }}>{rows.map((p) => <Row key={p.id} p={p} done={false} />)}</ul>
       )}
