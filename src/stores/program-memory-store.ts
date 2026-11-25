@@ -399,7 +399,7 @@ export const useMemoryStore = create<MemoryState>()(
               quote: finding.quote,
             },
             generation: {
-              provider: "OpenAI",
+              provider: /^gemini/i.test(result.model) ? "Google Gemini" : "OpenAI",
               model: result.model,
               runId: result.runId,
               generatedAt: result.generatedAt,
