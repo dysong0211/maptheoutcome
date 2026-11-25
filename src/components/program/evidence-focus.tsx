@@ -108,7 +108,13 @@ export function EvidenceFocus({ finance = false }: { finance?: boolean }) {
           );
         })}
       </div>
-      {!display.length && <p>Add a source to start finding connections.</p>}
+      {!display.length && (
+        <p>
+          {sources.length
+            ? `${sources.length} document${sources.length === 1 ? " is" : "s are"} uploaded, but no findings are reviewed yet. They appear here once a finding is approved.`
+            : "Add a source to start finding connections."}
+        </p>
+      )}
     </section>
   );
 }
