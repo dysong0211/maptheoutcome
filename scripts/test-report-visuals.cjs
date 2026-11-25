@@ -22,8 +22,8 @@ const insights = [{ id: "i1", sourceId: "s1", officer: "O", observedOn: "2026-10
 
 const sections = v.buildSections(records, insights, sources, "https://x");
 assert.deepEqual(sections.map((s) => s.items.length), [2, 1, 2]);
-assert.ok(v.sectionText(sections[0]).includes("Groups kept meeting"));
-assert.ok(v.sectionHtml(sections[0]).includes("T a &lt;b&gt;"), "html must be escaped");
+assert.ok(v.sectionText(sections[0]).includes("groups kept meeting"));
+assert.ok(v.sectionHtml(v.buildSections([{ ...records[0], statement: "Hit <b>x</b>" }], [], sources, "https://x")[0]).includes("Hit &lt;b&gt;x&lt;/b&gt;"), "html must be escaped");
 const charts = v.evidenceCharts(records, insights, sources, "2026-08-01", "2026-10-31");
 assert.deepEqual(charts.map((c) => c.id), ["by-kind", "insights-by-type", "timeline", "by-location", "by-source"]);
 for (const c of charts) { assert.ok(c.svg.startsWith("<svg") && c.svg.endsWith("</svg>")); assert.ok(!c.svg.includes("<b>")); }
@@ -48,8 +48,18 @@ assert.ok(h.sentence.startsWith("Results and wins: Statement a."), h.sentence);
 assert.ok(h.sentence.includes("Main limits:") && h.sentence.includes("Lessons:"));
 assert.ok(h.base.includes("not a result") && h.base.includes("3 reviewed findings"));
 const w = sections[0];
-assert.ok(w.narrative.startsWith("Reviewed evidence records") && w.narrative.includes("The team reports that groups kept meeting") && w.narrative.includes("(Field report, 2026-08-10)"), w.narrative);
-assert.ok(v.sectionText(w).includes(w.narrative));
+assert.ok(w.lead.includes("verified outcome") && w.bullets.some((b) => b.text.startsWith("The team reports that groups kept meeting") && b.cite.includes("Field report, 2026-10-01")), JSON.stringify(w.bullets));
+assert.ok(v.sectionText(w).includes("- ") && v.sectionText(w).includes("Source links"));
+const hyp = v.buildSections([], [{ ...insights[0], implication: "Maybe transport" }], sources, "https://x");
+assert.ok(hyp[0].bullets[0].hypothesis === "Maybe transport" && v.sectionText(hyp[0]).includes("Idea to test (not a finding): Maybe transport"));
+assert.ok(!v.headline(hyp, "a", "b", 1).sentence.includes("transport"), "hypothesis stays out of summary");
+const lim = v.buildSections([{ ...records[0], level: "Output", limitation: "Unique persons not checked. Long limit text that must stay whole in the summary." }], [], sources, "https://x");
+const hl = v.headline(lim, "a", "b", 1);
+assert.ok(hl.sentence.includes("[Output]") && hl.sentence.includes("Limit: Unique persons not checked. Long limit text that must stay whole in the summary.") && hl.note.includes("not verified outcomes"), hl.sentence);
+const rep = v.reportHtml({ title: "R", programName: "P", from: "a", to: "b", stats: [], sections: lim, charts: [], caveat: "c", headline: hl, tableChart: cmp, tableStatus: "not yet reviewed" });
+assert.ok(rep.includes("Chart from uploaded data") && rep.includes("Figure 1. Planned vs Reached by Programme") && rep.includes("Unique persons not checked"), "table chart in export");
+const dup = v.buildSections([{ ...records[2], id: "x1" }, { ...records[2], id: "x2" }], [], sources, "https://x");
+assert.equal(dup[2].notes.length, 1, "repeated limit stated once");
 assert.ok(v.sourceReviewStatus({ reviewDisposition: "repository-only" }).includes("without review"));
 assert.ok(v.sourceReviewStatus({}).includes("not yet reviewed"));
 const cmp2 = v.compareChart(t, 0, [1], "saved without review, contents not verified");
