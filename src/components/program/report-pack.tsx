@@ -12,6 +12,7 @@ import {
   financeCharts,
   chronologyChart,
   THEMES,
+  esc,
   headline,
   limitationsHtml,
   limitationsOf,
@@ -267,12 +268,14 @@ export function ReportPack({
     const tc = tChart.chart ? withImg[sumCharts.length] : null;
     return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status });
   };
+  const scopeLine = `${programName} · Evidence window ${from} to ${to}`;
   const fullText = () =>
-    [`Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
+    [title, scopeLine, `Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
     <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
       <h2 id="pack-title">Report pack</h2>
+      <p className="report-draft-scope" data-testid="pack-scope"><b>Scope:</b> {scopeLine}</p>
       <p className="report-draft-scope">Draft wording, results and charts built from reviewed evidence in {from} to {to}. Copy what you need into your final report.</p>
       <div className="pack-actions pack-top">
         <button
@@ -302,7 +305,7 @@ export function ReportPack({
           {head.more > 0 && <p className="pack-hint">{head.more} more reviewed {head.more === 1 ? "statement" : "statements"} under the themes below.</p>}
           <p className="pack-hint"><b>Provisional theme mapping.</b> {head.note} Use the Theme menu in References to move an item.</p>
           <div className="pack-grid">{sumCharts.map((c) => <ChartCard key={c.id} chart={c} disabled={disabled} note={setMsg} />)}</div>
-          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<h3>Summary</h3>${head.html}`, `Summary\n${head.sentence}`)) ? "Copied the summary table. Paste it into your report." : "Copy was blocked by this browser.")}>Copy summary table</button>
+          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<p>${esc(scopeLine)}</p><h3>Summary</h3>${head.html}`, `${scopeLine}\nSummary\n${head.sentence}`)) ? "Copied the summary table. Paste it into your report." : "Copy was blocked by this browser.")}>Copy summary table</button>
         </div>
       )}
       {sections.map((s) => (

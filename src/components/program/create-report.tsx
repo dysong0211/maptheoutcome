@@ -50,8 +50,9 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     useProgramEvidence();
   const projectScope = useProjectScope(programId);
   const records = projectScope.filterRecords(allRecords);
-  const projectLabel = projectScope.filter === "all" ? "" : projectScope.filter === "none" ? " · Documents with no project" : ` · Project ${projectScope.projects.find((x) => x.id === projectScope.filter)?.code ?? ""} ${projectScope.projects.find((x) => x.id === projectScope.filter)?.name ?? ""}`.trimEnd();
-  const reflections = useReflectionStore((state) => state.reflections);
+  const projectLabel = projectScope.filter === "all" ? (projectScope.projects.length ? " · All projects combined" : "") : projectScope.filter === "none" ? " · Documents with no project" : ` · Project ${projectScope.projects.find((x) => x.id === projectScope.filter)?.code ?? ""} ${projectScope.projects.find((x) => x.id === projectScope.filter)?.name ?? ""}`.trimEnd();
+  const allReflections = useReflectionStore((state) => state.reflections);
+  const reflections = projectScope.filterInsights(allReflections);
   const approved = approvedInsights(reflections, sources);
   const uploadDays = sources
     .filter((source) => source.origin === "browser-upload")
@@ -385,7 +386,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
         </section>
       )}
       {draft && draftContext?.programId === programId && (
-        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={reportRecords(records, sources, draftContext.from, draftContext.to)} insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)} allInsights={reflections} undated={undatedRecords} sources={sources} evidenceChanged={evidenceChanged} />
+        <BeforeYouSend programId={programId} from={draftContext.from} to={draftContext.to} draftKey={draftVersionKey(draftContext, draft, evidenceKey)} records={reportRecords(records, sources, draftContext.from, draftContext.to)} insights={reportInsights(reflections, sources, draftContext.from, draftContext.to)} allInsights={allReflections} undated={undatedRecords} sources={sources} evidenceChanged={evidenceChanged} />
       )}
       {isDefault && (
         <>

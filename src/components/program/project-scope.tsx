@@ -6,28 +6,38 @@ import { matchesProject, projectsOfSource, suggestProjects, type Project, type S
 
 const EMPTY_PROJECTS: Project[] = [];
 const EMPTY_MAP: SourceProjects = {};
+const EMPTY_OVERRIDES: Record<string, string[]> = {};
 
 /** Project list, source->projects map and the selected filter for one programme. */
 export function useProjectScope(programId: string | null | undefined) {
   const pid = programId || "default";
   const projects = useProjectStore((s) => s.projects[pid]) ?? EMPTY_PROJECTS;
   const map = useProjectStore((s) => s.sourceProjects[pid]) ?? EMPTY_MAP;
+  const overrides = useProjectStore((s) => s.recordProjects[pid]) ?? EMPTY_OVERRIDES;
   const filter = useProjectStore((s) => s.filters[pid]) ?? "all";
   const setFilter = useProjectStore((s) => s.setFilter);
   return useMemo(
     () => ({
       pid,
+      overrides,
       projects,
       map,
       filter: filter === "all" || filter === "none" || projects.some((p) => p.id === filter) ? filter : "all",
       setFilter: (v: string) => setFilter(pid, v),
       /** Findings inherit the projects of the document they cite. */
-      filterRecords: <T extends { citation: { versionId: string } }>(records: T[]) => {
+      filterInsights: <T extends { sourceId: string }>(insights: T[]) => {
         const f = filter === "all" || filter === "none" || projects.some((p) => p.id === filter) ? filter : "all";
-        return records.filter((r) => matchesProject(map, r.citation.versionId, f, projects));
+        return insights.filter((i) => matchesProject(map, i.sourceId, f, projects));
+      },
+      filterRecords: <T extends { id?: string; citation: { versionId: string } }>(records: T[]) => {
+        const f = filter === "all" || filter === "none" || projects.some((p) => p.id === filter) ? filter : "all";
+        return records.filter((r) => {
+          const own = r.id ? overrides[r.id] : undefined;
+          return own ? matchesProject({ x: own }, "x", f, projects) : matchesProject(map, r.citation.versionId, f, projects);
+        });
       },
     }),
-    [pid, projects, map, filter, setFilter],
+    [pid, projects, map, overrides, filter, setFilter],
   );
 }
 
@@ -52,7 +62,7 @@ export function ProjectFilter({ programId, shown, total }: { programId: string |
       </select>
       {scope.filter !== "all" && <button onClick={() => scope.setFilter("all")}>Show all projects</button>}
       {typeof shown === "number" && typeof total === "number" && scope.filter !== "all" && (
-        <small>Showing {shown} of {total} findings{scope.filter === "none" ? " with no project" : ""}.</small>
+        <small>Showing {shown} of {total} source-linked findings for this project (approved team insights for it are counted separately).</small>
       )}
     </div>
   );
@@ -155,5 +165,24 @@ export function ProjectManager({ programId, sources }: { programId: string | nul
         </div>
       )}
     </section>
+  );
+}
+
+/** Per-finding project override. Default: the finding inherits its document's projects. */
+export function RecordProjectOverride({ programId, recordId, sourceId }: { programId: string | null | undefined; recordId: string; sourceId: string }) {
+  const scope = useProjectScope(programId);
+  const setRecordProjects = useProjectStore((s) => s.setRecordProjects);
+  if (!scope.projects.length) return null;
+  const own = scope.overrides[recordId];
+  const inherited = projectsOfSource(scope.map, sourceId, scope.projects);
+  return (
+    <p className="record-tags" data-testid="record-project">
+      Project: {own ? scope.projects.filter((p) => own.includes(p.id)).map((p) => p.code).join(", ") + " (set for this finding)" : inherited.length ? inherited.map((p) => p.code).join(", ") + " (from the document)" : "none"}{" "}
+      <select aria-label="Set project for this finding" value="" onChange={(e) => { const v = e.target.value; if (v === "__inherit") setRecordProjects(scope.pid, recordId, null); else if (v) setRecordProjects(scope.pid, recordId, [v]); }}>
+        <option value="">Change…</option>
+        <option value="__inherit">Use the document's projects</option>
+        {scope.projects.map((p) => <option key={p.id} value={p.id}>{p.code} · {p.name}</option>)}
+      </select>
+    </p>
   );
 }

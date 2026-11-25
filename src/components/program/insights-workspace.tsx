@@ -11,7 +11,7 @@ import { ConnectedOutcomeTrail } from "./connected-outcome-trail";
 import { EvidenceFocus } from "./evidence-focus";
 import { SavedFindings } from "./saved-findings";
 import { useProgramEvidence } from "./use-program-evidence";
-import { ProjectFilter, useProjectScope } from "./project-scope";
+import { ProjectFilter, RecordProjectOverride, useProjectScope } from "./project-scope";
 import { resolveCitation } from "@/lib/program-memory";
 
 const OfficerInsights = dynamic(() =>
@@ -271,6 +271,7 @@ export function InsightsWorkspace({
                             .join(" · ")}
                         </p>
                       )}
+                      <RecordProjectOverride programId={programId} recordId={record.id} sourceId={record.citation.versionId} />
                       <details>
                         <summary>Original passage & context</summary>
                         <blockquote>
