@@ -1,7 +1,7 @@
 "use client";
 
 import { localDay } from "@/lib/local-date";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
@@ -226,6 +226,16 @@ export function ConnectedOutcomeTrail({
       className="outcome-trail compact-outcome-trail"
       aria-label="Explore evidence connections"
     >
+      <style>{`
+        .compact-outcome-trail .trail-header.workspace-section-header{background:#fff;color:#12332d;padding:14px 20px;border-bottom:1px solid #e3e9e8}
+        .compact-outcome-trail .trail-header h2{color:#12332d!important;font-size:20px;margin:2px 0}
+        .compact-outcome-trail .trail-header .trail-eyebrow{color:#256b59}
+        .compact-outcome-trail .trail-picker{color:#475569}
+        .compact-outcome-trail .trail-picker select{background:#fff;color:#12332d;border:1px solid #cfe0da}
+        @media(min-width:900px){.compact-outcome-trail .trail-layout{grid-template-columns:minmax(0,2fr) minmax(280px,1fr)}}
+        .og-mid .trail-focus strong{font-size:17px;line-height:1.25}
+        @media(max-width:640px){.compact-outcome-trail .trail-header.workspace-section-header{flex-wrap:wrap;gap:8px}}
+      `}</style>
       <header className="trail-header workspace-section-header">
         <div>
           <span className="trail-eyebrow v1-positioning">
@@ -241,11 +251,17 @@ export function ConnectedOutcomeTrail({
             onChange={(event) => recenter(event.target.value)}
           >
             {!trail && <option value="">No reviewed findings</option>}
-            {records.map((record) => (
-              <option key={record.id} value={record.id}>
-                {record.title}
-              </option>
-            ))}
+            {themeSummary(records, themeOverrides)
+              .filter((t) => t.items.length > 0)
+              .map((t) => (
+                <optgroup key={t.id} label={`${t.title} (${t.items.length})`}>
+                  {t.items.map((record) => (
+                    <option key={record.id} value={record.id}>
+                      {record.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
           </select>
         </label>
       </header>
@@ -256,7 +272,7 @@ export function ConnectedOutcomeTrail({
             finding below to explore this program.
           </p>
         )}
-        <div
+        {false && <div
           className="connection-focus-tabs"
           role="group"
           aria-label="Explore connections focus"
@@ -280,8 +296,8 @@ export function ConnectedOutcomeTrail({
               <strong style={{ fontSize: 13, fontWeight: 600 }}>{f.title} · {f.n}</strong>
             </button>
           ))}
-        </div>
-        {facet !== "all" && facet !== "why" && facet !== "gaps" && (
+        </div>}
+        {false && facet !== "all" && facet !== "why" && facet !== "gaps" && (
           <div className="facet-findings" data-testid="facet-findings" style={{ margin: "8px 0" }}>
             <p className="text-xs text-slate-600">
               {({ updates: "What is new in the programme.", progress: "What was delivered against plans.", finance: "Money: funding, budget and spending as reported in documents.", challenges: "Problems, delays and risks reported.", lessons: "What worked or should change." } as Record<string, string>)[facet] ?? ""} These are approved findings. Click one to see its source document. Topics are matched from each finding's type and wording, and a reviewer can move an item in the report.
@@ -356,6 +372,7 @@ export function ConnectedOutcomeTrail({
               <div className={`trail-map connection-${layout}`}>
                 <button
                   className="trail-focus"
+                  style={layout === "map" ? { display: "none" } : undefined}
                   aria-pressed={activeId === focusId}
                   onClick={() => inspect(focusId)}
                   aria-controls="trail-inspector"
@@ -488,6 +505,39 @@ export function ConnectedOutcomeTrail({
                     })}
                   </div>
                 ) : (
+                  <>
+                    <OutcomeGraph
+                      focus={
+                        <button
+                          className="trail-focus"
+                          aria-pressed={activeId === focusId}
+                          onClick={() => inspect(focusId)}
+                          aria-controls="trail-inspector"
+                        >
+                          <span>
+                            {themes[trail.focus.kind]} ·{" "}
+                            {citationMatchesSource(trail.focus.citation, sources) ? "source linked" : "source needs review"}
+                          </span>
+                          <strong>{trail.focus.title}</strong>
+                          <small>
+                            {sources.find((source) => source.id === trail.focus.citation.versionId)?.title ?? "Source unavailable"} · {trail.focus.eventDate}
+                          </small>
+                        </button>
+                      }
+                      items={linked.flatMap(({ record, relation }) =>
+                        record && BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group !== "dates"
+                          ? [
+                              {
+                                id: record.id,
+                                dashed: ["ai"].includes(BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group),
+                                node: node(record, relation.label),
+                              },
+                            ]
+                          : [],
+                      )}
+                    />
+                  <details className="og-list" style={{ marginTop: 8 }}>
+                  <summary style={{ fontSize: 13, cursor: "pointer" }}>Show as list</summary>
                   <div className="trail-connections">
                     {GROUPS.map((group) => {
                       const items = linked.filter(
@@ -512,10 +562,12 @@ export function ConnectedOutcomeTrail({
                       ) : null;
                     })}
                   </div>
+                  </details>
+                  </>
                 )}
                 {layout !== "pathway" && role !== "funder" && records.length > 1 && (
-                  <div className="trail-add-link" style={{ marginTop: 10, fontSize: 13 }}>
-                    <strong>Record a link from this finding</strong>
+                  <details className="trail-add-link" style={{ marginTop: 10, fontSize: 13 }}>
+                    <summary style={{ cursor: "pointer", fontWeight: 600 }}>Record a link from this finding</summary>
                     <small style={{ display: "block", color: "#64748b" }}>
                       Only add a link a document supports. It is saved as a reviewer-recorded link, not as proof of cause.
                     </small>
@@ -553,7 +605,7 @@ export function ConnectedOutcomeTrail({
                         Remove my links from this finding
                       </button>
                     )}
-                  </div>
+                  </details>
                 )}
                 {focus === "gaps" && gaps.length > 0 && (
                   <div className="trail-required-documents">
@@ -676,5 +728,94 @@ export function ConnectedOutcomeTrail({
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Outcome map: the selected result is the headline box. Every connected
+ * finding sits below it and is joined to it by a straight line (a vertical
+ * line down the gutter with a short tick to each box). A line means the
+ * findings are related context (recorded link, shared document or tag, close
+ * dates, or an accepted AI suggestion). It is not proof of cause.
+ */
+function OutcomeGraph({
+  focus,
+  items,
+}: {
+  focus: ReactNode;
+  items: { id: string; dashed: boolean; node: ReactNode }[];
+}) {
+  const shown = items.slice(0, 12);
+  const n = shown.length;
+  const leftN = Math.ceil(n / 2);
+  const col = (side: "l" | "r") =>
+    shown.flatMap((item, i) =>
+      (i % 2 === 0) === (side === "l")
+        ? [
+            <div
+              key={item.id}
+              className={"og-item og-" + side}
+              data-dashed={item.dashed ? "1" : "0"}
+              data-last={i === n - 1 ? "1" : undefined}
+              style={{ "--o": i } as React.CSSProperties}
+            >
+              {item.node}
+            </div>,
+          ]
+        : [],
+    );
+  return (
+    <div className="og-wrap" data-testid="outcome-graph">
+      <style>{`
+        .og-wrap .trail-focus{width:100%;margin:0}
+        .og-c{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,210px) minmax(0,1fr);column-gap:40px;align-items:center}
+        .og-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+        .og-mid{position:relative}
+        .og-mid::before,.og-mid::after{content:"";position:absolute;top:calc(50% - 4px);width:24px;height:8px;background:linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-mid::before{right:calc(100% - 4px);background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-mid::after{left:calc(100% - 4px);background:radial-gradient(circle at 4px 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-item{position:relative;min-width:0}
+        .og-item .trail-node{width:100%;min-height:0;padding:10px;gap:5px}
+        .og-item .trail-node .theme-chip{order:1}
+        .og-item .trail-node small{order:2}
+        .og-item .trail-node strong{order:3}
+        .og-sentence{font-size:13px!important;font-weight:600;line-height:1.35!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+        .og-item::after{content:"";position:absolute;top:calc(50% - 4px);width:24px;height:8px}
+        .og-l::after{left:calc(100% - 4px);background:radial-gradient(circle at 4px 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-r::after{right:calc(100% - 4px);background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        .og-item[data-dashed="1"]::after{opacity:.75}
+        .og-item:not(:last-child)::before{content:"";position:absolute;top:50%;height:calc(100% + 12px);border-left:2px solid #bcd3cb;border-radius:2px}
+        .og-l::before{left:calc(100% + 19px)}
+        .og-r::before{right:calc(100% + 19px)}
+        .og-legend{font-size:12px;color:#64748b;margin:10px 0 0}
+        @media(max-width:860px){
+          .og-c{grid-template-columns:minmax(0,1fr);display:flex;flex-direction:column;align-items:stretch;row-gap:12px;padding-left:16px}
+          .og-col{display:contents}
+          .og-mid{order:-1;margin-left:-16px}
+          .og-mid::before,.og-mid::after{display:none}
+          .og-item{order:var(--o)}
+          .og-item::before,.og-item:not(:last-child)::before{content:"";display:block;position:absolute;left:-15px;right:auto;top:-12px;height:calc(100% + 12px);border-left:2px solid #bcd3cb;border-radius:2px}
+          .og-item[data-last="1"]::before{height:calc(50% + 12px)}
+          .og-l::after,.og-r::after{left:-15px;right:auto;width:19px;background:radial-gradient(circle at calc(100% - 4px) 50%,#6b8f84 3.5px,transparent 4px),linear-gradient(#bcd3cb,#bcd3cb) center/100% 2px no-repeat}
+        }
+      `}</style>
+      {n > 0 ? (
+        <div className="og-c">
+          <div className="og-col">{col("l")}</div>
+          <div className="og-mid">{focus}</div>
+          <div className="og-col">{col("r")}</div>
+        </div>
+      ) : (
+        focus
+      )}
+      {n === 0 ? (
+        <p className="connection-explainer">No connected findings for this result yet.</p>
+      ) : (
+        <p className="og-legend">
+          Lines show related context, not proof of cause. Faded: AI suggestion. Links based only on timing are not shown here.
+          {items.length > n ? " Showing " + n + " of " + items.length + "; see the full list below." : ""}
+        </p>
+      )}
+    </div>
   );
 }
