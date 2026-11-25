@@ -112,10 +112,10 @@ export function InsightsWorkspace({
           <Link href="/assurance">Program Assurance →</Link>
         </p>
       )}
+      <EvidenceFocus />
       <section className="summary-connections" id="explore-connections">
         <ConnectedOutcomeTrail initialFocus={view} />
       </section>
-      <EvidenceFocus />
       <section
         className="insights-ai-composer"
         aria-label="Ask MapToc about reviewed documents"
