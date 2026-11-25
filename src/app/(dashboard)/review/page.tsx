@@ -71,6 +71,43 @@ function Row({ p, done }: { p: EvidenceProposal; done: boolean }) {
   );
 }
 
+function ApprovedEdit() {
+  const records = useMemoryStore((s) => s.records);
+  const edit = useMemoryStore((s) => s.editRecordStatement);
+  const [open, setOpen] = useState<string | null>(null);
+  const [text, setText] = useState("");
+  const [msg, setMsg] = useState("");
+  return (
+    <details className="memory-card" style={{ padding: 12, marginTop: 14 }}>
+      <summary style={{ cursor: "pointer", fontWeight: 600 }}>Fix an approved finding ({records.length})</summary>
+      <p style={{ fontSize: 13, color: "#475569" }}>Change the wording if the AI got it wrong. The quote and source stay as they are. Changes are logged.</p>
+      <ul style={{ padding: 0, margin: 0 }}>
+        {records.map((r) => (
+          <li key={r.id} style={{ listStyle: "none", borderTop: "1px solid #e2e8f0", padding: "8px 0" }}>
+            <strong>{r.title}</strong>
+            {open === r.id ? (
+              <>
+                <textarea className="memory-input" aria-label="Edit wording" rows={3} value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", marginTop: 4 }} />
+                <blockquote style={{ margin: "4px 0", paddingLeft: 8, borderLeft: "3px solid #76ad98", fontSize: 12.5, color: "#475569" }}>“{r.citation.quote}”</blockquote>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="memory-action" onClick={() => { const ok = edit(r.id, text); setMsg(ok ? "Saved." : "Nothing changed."); if (ok) setOpen(null); }}>Save</button>
+                  <button className="memory-action" onClick={() => setOpen(null)}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: "2px 0", fontSize: 13 }}>{r.statement}</p>
+                <button className="memory-action" onClick={() => { setOpen(r.id); setText(r.statement); setMsg(""); }}>Edit</button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+      {msg && <p role="status" style={{ fontSize: 13 }}>{msg}</p>}
+    </details>
+  );
+}
+
 function List() {
   const proposals = useMemoryStore((s) => s.proposals);
   const review = useMemoryStore((s) => s.review);
@@ -99,6 +136,7 @@ function List() {
       ) : (
         <ul style={{ padding: 0 }}>{rows.map((p) => <Row key={p.id} p={p} done={false} />)}</ul>
       )}
+      <ApprovedEdit />
     </>
   );
 }
