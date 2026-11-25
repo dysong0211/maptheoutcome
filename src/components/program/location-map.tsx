@@ -8,7 +8,11 @@ const NONE = /^(|see source document|location not specified.*|not specified|unkn
 type Hit = { lat: number; lon: number; name: string; count: number };
 
 /** Geography only. Places come from each finding's location label (set by a reviewer). Nothing here shows how findings relate. */
-export function LocationMap({ records, sources }: { records: ProgramRecord[]; sources: SourceVersion[] }) {
+/** Street-map view is hidden for now (owner instruction): the Program summary shows places instead. Kept as LocationMapOsm. */
+export function LocationMap(_props: { records: ProgramRecord[]; sources: SourceVersion[] }) {
+  return null;
+}
+export function LocationMapOsm({ records, sources }: { records: ProgramRecord[]; sources: SourceVersion[] }) {
   const groups = new Map<string, ProgramRecord[]>();
   for (const r of records) {
     const loc = (r.location ?? "").trim();
