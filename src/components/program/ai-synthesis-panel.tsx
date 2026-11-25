@@ -137,13 +137,9 @@ export function AISynthesisPanel({
     ) : null;
   };
   return (
-    <section className="memory-card" aria-label="AI synthesis" data-testid="ai-synthesis" style={{ padding: 14, margin: "12px 0", border: "1px solid #c4b5fd", borderRadius: 12, background: "#faf8ff" }}>
-      <h3 className="text-base font-semibold"><Sparkles size={16} style={{ display: "inline" }} /> AI connections, reasons, pathways and lessons</h3>
-      <p className="text-xs text-slate-600">
-        One AI call reads your {records.length} approved findings (statements and cited quotations only) and proposes links, reasons that may fill evidence gaps, pathways and lessons. Everything is a proposal. Shared documents, codes or dates are never turned into cause.
-      </p>
-      <button className="memory-action" disabled={busy || records.length < 2 || !ai.ready || role === "funder"} onClick={run}>
-        {busy ? "Connecting findings…" : "Propose connections with AI (1 AI call)"}
+    <section className="memory-card" aria-label="AI synthesis" data-testid="ai-synthesis" style={{ padding: "6px 0", margin: "6px 0" }}>
+      <button className="memory-action" title="One AI call. Suggestions only, never proof." disabled={busy || records.length < 2 || !ai.ready || role === "funder"} onClick={() => { if (window.confirm(`Send your ${records.length} approved findings (statements and quotes only) to AI in one call? It only suggests links. You decide what to keep.`)) run(); }}>
+        <Sparkles size={14} style={{ display: "inline" }} /> {busy ? "Finding connections…" : "Find connections (AI)"}
       </button>
       {!ai.ready && <small style={{ marginLeft: 8 }}>{ai.message}</small>}
       {records.length < 2 && <small style={{ marginLeft: 8 }}>Needs at least 2 approved findings.</small>}
