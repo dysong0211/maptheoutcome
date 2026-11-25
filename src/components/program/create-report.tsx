@@ -108,7 +108,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     records.filter((r) => { const d = recordDate(r.eventDate); return d && r.eventDateBasis !== "document-date" && (d < from || d > to); }).length +
     approved.filter((i) => i.observedOn < from || i.observedOn > to).length;
   const undatedRecords = undatedReportRecords(records, sources);
-  const [includeUndated, setIncludeUndated] = useState(false);
+  const [includeUndated, setIncludeUndated] = useState(true);
   const [dateDrafts, setDateDrafts] = useState<Record<string, string>>({});
   const [packUndated, setPackUndated] = useState(false);
   const evidenceKey = reportEvidenceKey(records, sources, reflections);
