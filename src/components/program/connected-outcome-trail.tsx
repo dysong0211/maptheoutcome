@@ -391,16 +391,6 @@ export function ConnectedOutcomeTrail({
             </div>
             <div className="trail-layout">
               <div className={`trail-map connection-${layout}`}>
-                <div className="trail-objective">
-                  <Target size={18} />
-                  <div>
-                    <span>Intended outcome</span>
-                    <p>{program?.objective ?? programContext.objective}</p>
-                  </div>
-                </div>
-                <div className="trail-connector" aria-hidden="true">
-                  <ArrowDown size={18} />
-                </div>
                 <button
                   className="trail-focus"
                   aria-pressed={activeId === focusId}
@@ -550,8 +540,7 @@ export function ConnectedOutcomeTrail({
                             return (
                               record && (
                                 <div key={record.id}>
-                                  {node(record, `${relation.label} · ${BASIS_TEXT[rel.basis ?? "reviewer"].badge}`)}
-                                  <small style={{ display: "block", margin: "0 0 6px 4px", color: "#64748b" }}>{rel.why}</small>
+                                  {node(record, relation.label)}
                                 </div>
                               )
                             );
