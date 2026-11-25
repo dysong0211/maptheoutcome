@@ -224,7 +224,14 @@ export function AssuranceWorkspace({ view }: { view: View }) {
                 {workspace.program?.periodStart}–{workspace.program?.periodEnd}
               </span>
             </div>
-            <div className="health-lights">
+            {lights.every((l) => l.items.length === 0) && (
+              <p role="status" style={{ margin: "12px 16px", fontSize: 14, color: "#475569" }}>
+                {health.lastRun
+                  ? "No checks to show right now."
+                  : "Not run yet. Run Program Assurance to see which checks pass and which need review."}
+              </p>
+            )}
+            <div className="health-lights" style={lights.every((l) => l.items.length === 0) ? { display: "none" } : undefined}>
               {lights.map((light) => (
                 <button
                   key={light.id}
