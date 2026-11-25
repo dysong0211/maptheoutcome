@@ -2,11 +2,13 @@
 import Link from "next/link";
 import { eventDateText } from "@/lib/event-date";
 import type { ProgramRecord } from "@/lib/program-memory";
+import { useSavedFindings } from "./saved-findings";
 
 export type ThemeLines = { progress?: string; finance?: string; challenges?: string };
 
 /** The five Overview summary themes. Each shows one plain sentence from reviewed records or existing figures, never a guess. */
 export function SummaryThemes({ records, lines = {} }: { records: ProgramRecord[]; lines?: ThemeLines }) {
+  const awaiting = useSavedFindings().length;
   const sorted = records.slice().sort((a, b) => (b.reviewedAt ?? "").localeCompare(a.reviewedAt ?? "") || b.eventDate.localeCompare(a.eventDate));
   const latest = sorted[0];
   const results = records.filter((r) => r.kind === "Result");
@@ -20,6 +22,7 @@ export function SummaryThemes({ records, lines = {} }: { records: ProgramRecord[
     { k: "Lessons", color: "teal", means: "What worked, what didn't, what to repeat or change", href: "/insights?view=changes", text: lessons[0] ? lessons[0].title : "No reviewed lessons yet." },
   ];
   return (
+    <>
     <ul className="summary-themes" aria-label="Program summary themes">
       {cards.map((c) => (
         <li key={c.k} className={c.color}>
@@ -31,5 +34,11 @@ export function SummaryThemes({ records, lines = {} }: { records: ProgramRecord[
         </li>
       ))}
     </ul>
+    {awaiting > 0 && (
+      <p className="summary-awaiting text-sm">
+        {awaiting} saved finding{awaiting === 1 ? "" : "s"} awaiting reviewer approval, not yet counted above. <Link href="/insights">See saved findings →</Link>
+      </p>
+    )}
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { Sparkles } from "lucide-react";
 import { EvidenceAsk } from "./evidence-lens";
 import { ConnectedOutcomeTrail } from "./connected-outcome-trail";
 import { EvidenceFocus } from "./evidence-focus";
+import { SavedFindings } from "./saved-findings";
 import { useProgramEvidence } from "./use-program-evidence";
 import { resolveCitation } from "@/lib/program-memory";
 
@@ -109,6 +110,7 @@ export function InsightsWorkspace({
           <Link href="/assurance">Program Assurance →</Link>
         </p>
       )}
+      <SavedFindings />
       <EvidenceFocus />
       <section
         className="insights-ai-composer"

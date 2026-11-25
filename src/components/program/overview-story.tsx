@@ -8,6 +8,7 @@ import { overviewRecords } from "@/lib/overview-summary";
 import { resolveCitation } from "@/lib/program-memory";
 import { ReadinessStrip } from "./readiness-strip";
 import { useProgramEvidence } from "./use-program-evidence";
+import { useSavedFindings } from "./saved-findings";
 
 export function MapTocGuide() {
   return <details className="overview-guide"><summary><CircleHelp size={17}/> How MapToc works <span>Capture → review → understand → follow up</span></summary>
@@ -24,11 +25,12 @@ export function MapTocGuide() {
 export function OverviewBridge() {
   const proposals=useMemoryStore(s=>s.proposals),records=useMemoryStore(s=>s.records);
   const {sources}=useProgramEvidence();
+  const savedKept=useSavedFindings().length;
   const pending=proposals.filter(p=>["pending","flagged"].includes(p.status)&&p.triage!=="dismissed"&&sources.some(s=>s.id===p.citation.versionId));
   const approved=overviewRecords(records,sources);
   const steps=[
     {Icon:FileText,title:"Upload",detail:`${sources.length} source documents`,href:"/sources"},
-    {Icon:Sparkles,title:"AI suggests",detail:`${pending.length} findings awaiting review`,href:"/review"},
+    {Icon:Sparkles,title:"AI suggests",detail:`${pending.length} findings awaiting review${savedKept?` · ${savedKept} saved, awaiting approval`:""}`,href:"/review"},
     {Icon:ShieldCheck,title:"Review",detail:"Check the source or skip review",href:"/review"},
     {Icon:ChartNoAxesCombined,title:"Summary updates",detail:`${approved.length} source-linked records`,href:"#program-summary"}
   ];
