@@ -510,7 +510,9 @@ export const useMemoryStore = create<MemoryState>()(
           return false;
         const occurredAt = new Date().toISOString();
         const actor = viaSave
-          ? "Program manager · approved on save"
+          ? decision === "approved"
+            ? "Program manager · approved on save"
+            : "Program manager · dismissed in review list"
           : pilotSingleOperator
           ? "Pilot participant · demo self-review"
           : "M&E reviewer · identity not verified";
