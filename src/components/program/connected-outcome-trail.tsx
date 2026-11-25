@@ -325,7 +325,7 @@ export function ConnectedOutcomeTrail({
               {awaiting
                 ? "The outcome map, pathway, relationships and themes are built from approved findings only. Open the review inbox, check each finding against its source, and approve it to see it here."
                 : sources.length
-                  ? "A document is uploaded, but no findings are approved yet. Open Evidence to check it, or add a finding, then review it to connect results, decisions and evidence gaps here."
+                  ? `${sources.length === 1 ? "1 document is" : `${sources.length} documents are`} uploaded, but no findings are approved yet. Open Evidence to check ${sources.length === 1 ? "it" : "them"}, or add a finding, then review to connect results, decisions and evidence gaps here.`
                   : "Upload a document and review its findings to connect results, decisions and evidence gaps here."}
             </p>
             {awaiting > 0 && (
@@ -334,7 +334,7 @@ export function ConnectedOutcomeTrail({
               </Link>
             )}
             <Link className="memory-action" href="/sources">
-              Add documents →
+              {sources.length ? "Open documents →" : "Add documents →"}
             </Link>
           </div>
         ) : (
