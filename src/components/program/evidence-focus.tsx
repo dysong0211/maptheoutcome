@@ -50,7 +50,9 @@ export function EvidenceFocus({ finance = false }: { finance?: boolean }) {
                   : r.kind === "Decision"
                     ? "Program decision"
                     : r.kind === "Change"
-                      ? "Budget"
+                      ? r.id === "cost" || r.id === "transport"
+                        ? "Budget"
+                        : "Event"
                       : r.kind}
               </small>
               <h3>{r.title}</h3>
