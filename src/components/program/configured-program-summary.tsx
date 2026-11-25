@@ -27,8 +27,8 @@ export function ConfiguredProgramSummary() {
     );
   const mine = allRecords.filter((r) => sources.some((x) => x.id === r.citation.versionId && (x.programId || "cambodia-demo") === p.id)),
     financeRec = mine.filter((r) => themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "finance"),
-    resultRec = mine.filter((r) => r.kind === "Result"),
-    fromDocs = (r?: { title: string }) => r ? `From your documents, not verified: ${r.title}. Open details to turn it into a check.` : "";
+    resultRec = mine.filter((r) => r.kind === "Result" || themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "progress"),
+    fromDocs = (r?: { statement: string }) => r ? `${r.statement.length > 160 ? r.statement.slice(0, 157) + "..." : r.statement} (from your approved findings, not audited)` : "";
   const coverage = [...new Set(p.rules.flatMap((r) => r.sourceIds))],
     linked = coverage.filter((id) => evidence.some((s) => s.id === id)).length,
     usage =
@@ -41,7 +41,7 @@ export function ConfiguredProgramSummary() {
       ruleIds: budget ? [budget.id] : [],
       value: base?.reviewedBy
         ? `${p.currency} ${Number(base.value).toLocaleString()}`
-        : "Figure needed",
+        : financeRec[0] ? "In documents" : "Figure needed",
       detail: budget?.line || fromDocs(financeRec[0]) || "No spending check configured",
       percent: null,
     },
@@ -50,7 +50,7 @@ export function ConfiguredProgramSummary() {
       ruleIds: budget ? [budget.id] : [],
       value: spend?.reviewedBy
         ? `${p.currency} ${Number(spend.value).toLocaleString()}`
-        : "Figure needed",
+        : financeRec[0] ? "In documents" : "Figure needed",
       detail:
         usage === null
           ? fromDocs(financeRec[1] ?? financeRec[0]) || "Link and review the source figure"
@@ -62,7 +62,7 @@ export function ConfiguredProgramSummary() {
       ruleIds: delivery ? [delivery.id] : [],
       value: result?.reviewedBy
         ? Number(result.value).toLocaleString()
-        : "Figure needed",
+        : resultRec[0] ? "In documents" : "Figure needed",
       detail: result?.unit || fromDocs(resultRec[0]) || "Set a delivery measure",
       percent: null,
     },
