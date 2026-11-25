@@ -15,6 +15,7 @@ import { ProgramCommitments } from "./program-commitments";
 import { StudySites } from "./study-sites";
 import { ScopedProgramTool } from "./scoped-program-tool";
 import { ProjectFilter, useProjectScope } from "./project-scope";
+import { SavedFindings } from "./saved-findings";
 import {
   programSections,
   programSectionHref,
@@ -168,6 +169,7 @@ function ProgramSummaryContent() {
   return (
     <>
       <ProjectFilter programId={p?.id} shown={records.length} />
+      <SavedFindings />
       <div className="portfolio-grid">
         <div className="portfolio-main">
           <div className="portfolio-stats">
