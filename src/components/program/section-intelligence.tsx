@@ -95,7 +95,9 @@ export function SectionIntelligence({
               ? `Live AI interpretation shown above · the heuristic summary below uses this view’s demo data`
               : aiStatus.ready
                 ? `Based on this programme’s ${isDefault ? "demo " : ""}records · live ${aiProviderName(aiStatus.provider)} available on demand above`
-                : `Based on this programme’s ${isDefault ? "demo " : ""}records · No live AI`}
+                : aiStatus.message.startsWith("Checking")
+                  ? `Based on this programme’s ${isDefault ? "demo " : ""}records · checking AI status…`
+                  : `Based on this programme’s ${isDefault ? "demo " : ""}records · No live AI (${aiStatus.message})`}
           </span>
           {insight.references.length > 0 && (
             <details>
