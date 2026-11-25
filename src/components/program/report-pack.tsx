@@ -8,7 +8,14 @@ import {
   buildSections,
   compareChart,
   evidenceCharts,
+  flowChart,
   headline,
+  limitationsHtml,
+  limitationsOf,
+  limitationsText,
+  refsHtml,
+  refsText,
+  summaryChart,
   itemHtml,
   itemText,
   numericColumns,
@@ -111,20 +118,16 @@ function ChartCard({ chart, disabled, note }: { chart: Chart; disabled?: boolean
   );
 }
 
-function ItemCard({ item, disabled, note }: { item: PackItem; disabled?: boolean; note: (m: string) => void }) {
+function RefCard({ item, disabled, note }: { item: PackItem; disabled?: boolean; note: (m: string) => void }) {
   return (
-    <article className="pack-item">
-      <h4>{item.title}</h4>
-      <p>{item.text}</p>
-      <p className="pack-meta">
-        {item.meta}{item.tags ? ` · ${item.tags}` : ""} · Source: <a href={item.link}>{item.source}</a>
-      </p>
+    <li value={item.ref} className="pack-ref">
+      <b>{item.title}</b>: {item.text}
+      <span className="pack-meta"> {item.meta}{item.tags ? ` · ${item.tags}` : ""} · Source: <a href={item.link}>{item.source}</a></span>
       {item.quote && <blockquote className="pack-quote">“{item.quote}”</blockquote>}
-      {item.limit && <p className="pack-limit"><b>Limit:</b> {item.limit}</p>}
-      <button disabled={disabled} className="pack-copy" onClick={async () => note((await copyRich(itemHtml(item), itemText(item))) ? "Copied. Paste it into your report." : "Copy was blocked by this browser.")}>
+      <button disabled={disabled} className="pack-copy" onClick={async () => note((await copyRich(itemHtml(item), itemText(item))) ? `Copied reference [${item.ref}] with its source passage.` : "Copy was blocked by this browser.")}>
         Copy this
       </button>
-    </article>
+    </li>
   );
 }
 
@@ -234,13 +237,16 @@ export function ReportPack({
   ];
   const caveat = "Findings and insights were approved by a reviewer and are not independently verified. Charts count evidence items or plot uploaded tables as given. They are not measured results. Check consent and disclosure before sharing.";
   const head = headline(sections, from, to, sourceCount, { findings: records.length, insights: insights.length });
+  const sumCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections)].filter((c): c is Chart => !!c), [sections, sourceCount]);
+  const allItems = sections.flatMap((x) => x.items);
   const fullHtml = async () => {
-    const withImg = await withImages([...(tChart.chart ? [tChart.chart] : []), ...charts]);
-    const tc = tChart.chart ? withImg[0] : null;
-    return reportHtml({ title, programName, from, to, stats, sections, charts: tChart.chart ? withImg.slice(1) : withImg, caveat, headline: head, tableChart: tc, tableStatus: tChart.status });
+    const withImg = await withImages([...sumCharts, ...(tChart.chart ? [tChart.chart] : []), ...charts]);
+    const sc = withImg.slice(0, sumCharts.length);
+    const tc = tChart.chart ? withImg[sumCharts.length] : null;
+    return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status });
   };
   const fullText = () =>
-    [`Summary\n${head.sentence}`, ...sections.map(sectionText), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
+    [`Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
     <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
@@ -263,28 +269,28 @@ export function ReportPack({
       {head.sentence && (
         <div className="pack-summary">
           <h3>Summary</h3>
-          {head.blocks.map((b) => (
-            <div key={b.label}>
-              <h4>{b.label}</h4>
-              <ul>
-                {b.lines.map((l, i) => (
-                  <li key={i}>{l.text}{l.caveat && <><br /><em className="pack-limit">Limit: {l.caveat}</em></>}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-          {head.note && <p className="pack-hint">{head.note}</p>}
-          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<h3>Summary</h3>${head.html}`, `Summary\n${head.sentence}`)) ? "Copied the summary, with its limits." : "Copy was blocked by this browser.")}>Copy summary</button>
+          <table className="pack-table-sum">
+            <thead><tr><th>Theme</th><th>Statement</th><th>Ref</th></tr></thead>
+            <tbody>
+              {head.rows.map((r) => (
+                <tr key={r.ref}><td>{r.area}{r.level && <small> {r.level}</small>}</td><td>{r.text}</td><td>[{r.ref}]</td></tr>
+              ))}
+            </tbody>
+          </table>
+          {head.more > 0 && <p className="pack-hint">{head.more} more reviewed {head.more === 1 ? "statement" : "statements"} under the themes below.</p>}
+          <p className="pack-hint">{head.note}</p>
+          <div className="pack-grid">{sumCharts.map((c) => <ChartCard key={c.id} chart={c} disabled={disabled} note={setMsg} />)}</div>
+          <button disabled={disabled} className="pack-copy" onClick={async () => setMsg((await copyRich(`<h3>Summary</h3>${head.html}`, `Summary\n${head.sentence}`)) ? "Copied the summary table. Paste it into your report." : "Copy was blocked by this browser.")}>Copy summary table</button>
         </div>
       )}
       {sections.map((s) => (
         <div key={s.id} className="pack-section">
           <div className="pack-section-head">
             <div>
-              <h3>{s.title} <small>({s.items.length} reviewed {s.items.length === 1 ? "item" : "items"})</small></h3>
+              <h3>{s.title} <small>({s.items.length})</small></h3>
               <p className="pack-hint">{s.lead || s.intro}</p>
             </div>
-            <button disabled={disabled || !s.items.length} onClick={async () => setMsg((await copyRich(sectionHtml(s), sectionText(s))) ? `Copied “${s.title}”. Paste it into your report.` : "Copy was blocked by this browser.")}>
+            <button disabled={disabled || !s.items.length} onClick={async () => setMsg((await copyRich(sectionHtml(s), sectionText(s))) ? `Copied “${s.title}” with its limitations and references.` : "Copy was blocked by this browser.")}>
               Copy section
             </button>
           </div>
@@ -293,23 +299,40 @@ export function ReportPack({
               <ul>
                 {s.bullets.map((b, i) => (
                   <li key={i}>
-                    {b.level && <b>[{b.level}] </b>}{b.text} <span className="pack-cite">{b.cite}</span>
-                    {b.caveat && <><br /><em className="pack-limit">Limit: {b.caveat}</em></>}
+                    {b.level && <b>[{b.level}] </b>}{b.text} <span className="pack-cite">[{b.ref}]</span>
                     {b.hypothesis && <><br /><em className="pack-limit">Idea to test (not a finding): {b.hypothesis}</em></>}
                   </li>
                 ))}
               </ul>
-              {s.notes.length > 0 && <p className="pack-limit"><b>Limits that apply to several items above:</b> {s.notes.join(" ")}</p>}
             </div>
-          ) : <p className="pack-hint">Nothing reviewed yet for this section.</p>}
-          {s.items.length > 0 && (
-            <details className="pack-details">
-              <summary>Source-linked items ({s.items.length})</summary>
-              {s.items.map((it, i) => <ItemCard key={i} item={it} disabled={disabled} note={setMsg} />)}
-            </details>
-          )}
+          ) : <p className="pack-hint">{s.id === "finance" ? "No finance statement has been reviewed yet. Figures should come from the finance system." : "Nothing reviewed yet for this theme."}</p>}
         </div>
       ))}
+      {!empty && (
+        <div className="pack-section pack-limits">
+          <div className="pack-section-head">
+            <div>
+              <h3>Limitations</h3>
+              <p className="pack-hint">What the evidence does not show. Reference numbers match the statements above.</p>
+            </div>
+            <button disabled={disabled} onClick={async () => setMsg((await copyRich(limitationsHtml(allItems), limitationsText(allItems))) ? "Copied the limitations." : "Copy was blocked by this browser.")}>Copy limitations</button>
+          </div>
+          <table className="pack-table-sum">
+            <thead><tr><th>Applies to</th><th>Limitation</th></tr></thead>
+            <tbody>
+              <tr><td>All</td><td>All statements were approved by a reviewer and are recorded as the sources state them. They are not independently verified. Outputs and reported community change are not verified outcomes.</td></tr>
+              {limitationsOf(allItems).map((l, i) => <tr key={i}><td>{l.refs.map((r) => `[${r}]`).join(" ")}</td><td>{l.text}</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {!empty && (
+        <details className="pack-details pack-refs">
+          <summary>References ({allItems.length})</summary>
+          <p className="pack-hint">Numbered to match [n] above. Each shows its source, date and source passage.</p>
+          <ol>{allItems.map((it) => <RefCard key={it.ref} item={it} disabled={disabled} note={setMsg} />)}</ol>
+        </details>
+      )}
       <h3>Chart your data (uploaded tables)</h3>
       <TableCharts sources={sources} disabled={disabled} note={setMsg} onChart={(chart, status) => setTChart((p) => (p.chart?.svg === chart?.svg && p.status === status ? p : { chart, status }))} />
       {tChart.chart && <p className="pack-hint">This chart is included in Copy whole report and Download report.</p>}
