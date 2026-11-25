@@ -72,7 +72,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     [...approved.map((i) => i.observedOn), ...uploadDays],
   );
   const [to, setTo] = useState(period.to);
-  const [from, setFrom] = useState(period.from);
+  const [from, setFrom] = useState(period.first);
   const [prompt, setPrompt] = useState("Weekly program update");
   const [reportKind, setReportKind] = useState<ReportKind>("program-update");
   const [draft, setDraft] = useState("");
@@ -100,7 +100,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     setDraftContext(null);
     setError("");
     setTo(period.to);
-    setFrom(period.from);
+    setFrom(period.first);
   }, [programId]);
   const matchingRecords = reportRecords(records, sources, from, to);
   const matchingInsights = reportInsights(reflections, sources, from, to);
