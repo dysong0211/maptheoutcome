@@ -6,6 +6,8 @@ import { allEvidence } from "@/lib/assurance";
 import { ProgramAssuranceSetup } from "./program-assurance-setup";
 import { presentCheck } from "@/lib/assurance-presentation";
 import { caseHref, linkedCaseId } from "@/lib/clarifications";
+import { useProgramEvidence } from "./use-program-evidence";
+import { themeOf } from "@/lib/outcome-links";
 
 /** Legacy Cambodia tools remain intact; other programs use only their own inputs. */
 export function ScopedProgramTool({
@@ -20,6 +22,8 @@ export function ScopedProgramTool({
   const state = useClarifications(),
     sources = useMemoryStore((s) => s.sources),
     p = state.program;
+  const evidence = useProgramEvidence();
+  const financeFindings = evidence.records.filter((r) => themeOf(r) === "finance");
   if (!p || p.id === "cambodia-demo") return <>{children}</>;
   const docs = allEvidence(state, sources).filter(
     (s) => !s.id.startsWith("configured-inputs:"),
@@ -151,6 +155,24 @@ export function ScopedProgramTool({
               to suggest them.
             </p>
           )}
+          {financeFindings.length > 0 && (
+            <article className="memory-card" style={{ gridColumn: "1 / -1" }}>
+              <h2>Reported in documents</h2>
+              <p>Approved finance findings, each with its source. These are reported figures, not checked against a ledger.</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+                {financeFindings.map((r) => (
+                  <li key={r.id} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
+                    <strong>{r.title}</strong>
+                    <p style={{ margin: "4px 0", fontSize: 14 }}>{r.statement}</p>
+                    <small>
+                      {evidence.sources.find((x) => x.id === r.citation.versionId)?.title ?? "Source unavailable"} ·{" "}
+                      <Link href={`/record?item=${encodeURIComponent(r.id)}`}>Open evidence record ↗</Link>
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          )}
         </section>
       ) : (
         <div className="assurance-check-grid">
@@ -196,13 +218,13 @@ export function ScopedProgramTool({
           )}
         </div>
       )}
-      <section className="scoped-originals">
-        <h2>Original documents</h2>
+      <details className="scoped-originals">
+        <summary style={{ cursor: "pointer", fontWeight: 600 }}>Original documents ({docs.length})</summary>
         {docs.map((s) => (
           <details key={s.id}>
             <summary>
               {s.title}
-              <small> · {s.sourceDate}</small>
+              <small> · {String(s.sourceDate).slice(0, 10)}</small>
             </summary>
             {s.passages.map((p) => (
               <blockquote key={p.id}>{p.text}</blockquote>
@@ -210,7 +232,7 @@ export function ScopedProgramTool({
           </details>
         ))}
         <Link href="/sources">Add supporting documents ↗</Link>
-      </section>
+      </details>
     </div>
   );
 }
