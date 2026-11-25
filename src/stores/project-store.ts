@@ -9,6 +9,9 @@ type State = {
   sourceProjects: Record<string, SourceProjects>;
   /** Selected project filter per programme: "all", "none" or a project id. */
   filters: Record<string, string>;
+  /** Optional per-finding override: recordId -> project ids. Absent means the finding inherits its document's projects. */
+  recordProjects: Record<string, Record<string, string[]>>;
+  setRecordProjects: (programId: string, recordId: string, projectIds: string[] | null) => void;
   setFilter: (programId: string, value: string) => void;
   importList: (programId: string, text: string) => { added: number; skipped: number };
   assign: (programId: string, sourceIds: string[], projectIds: string[]) => void;
@@ -21,6 +24,15 @@ export const useProjectStore = create<State>()(
       projects: {},
       sourceProjects: {},
       filters: {},
+      recordProjects: {},
+      setRecordProjects: (programId, recordId, projectIds) =>
+        set((s) => {
+          const cur = { ...(s.recordProjects[programId] ?? {}) };
+          const ok = new Set((s.projects[programId] ?? []).map((p) => p.id));
+          const ids = (projectIds ?? []).filter((id) => ok.has(id));
+          if (projectIds && ids.length) cur[recordId] = ids; else delete cur[recordId];
+          return { recordProjects: { ...s.recordProjects, [programId]: cur } };
+        }),
       setFilter: (programId, value) => set((s) => ({ filters: { ...s.filters, [programId]: value } })),
       importList: (programId, text) => {
         const current = get().projects[programId] ?? [];
