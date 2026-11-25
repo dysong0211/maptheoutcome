@@ -202,7 +202,7 @@ export function ConnectedOutcomeTrail({
       if (first) recenter(first.id);
     }
   }
-  function node(record: ProgramRecord, detail?: string, sentence = false) {
+  function node(record: ProgramRecord, detail?: string) {
     return (
       <button
         key={record.id}
@@ -211,12 +211,11 @@ export function ConnectedOutcomeTrail({
         aria-pressed={activeId === record.id}
         onClick={() => inspect(record.id)}
         aria-controls="trail-inspector"
-        aria-label={sentence ? `${record.title}. ${record.statement}` : undefined}
       >
         <span className="theme-chip" data-kind={record.kind}>
           {themes[record.kind]}
         </span>
-        <strong className={sentence ? "og-sentence" : undefined}>{sentence ? record.statement : record.title}</strong>
+        <strong>{record.title}</strong>
         <small>{detail ?? record.eventDate}</small>
         <ArrowUpRight size={14} />
       </button>
@@ -531,7 +530,7 @@ export function ConnectedOutcomeTrail({
                               {
                                 id: record.id,
                                 dashed: ["ai"].includes(BASIS_TEXT[(relation as LinkedRelation).basis ?? "reviewer"].group),
-                                node: node(record, relation.label, true),
+                                node: node(record, relation.label),
                               },
                             ]
                           : [],
