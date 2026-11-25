@@ -7,7 +7,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "test": "node scripts/test-program-memory.cjs && node scripts/test-evidence-lookup.cjs && node scripts/test-evidence-support.cjs && node scripts/test-live-ai.cjs && node scripts/test-transparency.cjs && node scripts/test-outcome-trail.cjs && node scripts/test-resilience-pipeline.cjs && node scripts/test-gemini.cjs && node scripts/test-pilot-fixes.cjs && node scripts/test-pilot-changes.cjs && node scripts/test-program-ids.cjs && node scripts/test-insight-review.cjs && node scripts/test-report-visuals.cjs && node scripts/test-projects.cjs",
+    "test": "node scripts/test-program-memory.cjs && node scripts/test-evidence-lookup.cjs && node scripts/test-evidence-support.cjs && node scripts/test-live-ai.cjs && node scripts/test-transparency.cjs && node scripts/test-outcome-trail.cjs && node scripts/test-resilience-pipeline.cjs && node scripts/test-gemini.cjs && node scripts/test-pilot-fixes.cjs && node scripts/test-pilot-changes.cjs && node scripts/test-program-ids.cjs && node scripts/test-insight-review.cjs && node scripts/test-report-visuals.cjs && node scripts/test-projects.cjs && node scripts/test-outcome-links.cjs",
     "test:ai": "node scripts/test-live-ai.cjs && node scripts/test-gemini.cjs",
     "test:memory": "node scripts/test-program-memory.cjs",
     "test:evidence": "node scripts/test-evidence.cjs",
