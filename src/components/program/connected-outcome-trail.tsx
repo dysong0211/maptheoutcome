@@ -275,7 +275,6 @@ export function ConnectedOutcomeTrail({
               title={f.n === 0 && f.id !== "all" ? "Nothing approved under this topic yet" : undefined}
               onClick={() => chooseFacet(f.id)}
               data-facet={f.id}
-              title={f.sub}
               style={{ width: "auto", flex: "0 0 auto", minHeight: 34, padding: "4px 14px", borderRadius: 999, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <strong style={{ fontSize: 13, fontWeight: 600 }}>{f.title} · {f.n}</strong>
