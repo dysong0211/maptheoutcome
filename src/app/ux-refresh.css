@@ -190,3 +190,8 @@
 .pack-details > summary { cursor: pointer; font-size: 0.85rem; color: #0f766e; font-weight: 600; }
 .pack-warn { background: #fffbeb; border: 1px solid #fcd34d; color: #78350f; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; margin-bottom: 8px; }
 .pack-base { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+.pack-summary h4 { margin: 8px 0 2px; color: #0f766e; font-size: 0.9rem; }
+.pack-narrative ul { margin: 0 0 4px 18px; list-style: disc; }
+.pack-narrative li { margin: 6px 0; }
+.pack-cite { font-size: 0.75rem; color: #475569; }
+.pack-section-head h3 { color: #0f766e; }
