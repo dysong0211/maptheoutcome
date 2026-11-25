@@ -14,6 +14,22 @@ import {
   GitBranch,
   Target,
 } from "lucide-react";
+import { useProjectScope } from "./project-scope";
+import { LocationMap } from "./location-map";
+import { AISynthesisPanel } from "./ai-synthesis-panel";
+import { useSynthesisStore } from "@/stores/outcome-synthesis-store";
+import { useMemoryStore } from "@/stores/program-memory-store";
+import { useDemoStore } from "@/stores/demo-store";
+import {
+  BASIS_TEXT,
+  GROUPS,
+  GROUP_TITLE,
+  STAGES,
+  deriveRelations,
+  themeOf,
+  themeSummary,
+  type LinkedRelation,
+} from "@/lib/outcome-links";
 import { useOutputStore } from "@/stores/output-intelligence-store";
 import { buildOutcomeTrail, trailRequirements } from "@/lib/outcome-trail";
 import {
@@ -47,8 +63,36 @@ export function ConnectedOutcomeTrail({
   initialFocus?: string;
 }) {
   const params = useSearchParams();
-  const { program, programId, records, sources, relations, isDefault } =
+  const { program, programId, records: allProgramRecords, sources, relations: storedRelations, proposals, isDefault } =
     useProgramEvidence();
+  const projectScope = useProjectScope(programId);
+  const records = projectScope.filterRecords(allProgramRecords);
+  const synth = useSynthesisStore((st) => st.items);
+  const [facet, setFacet] = useState<string>("all");
+  const addRelation = useMemoryStore((st) => st.addRelation);
+  const removeRelation = useMemoryStore((st) => st.removeRelation);
+  const role = useDemoStore((st) => st.role);
+  const [themeOverrides, setThemeOverrides] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      setThemeOverrides(JSON.parse(localStorage.getItem("maptoc-theme-overrides") || "{}"));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const aiLinks: LinkedRelation[] = synth
+    .filter((i) => i.programId === programId && i.kind === "link" && i.status === "accepted")
+    .map((i) => ({
+      from: i.recordIds[0],
+      to: i.recordIds[1],
+      label: `AI hypothesis: ${i.type === "explains" ? "may explain" : i.type === "contributed-to" ? "may have contributed to" : i.type === "left-gap-for" ? "leaves a gap for" : "same topic as"}`,
+      basis: "ai" as const,
+      why: i.text,
+    }));
+  const relations: LinkedRelation[] = deriveRelations(records, sources, storedRelations, themeOverrides, aiLinks);
+  const awaiting = proposals.filter((p) => ["pending", "flagged"].includes(p.status)).length;
+  const [linkTo, setLinkTo] = useState("");
+  const [linkLabel, setLinkLabel] = useState("Context for");
   const requirements = useOutputStore((state) => state.requirements);
   const tasks = useOutputStore((state) => state.tasks);
   const reviews = useOutputStore((state) => state.inputReviews);
@@ -150,6 +194,14 @@ export function ConnectedOutcomeTrail({
     );
     inspect(first?.id ?? focusId);
   }
+  function chooseFacet(id: string) {
+    setFacet(id);
+    changeFocus(id === "why" ? "change" : id === "gaps" ? "gaps" : "results");
+    if (id !== "all" && id !== "why" && id !== "gaps") {
+      const first = records.find((r) => themeOf(r, themeOverrides) === id);
+      if (first) recenter(first.id);
+    }
+  }
   function node(record: ProgramRecord, detail?: string) {
     return (
       <button
@@ -208,39 +260,101 @@ export function ConnectedOutcomeTrail({
           className="connection-focus-tabs"
           role="group"
           aria-label="Explore connections focus"
+          style={{ flexWrap: "wrap" }}
         >
-          {(
-            [
-              ["results", "Results", "What happened"],
-              ["change", "Why it changed", "Decisions & context"],
-              ["gaps", "Evidence gap", "What is still missing"],
-            ] as const
-          ).map(([value, title, subtitle]) => (
+          {[
+            { id: "all", title: "All findings", sub: "Everything approved", n: records.length },
+            ...themeSummary(records, themeOverrides).map((t) => ({ id: t.id, title: t.title, sub: t.gloss, n: t.items.length })),
+            { id: "why", title: "Why it changed", sub: "Decisions & context", n: records.filter((r) => ["Decision", "Change"].includes(r.kind)).length + synth.filter((i) => i.programId === programId && i.kind === "link" && i.status === "accepted").length },
+            { id: "gaps", title: "Evidence gaps", sub: "Open questions", n: records.filter((r) => ["Question", "Risk"].includes(r.kind)).length + synth.filter((i) => i.programId === programId && i.kind === "gap" && i.status === "accepted").length },
+          ].map((f) => (
             <button
-              key={value}
-              aria-pressed={focus === value}
-              onClick={() => changeFocus(value)}
+              key={f.id}
+              aria-pressed={facet === f.id}
+              onClick={() => chooseFacet(f.id)}
+              data-facet={f.id}
             >
-              <strong>{title}</strong>
-              <span>{subtitle}</span>
+              <strong>{f.title} · {f.n}</strong>
+              <span>{f.sub}</span>
               <ArrowRight size={18} />
             </button>
           ))}
         </div>
+        {facet !== "all" && facet !== "why" && facet !== "gaps" && (
+          <div className="facet-findings" data-testid="facet-findings" style={{ margin: "8px 0" }}>
+            <p className="text-xs text-slate-600">
+              Approved findings under this theme. The theme is assigned by rule from the finding type and wording and a reviewer can change it in the report.
+            </p>
+            {records.filter((r) => themeOf(r, themeOverrides) === facet).map((r) => (
+              <div key={r.id}>
+                {node(r, `${r.eventDateBasis === "document-date" ? "Event date not confirmed" : r.eventDate} · ${sources.find((x) => x.id === r.citation.versionId)?.title ?? "source"}`)}
+              </div>
+            ))}
+            {!records.some((r) => themeOf(r, themeOverrides) === facet) && <p className="text-xs">No approved findings under this theme yet.</p>}
+          </div>
+        )}
         {!trail ? (
           <div className="trail-empty">
             <FileText size={26} />
-            <h3>Build the program’s evidence story</h3>
+            <h3>
+              {awaiting
+                ? `${awaiting} finding${awaiting === 1 ? " is" : "s are"} waiting for review`
+                : "Build the program’s evidence story"}
+            </h3>
             <p>
-              Review a document finding to connect results, decisions and
-              evidence gaps here.
+              {awaiting
+                ? "The outcome map, pathway, relationships and themes are built from approved findings only. Open the review inbox, check each finding against its source, and approve it to see it here."
+                : "Upload a document and review its findings to connect results, decisions and evidence gaps here."}
             </p>
+            {awaiting > 0 && (
+              <Link className="memory-action" href="/review">
+                Open review inbox →
+              </Link>
+            )}
             <Link className="memory-action" href="/sources">
               Add documents →
             </Link>
           </div>
         ) : (
           <>
+            <section className="trail-themes" aria-label="Thematic insights" style={{ margin: "12px 0" }}>
+              <h3 className="text-base font-semibold">Thematic insights</h3>
+              <p className="text-xs text-slate-600">
+                Approved findings grouped by theme (assigned by rule from finding type and wording; a reviewer can move an item in the report). {awaiting > 0 && `${awaiting} more await review and are not included.`}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 8, marginTop: 8 }}>
+                {themeSummary(records, themeOverrides).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="memory-card"
+                    style={{ textAlign: "left", padding: 10, borderRadius: 10, border: "1px solid #d8dee4", background: "#fff" }}
+                    disabled={!t.items.length}
+                    onClick={() => t.items[0] && recenter(t.items[0].id)}
+                    data-theme-card={t.id}
+                  >
+                    <strong>{t.title} · {t.items.length}</strong>
+                    <small style={{ display: "block", color: "#64748b" }}>
+                      {t.items.length
+                        ? `${t.documents} document${t.documents === 1 ? "" : "s"}${t.latest ? ` · latest ${t.latest}` : ""}`
+                        : "No approved findings yet"}
+                    </small>
+                    {t.items.slice(0, 2).map((r) => (
+                      <span key={r.id} style={{ display: "block", fontSize: 12, marginTop: 4 }}>• {r.title}</span>
+                    ))}
+                  </button>
+                ))}
+              </div>
+            </section>
+            <LocationMap records={records} sources={sources} />
+            <AISynthesisPanel
+              programId={programId}
+              programName={program?.name ?? programContext.name}
+              objective={program?.objective ?? programContext.objective}
+              records={records}
+              themeOverrides={themeOverrides}
+              onFocus={recenter}
+            />
             <div
               className="connection-layout-tabs"
               role="group"
@@ -307,45 +421,173 @@ export function ConnectedOutcomeTrail({
                     that may explain this result.
                   </p>
                 )}
-                {layout !== "map" ? (
-                  <div className="relationship-list">
-                    {visibleRelations.map((relation) => {
-                      const from = records.find(
-                        (record) => record.id === relation.from,
-                      );
-                      const to = records.find(
-                        (record) => record.id === relation.to,
-                      );
-                      return from && to ? (
-                        <div
-                          className="relationship-edge"
-                          key={`${relation.from}-${relation.to}-${relation.label}`}
-                        >
-                          <button
-                            onClick={() => inspect(from.id)}
-                            aria-pressed={activeId === from.id}
-                          >
-                            {from.title}
-                          </button>
-                          <span>
-                            <ArrowRight size={16} />
-                            {relation.label}
-                          </span>
-                          <button
-                            onClick={() => inspect(to.id)}
-                            aria-pressed={activeId === to.id}
-                          >
-                            {to.title}
-                          </button>
+                {layout === "pathway" ? (
+                  <div className="pathway-stages" data-testid="pathway">
+                    <p className="connection-explainer">
+                      Reading order across the programme: where each approved finding sits between decisions, funding, delivery, problems and lessons. The order is a way to read the record, not a chain of cause and effect. Chronology is not an outcome pathway.
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 8 }}>
+                      {STAGES.map((stage) => {
+                        const items = records
+                          .filter((r) => themeOf(r, themeOverrides) === stage.id)
+                          .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+                        return (
+                          <div key={stage.id} style={{ border: "1px solid #d8dee4", borderRadius: 10, padding: 8 }}>
+                            <strong>{stage.title} · {items.length}</strong>
+                            <small style={{ display: "block", color: "#64748b" }}>{stage.note}</small>
+                            {items.slice(0, 6).map((r) => (
+                              <button
+                                key={r.id}
+                                type="button"
+                                className="trail-node"
+                                aria-pressed={focusId === r.id}
+                                onClick={() => recenter(r.id)}
+                              >
+                                <strong>{r.title}</strong>
+                                <small>{r.eventDateBasis === "document-date" ? "Event date not confirmed" : r.eventDate}</small>
+                              </button>
+                            ))}
+                            {items.length > 6 && <small>+{items.length - 6} more in the living record</small>}
+                            {!items.length && <small>Nothing recorded here.</small>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {synth.filter((i) => i.programId === programId && i.kind === "pathway" && i.status === "accepted" && i.recordIds.every((id) => records.some((r) => r.id === id))).map((i) => (
+                      <div key={i.id} style={{ border: "1px dashed #7c3aed", borderRadius: 10, padding: 8, margin: "8px 0" }}>
+                        <strong>{i.title}</strong>
+                        <small style={{ display: "block" }}>AI-proposed reading sequence, reviewer accepted. A hypothesis, not proof of cause.</small>
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
+                          {i.recordIds.map((id, k) => (
+                            <span key={id}>
+                              {k > 0 && <span aria-hidden="true"> then </span>}
+                              <button type="button" className="trail-node" onClick={() => recenter(id)}>{records.find((r) => r.id === id)?.title}</button>
+                            </span>
+                          ))}
                         </div>
-                      ) : null;
+                        <p className="text-xs">{i.text}</p>
+                      </div>
+                    ))}
+                    {linked.length > 0 && (
+                      <p className="connection-explainer">
+                        Selected finding has {linked.length} supported link{linked.length === 1 ? "" : "s"}. See Outcome map or Relationships for the evidence behind each.
+                      </p>
+                    )}
+                  </div>
+                ) : layout === "relationships" ? (
+                  <div className="relationship-list">
+                    {GROUPS.map((group) => {
+                      const edges = visibleRelations
+                        .filter((r) => BASIS_TEXT[(r as LinkedRelation).basis ?? "reviewer"].group === group)
+                        .slice(0, 60);
+                      return (
+                        <div key={group}>
+                          <h4 className="text-sm font-semibold" style={{ margin: "8px 0 4px" }}>
+                            {`${GROUP_TITLE[group]} (${edges.length})`}
+                          </h4>
+                          {!edges.length && (
+                            <p className="text-xs text-slate-600">
+                              {group === "recorded"
+                                ? "No reviewer-recorded links yet. Add one below when a document supports it."
+                                : group === "ai"
+                                  ? "No accepted AI proposals yet. Use “Propose connections with AI” below."
+                                  : group === "shared"
+                                    ? "No findings share a document or tag."
+                                    : "No findings with event dates close together."}
+                            </p>
+                          )}
+                          {edges.map((relation) => {
+                            const rel = relation as LinkedRelation;
+                            const from = records.find((record) => record.id === relation.from);
+                            const to = records.find((record) => record.id === relation.to);
+                            return from && to ? (
+                              <div className="relationship-edge" key={`${relation.from}-${relation.to}-${relation.label}`}>
+                                <button onClick={() => inspect(from.id)} aria-pressed={activeId === from.id}>
+                                  {from.title}
+                                </button>
+                                <span>
+                                  <ArrowRight size={16} />
+                                  {relation.label}
+                                  <small style={{ display: "block" }}>
+                                    {BASIS_TEXT[rel.basis ?? "reviewer"].badge}. {rel.why}
+                                  </small>
+                                </span>
+                                <button onClick={() => inspect(to.id)} aria-pressed={activeId === to.id}>
+                                  {to.title}
+                                </button>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      );
                     })}
                   </div>
                 ) : (
                   <div className="trail-connections">
-                    {linked.map(
-                      ({ record, relation }) =>
-                        record && node(record, relation.label),
+                    {GROUPS.map((group) => {
+                      const items = linked.filter(
+                        (c) => BASIS_TEXT[(c.relation as LinkedRelation).basis ?? "reviewer"].group === group,
+                      );
+                      return items.length ? (
+                        <div key={group}>
+                          <h4 className="text-sm font-semibold" style={{ margin: "8px 0 4px" }}>
+                            {GROUP_TITLE[group]}
+                          </h4>
+                          {items.map(({ record, relation }) => {
+                            const rel = relation as LinkedRelation;
+                            return (
+                              record && (
+                                <div key={record.id}>
+                                  {node(record, `${relation.label} · ${BASIS_TEXT[rel.basis ?? "reviewer"].badge}`)}
+                                  <small style={{ display: "block", margin: "0 0 6px 4px", color: "#64748b" }}>{rel.why}</small>
+                                </div>
+                              )
+                            );
+                          })}
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+                {layout !== "pathway" && role !== "funder" && records.length > 1 && (
+                  <div className="trail-add-link" style={{ marginTop: 10, fontSize: 13 }}>
+                    <strong>Record a link from this finding</strong>
+                    <small style={{ display: "block", color: "#64748b" }}>
+                      Only add a link a document supports. It is saved as a reviewer-recorded link, not as proof of cause.
+                    </small>
+                    <select className="memory-input" value={linkTo} onChange={(e) => setLinkTo(e.target.value)} aria-label="Link to finding">
+                      <option value="">Choose a finding…</option>
+                      {records.filter((r) => r.id !== focusId).map((r) => (
+                        <option key={r.id} value={r.id}>{r.title}</option>
+                      ))}
+                    </select>
+                    <select className="memory-input" value={linkLabel} onChange={(e) => setLinkLabel(e.target.value)} aria-label="Link type">
+                      {["Context for", "Recorded reason for", "Approval context for", "Same delivery period", "Leaves unanswered"].map((l) => (
+                        <option key={l}>{l}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="memory-action memory-secondary"
+                      disabled={!linkTo}
+                      onClick={() => {
+                        if (addRelation(focusId, linkTo, linkLabel)) setLinkTo("");
+                      }}
+                    >
+                      Save link
+                    </button>
+                    {storedRelations.some((r) => r.from === focusId || r.to === focusId) && (
+                      <button
+                        type="button"
+                        className="memory-action memory-secondary"
+                        onClick={() => {
+                          storedRelations
+                            .filter((r) => r.from === focusId && !["flood","transport","cost","saturday","stock","reach"].includes(r.from))
+                            .forEach((r) => removeRelation(r.from, r.to));
+                        }}
+                      >
+                        Remove my links from this finding
+                      </button>
                     )}
                   </div>
                 )}
@@ -368,7 +610,7 @@ export function ConnectedOutcomeTrail({
                 )}
                 {!linked.length && !(focus === "gaps" && gaps.length) && (
                   <p className="trail-empty">
-                    No{" "}
+                    No supported links for this finding: it shares no source document, code or reviewer-recorded link with another approved finding, and no other finding has a close event date. That is a real result, not a missing feature. No{" "}
                     {focus === "change"
                       ? "related decisions or changes"
                       : focus === "gaps"

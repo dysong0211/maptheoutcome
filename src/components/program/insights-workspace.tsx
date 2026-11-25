@@ -113,6 +113,9 @@ export function InsightsWorkspace({
           <Link href="/assurance">Program Assurance →</Link>
         </p>
       )}
+      <section className="summary-connections" id="explore-connections">
+        <ConnectedOutcomeTrail initialFocus={view} />
+      </section>
       <SavedFindings />
       <EvidenceFocus />
       <section
@@ -124,9 +127,6 @@ export function InsightsWorkspace({
           evidence.
         </h2>
         <EvidenceAsk compactControls />
-      </section>
-      <section className="summary-connections" id="explore-connections">
-        <ConnectedOutcomeTrail initialFocus={view} />
       </section>
       <ProjectFilter programId={programId} shown={records.length} total={allRecords.length} />
       <details

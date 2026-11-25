@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useProgramEvidence } from "./use-program-evidence";
+import { useDemoStore, pilotSingleOperator } from "@/stores/demo-store";
 import { eventDateText } from "@/lib/event-date";
 import type { EvidenceProposal } from "@/lib/program-memory";
 
@@ -18,6 +19,9 @@ export function useSavedFindings(): EvidenceProposal[] {
 export function SavedFindings({ limit = 50 }: { limit?: number }) {
   const saved = useSavedFindings();
   const { sources } = useProgramEvidence();
+  const role = useDemoStore((state) => state.role);
+  const setRole = useDemoStore((state) => state.setRole);
+  const canApprove = role === "reviewer" || pilotSingleOperator;
   if (!saved.length) return null;
   return (
     <section
@@ -30,9 +34,39 @@ export function SavedFindings({ limit = 50 }: { limit?: number }) {
       </h2>
       <p className="mt-1 text-sm text-slate-600">
         You kept these and saved your review. They are not yet approved, so they
-        are not counted as verified in the summary or reports.{" "}
-        <Link href="/review">Open the review inbox to approve →</Link>
+        are not counted as verified in the summary or reports.
       </p>
+      <div className="mt-2 rounded-lg border bg-white p-3 text-sm" data-testid="approval-guidance">
+        {canApprove ? (
+          <p>
+            You are in the <strong>Assurance reviewer</strong> role. Open each
+            finding to check it against its source, write a short review
+            rationale, then choose Approve, Flag or Reject. Nothing is approved
+            automatically.
+          </p>
+        ) : (
+          <>
+            <p>
+              Approval is done by an <strong>Assurance reviewer</strong>, in the
+              review inbox. You are now in the{" "}
+              <strong>{role === "funder" ? "Funder / Viewer" : "Program Manager"}</strong>{" "}
+              role, which cannot approve. Switch role, then open a finding.
+            </p>
+            <button
+              type="button"
+              className="memory-action memory-secondary mt-2"
+              onClick={() => setRole("reviewer")}
+            >
+              Switch to Assurance reviewer role
+            </button>
+          </>
+        )}
+        <p className="mt-2">
+          <Link className="memory-action" href={`/review?item=${encodeURIComponent(saved[0].id)}`}>
+            Review and approve ({saved.length}) →
+          </Link>
+        </p>
+      </div>
       <ul className="mt-3 space-y-3">
         {saved.slice(0, limit).map((p) => {
           const source = sources.find((s) => s.id === p.citation.versionId);
@@ -49,6 +83,9 @@ export function SavedFindings({ limit = 50 }: { limit?: number }) {
               <blockquote className="mt-1 text-xs text-slate-600">
                 “{p.citation.quote}”
               </blockquote>
+              <Link className="mt-2 inline-block font-semibold" href={`/review?item=${encodeURIComponent(p.id)}`}>
+                Review and approve this finding →
+              </Link>
             </li>
           );
         })}
