@@ -110,6 +110,27 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
     setFrom(period.first);
     setDatesTouched(false);
   }, [programId]);
+  // Keep the dates the user chose for this programme across reloads, so the same indicators stay in the report.
+  const [windowLoadedFor, setWindowLoadedFor] = useState("");
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`maptoc-report-window:${programId}`) || "null");
+      if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved.from) && /^\d{4}-\d{2}-\d{2}$/.test(saved.to)) {
+        setFrom(saved.from);
+        setTo(saved.to);
+        setDatesTouched(true);
+      }
+    } catch { /* ignore */ }
+    setWindowLoadedFor(programId);
+  }, [programId]);
+  useEffect(() => {
+    if (windowLoadedFor !== programId || reportKind !== "program-update") return;
+    try {
+      const key = `maptoc-report-window:${programId}`;
+      if (datesTouched) localStorage.setItem(key, JSON.stringify({ from, to }));
+      else localStorage.removeItem(key);
+    } catch { /* ignore */ }
+  }, [windowLoadedFor, programId, datesTouched, from, to, reportKind]);
   const matchingRecords = reportRecords(records, sources, from, to);
   const matchingInsights = reportInsights(reflections, sources, from, to);
   const outsideWindow =
