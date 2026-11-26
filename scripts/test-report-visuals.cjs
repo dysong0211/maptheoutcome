@@ -124,4 +124,19 @@ assert.ok(!v.flowChart(sections, 1).title.startsWith("Documented"));
     assert.ok(/themeFor\(/.test(code) && !/themeFor\([^)]*,\s*(true|false)\)/.test(code), f + " must use the shared rule without overrides");
   }
 }
+// a theme the user chose in the report is honoured by every screen helper
+{
+  const ol = require("../src/lib/outcome-links.ts");
+  const r = { id: "m1", kind: "Lesson", statement: "Budget lessons", title: "T", citation: {}, eventDate: "2026-10-01", eventDateBasis: "stated" };
+  assert.equal(ol.themeOf(r, { m1: "finance" }), "finance");
+  assert.equal(ol.themeOf(r, {}), "lessons");
+  assert.equal(ol.themeOf(r, { m1: "bogus" }), "lessons", "unknown theme ids are ignored");
+  assert.equal(ol.inTheme(r, "finance", { m1: "finance" }, false), true);
+  assert.equal(ol.inTheme(r, "lessons", { m1: "finance" }, true), false, "moved away from its default theme");
+  assert.equal(ol.inTheme(r, "lessons", {}, true), true);
+  assert.deepEqual(ol.readThemeOverrides(), {}, "no storage means no moves");
+  for (const f of ["overview-story", "summary-themes", "configured-program-summary"]) {
+    assert.ok(/useThemeOverrides\(\)/.test(fs.readFileSync(path.join(root, "src/components/program", f + ".tsx"), "utf8")), f + " reads the user's theme moves");
+  }
+}
 console.log("report visuals + themes ok");
