@@ -107,6 +107,11 @@ assert.ok(!v.flowChart(sections, 1).title.startsWith("Documented"));
   assert.equal(rows[2].variance, "Not recorded", "unreviewed actual has no variance");
   assert.equal(rows[3].variance, "Not recorded", "no target has no variance");
   assert.equal(rows[0].baseline, "Not recorded");
+  assert.equal(rows[0].attain, 85);
+  assert.equal(rows[2].attain, null, "no attainment without a reviewed actual");
+  const html = v.structureHtml({ cover: [{ label: "A", value: "B" }], summary: [], points: [], indicators: rows, sample: false, results: [{ ref: 1, text: "x ".repeat(300), level: "Not set", date: "2026-10-01", source: "S", team: false }], changes: [], forward: [], missing: [] });
+  assert.ok(!/<table/.test(html.front), "indicators, results and cover are cards, not table columns");
+  assert.ok(html.front.includes("width:85%"), "attainment bar");
   const wide = v.indicatorRows(prog, sources, "2026-10-02", "2026-10-03");
   assert.ok(wide[0].period.includes("extends outside the report window"));
 }
