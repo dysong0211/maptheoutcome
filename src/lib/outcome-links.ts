@@ -1,5 +1,37 @@
 import type { ProgramRecord, RecordRelation, SourceVersion } from "./program-memory";
+import { useEffect, useState } from "react";
 import { themeFor, THEMES, type ThemeId } from "./report-visuals";
+
+export const THEME_OVERRIDES_KEY = "maptoc-theme-overrides";
+export const THEME_OVERRIDES_EVENT = "maptoc-theme-overrides-changed";
+/** Themes the user moved findings to (record id to theme id). Empty when nothing was moved or storage is unavailable. */
+export function readThemeOverrides(): Record<string, string> {
+  try {
+    if (typeof localStorage === "undefined") return {};
+    const v = JSON.parse(localStorage.getItem(THEME_OVERRIDES_KEY) || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  } catch {
+    return {};
+  }
+}
+/** Every screen reads the same moves the user made in the report. */
+export function useThemeOverrides(): Record<string, string> {
+  const [o, setO] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const load = () => setO(readThemeOverrides());
+    load();
+    window.addEventListener("storage", load);
+    window.addEventListener(THEME_OVERRIDES_EVENT, load);
+    return () => { window.removeEventListener("storage", load); window.removeEventListener(THEME_OVERRIDES_EVENT, load); };
+  }, []);
+  return o;
+}
+/** True when the record belongs under `id`: the user's move wins, otherwise the screen's own rule. */
+export function inTheme(r: { id: string }, id: ThemeId, overrides: Record<string, string>, rule: boolean): boolean {
+  const ov = overrides[r.id];
+  if (ov && THEMES.some((t) => t.id === ov)) return ov === id;
+  return rule;
+}
 
 /**
  * How two findings are connected. None of these is a causal claim.
