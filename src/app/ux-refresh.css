@@ -166,7 +166,7 @@
 .pack-actions button:disabled, .pack-copy:disabled, .pack-section-head > button:disabled { opacity: 0.5; cursor: not-allowed; }
 .pack-actions.pack-top button.memory-action { border: 0; }
 .pack-msg { margin-top: 8px; font-size: 0.85rem; color: #0f766e; }
-.pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px; }
+.pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 16px; }
 .pack-chart { margin: 0; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; background: #fff; }
 .pack-chart-img svg { width: 100%; height: auto; display: block; }
 .pack-chart figcaption { font-size: 0.75rem; color: #475569; margin-top: 4px; }
@@ -202,3 +202,14 @@
 .pack-refs ol { margin: 6px 0 0 22px; list-style: decimal; font-size: 0.85rem; }
 .pack-ref { margin: 8px 0; }
 .pack-limits { background: #fff7ed; border-radius: 10px; padding: 4px 12px 10px; border-top: 0; }
+
+/* Report pack on narrow screens: nothing may push the page wider than the viewport. */
+.report-pack, .report-pack .pack-summary, .report-pack .pack-section { min-width: 0; max-width: 100%; }
+.report-pack .pack-grid > * { min-width: 0; }
+.report-pack .pack-chart { min-width: 0; max-width: 100%; overflow-x: auto; }
+.report-pack .pack-summary { overflow-x: auto; }
+.report-pack .pack-table-sum { word-break: break-word; }
+@media (max-width: 640px) {
+  .report-pack .pack-table-sum { font-size: 0.78rem; }
+  .report-pack .pack-table-sum th, .report-pack .pack-table-sum td { padding: 4px 5px; }
+}
