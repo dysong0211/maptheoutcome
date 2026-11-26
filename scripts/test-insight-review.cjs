@@ -42,7 +42,7 @@ assert.equal(refl.getState().review(item.id, "approved", "Matches transcript"), 
 assert.equal(refl.getState().review(item.id, "rejected", "changed mind"), false, "decision is final");
 const r = mkReport();
 assert.equal(r.count, 1);
-assert.ok(r.text.includes("Mothers' groups kept meeting") && r.text.includes("Source: ") && r.text.includes("/sources/view?id="), "approved insight cited with source");
+assert.ok(r.text.includes("Mothers' groups kept meeting") && r.text.includes("Source: ") && !r.text.includes("/sources/view?id="), "approved insight cited with source");
 // window and program scope
 assert.equal(rd.createPeriodReport({ title: "t", reportKind: "undp-lessons", programName: "P", from: "2026-08-01", to: "2026-08-31", records: [], sources: mem.getState().sources, origin: "https://x", insights: refl.getState().reflections }).count, 0, "outside window excluded");
 assert.equal(rd.createPeriodReport({ title: "t", reportKind: "undp-lessons", programName: "P", from: "2026-11-01", to: "2026-11-30", records: [], sources: [], origin: "https://x", insights: refl.getState().reflections }).count, 0, "other program excluded");
