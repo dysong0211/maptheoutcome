@@ -213,3 +213,7 @@
   .report-pack .pack-table-sum { font-size: 0.78rem; }
   .report-pack .pack-table-sum th, .report-pack .pack-table-sum td { padding: 4px 5px; }
 }
+
+/* Long finding text must wrap inside its card and never run under the link below it. */
+.lean-overview .visual-summary .lean-metric>*,.summary-themes li a>*{min-width:0;overflow-wrap:anywhere}
+.lean-overview .visual-summary .lean-metric>.metric-inspect{position:relative;z-index:1;align-self:end}
