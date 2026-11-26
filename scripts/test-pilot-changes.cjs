@@ -50,7 +50,7 @@ const q2=ms.getState().proposals.find(x=>x.status==='pending');
 assert.equal(ms.getState().review(q2.id,'approved','Checked','ok',false,{reportingPeriod:'Q3 2026'}),true);
 assert.equal(ms.getState().records.find(x=>x.proposalId===q2.id).reportingPeriod,'Q3 2026');
 const rep=createPeriodReport({title:'T',programName:'P',from:'2026-01-01',to:'2026-12-31',records:[un],sources:src,origin:'https://example.test'});
-assert.match(rep.text,/DATE NOT CONFIRMED/);assert.match(rep.text,/https:\/\/example\.test\/sources\/view/);assert.equal(rep.count,0);
+assert.match(rep.text,/DATE NOT CONFIRMED/);assert.doesNotMatch(rep.text,/example\.test\/sources\/view/);assert.equal(rep.count,0);
 const trk=require('../src/stores/tracking-store.ts').useTracking;
 roles.getState().setRole('program');trk.setState({signoffs:[]});
 trk.getState().signOff({id:'a',programId:'p',draftKey:'k',stage:'signed',name:'X',at:'2026-01-01'});
