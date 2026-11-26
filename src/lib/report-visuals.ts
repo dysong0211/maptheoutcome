@@ -1,4 +1,5 @@
 import type { ProgramRecord, SourceVersion } from "./program-memory";
+import type { ProgramRule, ProgramDatum } from "./program-assurance";
 import type { Reflection } from "@/stores/reflection-store";
 import { parseDelimited } from "./csv-preview";
 
@@ -57,7 +58,8 @@ export const THEMES: { id: ThemeId; title: string; gloss: string; lead: string }
 const FINANCE_WORDS = /\b(budget|budgets|budgeted|expenditure|expenditures|spend|spending|spent|funding|funds?|financ\w*|disburse\w*|usd|us\$|invoice|invoices|salary|salaries)\b|\$\s?\d/i;
 
 /** Which of the five report themes an item belongs to. Rule-based on the reviewer's own labels and wording. */
-export function themeFor(item: { kind?: string; theme?: string; text?: string; title?: string }): ThemeId {
+/** typeFirst (used by the report only): the finding type decides before budget wording. Other screens keep the keyword-first rule. */
+export function themeFor(item: { kind?: string; theme?: string; text?: string; title?: string }, typeFirst = false): ThemeId {
   if (item.theme) {
     const t = item.theme.toLowerCase();
     if (FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
@@ -66,10 +68,11 @@ export function themeFor(item: { kind?: string; theme?: string; text?: string; t
     if (t === "unexpected effect") return "updates";
     return "progress"; // what worked (a win), change for the community
   }
-  if (FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
+  if (!typeFirst && FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
   if (item.kind === "Risk" || item.kind === "Question") return "challenges";
   if (item.kind === "Lesson") return "lessons";
   if (item.kind === "Decision" || item.kind === "Change") return "updates";
+  if (typeFirst && FINANCE_WORDS.test(`${item.text ?? ""} ${item.title ?? ""}`)) return "finance";
   return "progress";
 }
 
@@ -84,7 +87,7 @@ export function buildSections(records: ProgramRecord[], insights: Reflection[], 
   for (const r of records) {
     const date = r.eventDate.slice(0, 10);
     const ov = overrides[r.id];
-    sec[isTheme(ov) ? ov : themeFor({ kind: r.kind, text: r.statement, title: r.title })].items.push({
+    sec[isTheme(ov) ? ov : themeFor({ kind: r.kind, text: r.statement, title: r.title }, true)].items.push({
       id: r.id,
       moved: isTheme(ov),
       date: r.eventDateBasis === "document-date" ? undefined : date,
@@ -587,6 +590,59 @@ figure{margin:16px 0}figure svg{max-width:100%;height:auto;border:1px solid #e2e
 
 /* ---------- UN-style report structure (cover, executive summary, results table) ---------- */
 
+export type IndicatorRow = {
+  indicator: string;
+  baseline: string;
+  target: string;
+  actual: string;
+  variance: string;
+  period: string;
+  source: string;
+  status: string;
+};
+const num = (v: string | undefined) => {
+  const x = Number(String(v ?? "").replace(/[,\s]/g, ""));
+  return String(v ?? "").trim() !== "" && Number.isFinite(x) ? x : null;
+};
+/**
+ * Indicator rows from the programme's own structured delivery checks (Program setup). The actual is the linked figure,
+ * the target is the check's planned figure. Variance is calculated only when both are numbers and the actual was reviewed
+ * against its source passage. Baseline and Output/Outcome class are not part of that structure, so they stay "Not recorded".
+ */
+export function indicatorRows(
+  program: { rules?: ProgramRule[]; data?: ProgramDatum[]; sample?: boolean } | null | undefined,
+  sources: SourceVersion[],
+  from: string,
+  to: string,
+): IndicatorRow[] {
+  if (!program?.rules || !program.data) return [];
+  const rows: IndicatorRow[] = [];
+  for (const r of program.rules) {
+    if (r.method !== "reported-result") continue;
+    const d = program.data.find((x) => x.id === r.inputIds[0]);
+    if (d && (d.periodEnd < from || d.periodStart > to)) continue;
+    const reviewed = !!d?.reviewedBy && !!d?.anchor;
+    const unit = d?.unit ? ` ${d.unit}` : "";
+    const a = num(d?.value), t = num(r.target);
+    let variance = "Not recorded";
+    if (reviewed && a !== null && t !== null) {
+      const diff = a - t;
+      variance = `${diff > 0 ? "+" : ""}${Number(diff.toFixed(3))}${unit}${t !== 0 ? ` (${Number(((a / t) * 100).toFixed(1))}% of target)` : ""}, calculated by MapToc from the two figures`;
+    }
+    rows.push({
+      indicator: r.title,
+      baseline: "Not recorded",
+      target: r.target ? `${r.target}${unit}` : "Not recorded",
+      actual: d ? `${d.value}${unit}` : "Not recorded",
+      variance,
+      period: d ? `${d.periodStart} to ${d.periodEnd}` : "Not recorded",
+      source: d?.anchor ? sources.find((x) => x.id === d.anchor!.sourceId)?.title ?? "Source not found" : "No source linked",
+      status: reviewed ? "Actual reviewed against its source passage" : "Actual not yet reviewed against its source",
+    });
+  }
+  return rows;
+}
+
 /** Facts about the programme that the report cover can show. Empty values are printed as "Not recorded", never guessed. */
 export type ReportMeta = {
   programRef?: string;
@@ -605,9 +661,16 @@ export type StructureInput = {
   findings: number;
   insights: number;
   meta?: ReportMeta;
+  /** The report title the user set. */
+  title?: string;
   /** YYYY-MM-DD the draft was generated. */
   generatedOn: string;
   excludedUndated?: number;
+  indicators?: IndicatorRow[];
+  preparedBy?: string;
+  partner?: string;
+  /** True when the programme is the built-in illustrative sample. */
+  sample?: boolean;
 };
 
 const NOT_RECORDED = "Not recorded";
@@ -619,6 +682,8 @@ export type Structure = {
   cover: { label: string; value: string }[];
   summary: string[];
   points: { ref: number; text: string }[];
+  indicators: IndicatorRow[];
+  sample: boolean;
   results: { ref: number; text: string; level: string; date: string; source: string; team: boolean }[];
   changes: { ref: number; text: string; source: string }[];
   forward: { ref: number; kind: string; text: string }[];
@@ -632,15 +697,16 @@ export function buildStructure(i: StructureInput): Structure {
   const m = i.meta ?? {};
   const agreement = m.agreementStart || m.agreementEnd ? `${m.agreementStart || "?"} to ${m.agreementEnd || "?"}` : NOT_RECORDED;
   const cover = [
-    { label: "Report", value: "Programme progress report, draft for review" },
+    { label: "Title", value: i.title?.trim() || "Programme progress report" },
+    { label: "Report type", value: "Progress report, draft for review" },
     { label: "Programme", value: i.programName },
     { label: "Programme ID", value: m.programRef?.trim() || NOT_RECORDED },
     { label: "Grant ID", value: m.grantRef?.trim() || NOT_RECORDED },
     { label: "Donor", value: m.donor?.trim() || NOT_RECORDED },
     { label: "Agreement period", value: agreement },
     { label: "Evidence window", value: `${i.from} to ${i.to}` },
-    { label: "Implementing partner", value: NOT_RECORDED },
-    { label: "Prepared by", value: NOT_RECORDED },
+    { label: "Implementing partner", value: i.partner?.trim() || NOT_RECORDED },
+    { label: "Prepared by", value: i.preparedBy?.trim() || NOT_RECORDED },
     { label: "Draft generated", value: i.generatedOn },
     { label: "Status", value: "Draft. Reviewer-approved evidence, not independently verified." },
   ];
@@ -652,10 +718,10 @@ export function buildStructure(i: StructureInput): Structure {
   if (!all.length) {
     summary.push(`No reviewed findings fall in ${i.from} to ${i.to} yet, so there is nothing to summarise.`);
   } else {
-    summary.push(`This draft covers ${i.from} to ${i.to} for ${i.programName}. It draws on ${n(i.findings, "reviewed finding", "reviewed findings")} and ${n(i.insights, "approved team insight", "approved team insights")} from ${n(i.sourceCount, "source document", "source documents")}. A reviewer approved each item. None is independently verified.`);
+    summary.push(`This draft covers ${i.from} to ${i.to} for ${i.programName}. Evidence base (a count of reviewed items, not a result): ${n(i.findings, "reviewed finding", "reviewed findings")} and ${n(i.insights, "approved team insight", "approved team insights")} from ${n(i.sourceCount, "source document", "source documents")}. A reviewer approved each item. None is independently verified.`);
     summary.push(
       resultItems.length
-        ? `Results and progress: ${n(resultItems.length, "item is", "items are")} recorded${outputs || signals ? ` (${outputs} marked Output, ${signals} marked Outcome signal)` : ""}. Outputs describe delivery or reach. They are not verified outcomes.`
+        ? `Reported results: ${n(resultItems.length, "reviewed statement is", "reviewed statements are")} recorded${outputs || signals ? ` (${outputs} marked Output, ${signals} marked Outcome signal)` : ""}. Outputs describe delivery or reach. They are not verified outcomes.`
         : "Results and progress: nothing has been reviewed under this heading yet.",
     );
     const counts = [["Finance", by("finance").length], ["Challenges and risks", by("challenges").length], ["Lessons", by("lessons").length], ["Updates and decisions", by("updates").length]] as const;
@@ -665,6 +731,12 @@ export function buildStructure(i: StructureInput): Structure {
     if (undatedIn || i.excludedUndated)
       summary.push(`Date caveat: ${undatedIn ? `${n(undatedIn, "finding has", "findings have")} no confirmed event date and ${undatedIn === 1 ? "is" : "are"} not counted inside the evidence window. ` : ""}${i.excludedUndated ? `${n(i.excludedUndated, "approved finding", "approved findings")} with no confirmed event date ${i.excludedUndated === 1 ? "is" : "are"} left out, so the picture is incomplete.` : ""}`.trim());
   }
+  const inds = i.indicators ?? [];
+  if (inds.length) {
+    const withBoth = inds.filter((x) => x.variance !== "Not recorded");
+    const below = withBoth.filter((x) => x.variance.startsWith("-")).length;
+    summary.push(`Delivery indicators: ${n(inds.length, "indicator is", "indicators are")} set up in the programme. ${withBoth.length} ${withBoth.length === 1 ? "has" : "have"} a reviewed actual and a target to compare${withBoth.length ? `; ${below} ${below === 1 ? "is" : "are"} below target` : ""}. The rest still need a target, an actual, or a review against the source.`);
+  } else summary.push("Delivery indicators: none are set up in Program setup, so no indicator table can be shown. Reported results below come from reviewed findings only.");
   const points = resultItems.slice(0, 3).map((x) => ({ ref: x.ref ?? 0, text: itemLine(x) }));
   const results = resultItems.map((x) => ({
     ref: x.ref ?? 0,
@@ -681,6 +753,7 @@ export function buildStructure(i: StructureInput): Structure {
     .filter((x) => /^(Decision|Question)\b/.test(x.meta))
     .map((x) => ({ ref: x.ref ?? 0, kind: x.meta.split(" · ")[0], text: itemLine(x) }));
   const missing: string[] = [];
+  if (inds.length) missing.push("Indicator baselines and Output/Outcome classes are not part of the programme setup, so they show Not recorded.");
   const unrecorded = cover.filter((c) => c.value === NOT_RECORDED).map((c) => c.label.toLowerCase());
   if (unrecorded.length) missing.push(`Cover details not recorded: ${unrecorded.join(", ")}.`);
   missing.push("Baseline, target and variance for each result are not calculated by MapToc. They appear only if a reviewed finding states them in its own words.");
@@ -688,27 +761,29 @@ export function buildStructure(i: StructureInput): Structure {
   if (emptyThemes.length) missing.push(`No reviewed evidence yet for: ${emptyThemes.join(", ")}.`);
   if (!forward.length) missing.push("No next steps, recommendations or open questions are recorded in the reviewed findings. Add them from the programme team before sending.");
   missing.push("Conflicting figures are not detected automatically. Check the reported changes and corrections list, and compare figures across sources, before sending.");
-  return { cover, summary, points, results, changes, forward, missing };
+  return { cover, summary, points, indicators: inds, sample: !!i.sample, results, changes, forward, missing };
 }
 
 const ref = (r: number) => `[${r}]`;
 
 export function structureHtml(s: Structure) {
-  const cover = `<table class="sumtable pack-table-sum cover"><tbody>${s.cover.map((c) => `<tr><th scope="row">${esc(c.label)}</th><td${c.value === NOT_RECORDED ? ' style="color:#7c2d12"' : ""}>${esc(c.value)}</td></tr>`).join("")}</tbody></table>`;
+  const cover = `<div style="max-width:100%;overflow-x:auto"><table class="sumtable pack-table-sum cover" style="width:100%;word-break:break-word"><tbody>${s.cover.map((c) => `<tr><th scope="row">${esc(c.label)}</th><td${c.value === NOT_RECORDED ? ' style="color:#7c2d12"' : ""}>${esc(c.value)}</td></tr>`).join("")}</tbody></table></div>`;
   const exec = `<h2>Executive summary</h2>${s.summary.map((p) => `<p style="margin:6px 0">${esc(p)}</p>`).join("")}${s.points.length ? `<p><b>Main reported results</b></p><ul>${s.points.map((p) => `<li>${esc(p.text)} ${ref(p.ref)}</li>`).join("")}</ul>` : ""}`;
-  const results = `<h2>Results reported, with sources</h2>${s.results.length ? `<table class="sumtable pack-table-sum"><thead><tr><th>Ref</th><th>Result as reported</th><th>Level</th><th>Event date</th><th>Source</th></tr></thead><tbody>${s.results.map((r) => `<tr><td>${ref(r.ref)}</td><td>${esc(r.text)}${r.team ? " <small>(team interpretation, not a verified finding)</small>" : ""}</td><td>${esc(r.level)}</td><td>${esc(r.date)}</td><td>${esc(r.source)}</td></tr>`).join("")}</tbody></table>` : `<p class="meta">No results reviewed in this window yet.</p>`}<p class="meta">Baseline, target and variance are not calculated here. They appear only when a reviewed finding states them.</p>`;
+  const ind = `<h2>Delivery indicators</h2>${s.indicators.length ? `<table class="sumtable pack-table-sum"><thead><tr><th>Indicator</th><th>Baseline</th><th>Target</th><th>Actual</th><th>Variance</th><th>Period</th><th>Source and status</th></tr></thead><tbody>${s.indicators.map((r) => `<tr><td>${esc(r.indicator)}</td><td>${esc(r.baseline)}</td><td>${esc(r.target)}</td><td>${esc(r.actual)}</td><td>${esc(r.variance)}</td><td>${esc(r.period)}</td><td>${esc(r.source)}<br><small>${esc(r.status)}</small></td></tr>`).join("")}</tbody></table><p class="meta">From the programme's delivery checks (Program setup)${s.sample ? ". This programme is the built-in illustrative sample, so these are example figures" : ""}. Delivery records are not proof of impact.</p>` : `<p class="meta">No delivery indicators are set up in Program setup.</p>`}`;
+  const results = `<h2>Reported results from reviewed findings</h2>${s.results.length ? `<div style="max-width:100%;overflow-x:auto"><table class="sumtable pack-table-sum"><thead><tr><th>Ref</th><th>Result as reported</th><th>Level</th><th>Event date</th><th>Source</th></tr></thead><tbody>${s.results.map((r) => `<tr><td>${ref(r.ref)}</td><td>${esc(r.text)}${r.team ? " <small>(team interpretation, not a verified finding)</small>" : ""}</td><td>${esc(r.level)}</td><td>${esc(r.date)}</td><td>${esc(r.source)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="meta">No results reviewed in this window yet.</p>`}<p class="meta">Baseline, target and variance are not calculated here. They appear only when a reviewed finding states them.</p>`;
   const changes = `<h2>Reported changes and corrections</h2>${s.changes.length ? `<ul>${s.changes.map((c) => `<li>${esc(c.text)} ${ref(c.ref)} <small>${esc(c.source)}</small></li>`).join("")}</ul><p class="meta">Listed because the item is a change or its wording signals a correction. Check each against the earlier figure it replaces.</p>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
   const fwd = `<h2>Decisions, open questions and next steps</h2>${s.forward.length ? `<ul>${s.forward.map((c) => `<li><b>${esc(c.kind)}:</b> ${esc(c.text)} ${ref(c.ref)}</li>`).join("")}</ul>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
   const gaps = `<h2>Information not recorded</h2><ul>${s.missing.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`;
-  return { front: `${cover}${exec}${results}`, back: `${changes}${fwd}${gaps}` };
+  return { front: `${cover}${exec}${ind}${results}`, back: `${changes}${fwd}${gaps}` };
 }
 
 export function structureText(s: Structure) {
   const cover = s.cover.map((c) => `${c.label}: ${c.value}`).join("\n");
   const exec = `Executive summary\n${s.summary.join("\n")}${s.points.length ? `\nMain reported results\n${s.points.map((p) => `- ${p.text} ${ref(p.ref)}`).join("\n")}` : ""}`;
-  const results = `Results reported, with sources\n${s.results.length ? s.results.map((r) => `- ${ref(r.ref)} ${r.text} | Level: ${r.level} | Event date: ${r.date} | Source: ${r.source}${r.team ? " | Team interpretation, not a verified finding" : ""}`).join("\n") : "No results reviewed in this window yet."}\nBaseline, target and variance are not calculated here. They appear only when a reviewed finding states them.`;
+  const ind = `Delivery indicators\n${s.indicators.length ? s.indicators.map((r) => `- ${r.indicator} | Baseline: ${r.baseline} | Target: ${r.target} | Actual: ${r.actual} | Variance: ${r.variance} | Period: ${r.period} | Source: ${r.source} (${r.status})`).join("\n") : "No delivery indicators are set up in Program setup."}${s.sample ? "\nBuilt-in illustrative sample programme: example figures." : ""}`;
+  const results = `Reported results from reviewed findings\n${s.results.length ? s.results.map((r) => `- ${ref(r.ref)} ${r.text} | Level: ${r.level} | Event date: ${r.date} | Source: ${r.source}${r.team ? " | Team interpretation, not a verified finding" : ""}`).join("\n") : "No results reviewed in this window yet."}\nBaseline, target and variance are not calculated here. They appear only when a reviewed finding states them.`;
   const changes = `Reported changes and corrections\n${s.changes.length ? s.changes.map((c) => `- ${c.text} ${ref(c.ref)} (${c.source})`).join("\n") : "None recorded in the reviewed findings."}`;
   const fwd = `Decisions, open questions and next steps\n${s.forward.length ? s.forward.map((c) => `- ${c.kind}: ${c.text} ${ref(c.ref)}`).join("\n") : "None recorded in the reviewed findings."}`;
   const gaps = `Information not recorded\n${s.missing.map((m) => `- ${m}`).join("\n")}`;
-  return { front: [cover, exec, results].join("\n\n"), back: [changes, fwd, gaps].join("\n\n") };
+  return { front: [cover, exec, ind, results].join("\n\n"), back: [changes, fwd, gaps].join("\n\n") };
 }
