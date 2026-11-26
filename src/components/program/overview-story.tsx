@@ -1,6 +1,7 @@
 "use client";
 
 import { themeFor } from "@/lib/report-visuals";
+import { inTheme, useThemeOverrides } from "@/lib/outcome-links";
 import { useState } from "react";
 import Link from "next/link";
 import { FileText, Sparkles, ShieldCheck, ChartNoAxesCombined, ArrowRight, CircleHelp, Network, BookOpen, Flag } from "lucide-react";
@@ -52,12 +53,13 @@ export function OverviewStory({focusRecord,metricLabel}:{focusRecord?:string;met
   const citation=record?resolveCitation(record.citation,sources):null;
   // Diane's five themes. Updates is newest-first across every kind (decisions included). Challenges holds risks and open questions.
   // Finance lists reviewed findings that mention funding or spending. They are figures reported in documents, not verified accounts.
+  const ov=useThemeOverrides();
   const groups:{key:string;label:string;hint:string;entries:typeof reviewed;empty:string;tone?:string}[]=[
     {key:"Updates",label:"Updates",hint:"What's new in the programme",entries:reviewed,empty:"Nothing new yet"},
-    {key:"Progress",label:"Progress",hint:"Results reported",entries:reviewed.filter(r=>r.kind==="Result"),empty:"No reviewed results"},
-    {key:"Finance",label:"Finance",hint:"Reported in documents, not audited",entries:reviewed.filter(r=>themeFor({kind:r.kind,text:r.statement,title:r.title})==="finance"),empty:"No finance findings reviewed yet"},
-    {key:"Challenges",label:"Challenges",hint:"Risks and open questions",entries:reviewed.filter(r=>r.kind==="Risk"||r.kind==="Question"),empty:"No challenges recorded",tone:"risk-theme"},
-    {key:"Lessons",label:"Lessons",hint:"What to repeat or change",entries:reviewed.filter(r=>themeFor({kind:r.kind,text:r.statement,title:r.title})==="lessons"),empty:"No reviewed lessons"},
+    {key:"Progress",label:"Progress",hint:"Results reported",entries:reviewed.filter(r=>inTheme(r,"progress",ov,r.kind==="Result")),empty:"No reviewed results"},
+    {key:"Finance",label:"Finance",hint:"Reported in documents, not audited",entries:reviewed.filter(r=>inTheme(r,"finance",ov,themeFor({kind:r.kind,text:r.statement,title:r.title})==="finance")),empty:"No finance findings reviewed yet"},
+    {key:"Challenges",label:"Challenges",hint:"Risks and open questions",entries:reviewed.filter(r=>inTheme(r,"challenges",ov,r.kind==="Risk"||r.kind==="Question")),empty:"No challenges recorded",tone:"risk-theme"},
+    {key:"Lessons",label:"Lessons",hint:"What to repeat or change",entries:reviewed.filter(r=>inTheme(r,"lessons",ov,themeFor({kind:r.kind,text:r.statement,title:r.title})==="lessons")),empty:"No reviewed lessons"},
   ];
   const [theme,setTheme]=useState("");
   const newFindings=reviewed.filter(r=>r.proposalId);
