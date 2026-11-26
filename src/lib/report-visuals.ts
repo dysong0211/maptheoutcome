@@ -598,6 +598,8 @@ export type IndicatorRow = {
   period: string;
   source: string;
   status: string;
+  /** Actual as a percent of target. Set only when both are numbers and the actual was reviewed against its source. */
+  attain: number | null;
 };
 const num = (v: string | undefined) => {
   const x = Number(String(v ?? "").replace(/[,\s]/g, ""));
@@ -624,11 +626,13 @@ export function indicatorRows(
     const unit = d?.unit ? ` ${d.unit}` : "";
     const a = num(d?.value), t = num(r.target);
     let variance = "Not recorded";
+    let attain: number | null = null;
     if (reviewed && a !== null && t !== null) {
       const diff = a - t;
       const pct = d?.unit?.trim() === "%";
       const sign = diff > 0 ? "+" : "";
       const absTxt = `${sign}${Number(diff.toFixed(3))}${pct ? " percentage points" : unit}`;
+      if (t !== 0) attain = Number(((a / t) * 100).toFixed(1));
       const rel = t !== 0 ? (pct ? ` (the actual is ${Number(((a / t) * 100).toFixed(1))}% of the target)` : ` (${Number(((a / t) * 100).toFixed(1))}% of target)`) : "";
       variance = `${absTxt}${rel}, calculated by MapToc from the two figures`;
     }
@@ -641,6 +645,7 @@ export function indicatorRows(
       period: d ? `${d.periodStart} to ${d.periodEnd}${d.periodStart < from || d.periodEnd > to ? " (extends outside the report window)" : ""}` : "Not recorded",
       source: d?.anchor ? sources.find((x) => x.id === d.anchor!.sourceId)?.title ?? "Source not found" : "No source linked",
       status: reviewed ? "Actual reviewed against its source passage" : "Actual not yet reviewed against its source",
+      attain,
     });
   }
   return rows;
@@ -770,10 +775,18 @@ export function buildStructure(i: StructureInput): Structure {
 const ref = (r: number) => `[${r}]`;
 
 export function structureHtml(s: Structure) {
-  const cover = `<div style="max-width:100%;overflow-x:auto"><table class="sumtable pack-table-sum cover" style="width:100%;word-break:break-word"><tbody>${s.cover.map((c) => `<tr><th scope="row">${esc(c.label)}</th><td${c.value === NOT_RECORDED ? ' style="color:#7c2d12"' : ""}>${esc(c.value)}</td></tr>`).join("")}</tbody></table></div>`;
+  const small = "font-size:12px;color:#475569;margin-top:4px;overflow-wrap:anywhere";
+  const cover = `<div class="report-cover" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin:8px 0">${s.cover.map((c) => `<div style="border:1px solid #cbd5e1;border-radius:6px;padding:6px 9px;background:#f0fbf8"><div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.03em">${esc(c.label)}</div><div style="overflow-wrap:anywhere${c.value === NOT_RECORDED ? ";color:#7c2d12" : ""}">${esc(c.value)}</div></div>`).join("")}</div>`;
   const exec = `<h2>Executive summary</h2>${s.summary.map((p) => `<p style="margin:6px 0">${esc(p)}</p>`).join("")}${s.points.length ? `<p><b>Main reported results</b></p><ul>${s.points.map((p) => `<li>${esc(p.text)} ${ref(p.ref)}</li>`).join("")}</ul>` : ""}`;
-  const ind = `<h2>Delivery indicators</h2>${s.indicators.length ? `<div style="max-width:100%;overflow-x:auto"><table class="sumtable pack-table-sum" style="min-width:640px"><thead><tr><th>Indicator</th><th>Baseline</th><th>Target</th><th>Actual</th><th>Variance</th><th>Period the figure covers</th><th>Source and status</th></tr></thead><tbody>${s.indicators.map((r) => `<tr><td>${esc(r.indicator)}</td><td>${esc(r.baseline)}</td><td>${esc(r.target)}</td><td>${esc(r.actual)}</td><td>${esc(r.variance)}</td><td>${esc(r.period)}</td><td>${esc(r.source)}<br><small>${esc(r.status)}</small></td></tr>`).join("")}</tbody></table></div><p class="meta">From the programme's delivery checks (Program setup)${s.sample ? ". This programme is the built-in illustrative sample, so these are example figures" : ""}. Delivery records are not proof of impact.</p>` : `<p class="meta">No delivery indicators are set up in Program setup.</p>`}`;
-  const results = `<h2>Reported results from reviewed findings</h2>${s.results.length ? `<div style="max-width:100%;overflow-x:auto"><table class="sumtable pack-table-sum" style="min-width:480px"><thead><tr><th>Ref</th><th>Result as reported</th><th>Level</th><th>Event date</th><th>Source</th></tr></thead><tbody>${s.results.map((r) => `<tr><td>${ref(r.ref)}</td><td>${esc(r.text)}${r.team ? " <small>(team interpretation, not a verified finding)</small>" : ""}</td><td>${esc(r.level)}</td><td>${esc(r.date)}</td><td>${esc(r.source)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="meta">No results reviewed in this window yet.</p>`}<p class="meta">This table lists reviewed findings only. They carry no baseline, target or variance. Those appear in the Delivery indicators table above when indicators are set up.</p>`;
+  const metric = (label: string, value: string) => `<div style="min-width:96px"><div style="font-size:11px;color:#475569;text-transform:uppercase">${label}</div><div style="font-size:17px;font-weight:600;overflow-wrap:anywhere">${esc(value)}</div></div>`;
+  const indCard = (r: IndicatorRow) => {
+    const reviewed = r.attain !== null || r.status.startsWith("Actual reviewed");
+    const bar = r.attain !== null ? `<div style="background:#e2e8f0;border-radius:4px;height:8px;margin-top:4px"><div style="background:#0f766e;border-radius:4px;height:8px;width:${Math.max(0, Math.min(100, r.attain))}%"></div></div><div style="${small}">Actual is ${r.attain}% of the target${r.attain > 100 ? " (bar stops at 100%)" : ""}.</div>` : "";
+    return `<div style="border:1px solid #cbd5e1;border-left:4px solid ${reviewed ? "#0f766e" : "#d97706"};border-radius:6px;padding:10px 12px;margin:8px 0;background:#fff"><div style="font-weight:600;overflow-wrap:anywhere">${esc(r.indicator)}</div><div style="display:flex;flex-wrap:wrap;gap:6px 22px;margin:8px 0">${metric("Target", r.target)}${metric("Actual", r.actual)}${metric("Baseline", r.baseline)}</div>${bar}<div style="margin-top:6px;overflow-wrap:anywhere"><b>Variance:</b> ${esc(r.variance)}</div><div style="${small}">Period the figure covers: ${esc(r.period)}</div><div style="${small}">Source: ${esc(r.source)}</div><div style="${small}"><b>${esc(r.status)}</b></div></div>`;
+  };
+  const ind = `<h2>Delivery indicators</h2>${s.indicators.length ? `${s.indicators.map(indCard).join("")}<p class="meta">From the programme's delivery checks (Program setup)${s.sample ? ". This programme is the built-in illustrative sample, so these are example figures" : ""}. Delivery records are not proof of impact.</p>` : `<p class="meta">No delivery indicators are set up in Program setup.</p>`}`;
+  const resCard = (r: Structure["results"][number]) => `<div style="border-left:3px solid #94a3b8;padding:6px 10px;margin:8px 0;background:#f8fafc"><div style="overflow-wrap:anywhere"><b>${ref(r.ref)}</b> ${esc(r.text)}${r.team ? " <small>(team interpretation, not a verified finding)</small>" : ""}</div><div style="${small}">Level: ${esc(r.level)} &middot; Event date: ${esc(r.date)} &middot; Source: ${esc(r.source)}</div></div>`;
+  const results = `<h2>Reported results from reviewed findings</h2>${s.results.length ? s.results.map(resCard).join("") : `<p class="meta">No results reviewed in this window yet.</p>`}<p class="meta">These are reviewed findings only. They carry no baseline, target or variance. Those appear in the Delivery indicators above when indicators are set up.</p>`;
   const changes = `<h2>Reported changes and corrections</h2>${s.changes.length ? `<ul>${s.changes.map((c) => `<li>${esc(c.text)} ${ref(c.ref)} <small>${esc(c.source)}</small></li>`).join("")}</ul><p class="meta">Listed because the item is a change or its wording signals a correction. Check each against the earlier figure it replaces.</p>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
   const fwd = `<h2>Decisions, open questions and next steps</h2>${s.forward.length ? `<ul>${s.forward.map((c) => `<li><b>${esc(c.kind)}:</b> ${esc(c.text)} ${ref(c.ref)}</li>`).join("")}</ul>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
   const gaps = `<h2>Information not recorded</h2><ul>${s.missing.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`;
@@ -784,7 +797,7 @@ export function structureText(s: Structure) {
   const cover = s.cover.map((c) => `${c.label}: ${c.value}`).join("\n");
   const exec = `Executive summary\n${s.summary.join("\n")}${s.points.length ? `\nMain reported results\n${s.points.map((p) => `- ${p.text} ${ref(p.ref)}`).join("\n")}` : ""}`;
   const ind = `Delivery indicators\n${s.indicators.length ? s.indicators.map((r) => `- ${r.indicator} | Baseline: ${r.baseline} | Target: ${r.target} | Actual: ${r.actual} | Variance: ${r.variance} | Period: ${r.period} | Source: ${r.source} (${r.status})`).join("\n") : "No delivery indicators are set up in Program setup."}${s.sample ? "\nBuilt-in illustrative sample programme: example figures." : ""}`;
-  const results = `Reported results from reviewed findings\n${s.results.length ? s.results.map((r) => `- ${ref(r.ref)} ${r.text} | Level: ${r.level} | Event date: ${r.date} | Source: ${r.source}${r.team ? " | Team interpretation, not a verified finding" : ""}`).join("\n") : "No results reviewed in this window yet."}\nThis table lists reviewed findings only. They carry no baseline, target or variance. Those appear in the Delivery indicators table above when indicators are set up.`;
+  const results = `Reported results from reviewed findings\n${s.results.length ? s.results.map((r) => `- ${ref(r.ref)} ${r.text} | Level: ${r.level} | Event date: ${r.date} | Source: ${r.source}${r.team ? " | Team interpretation, not a verified finding" : ""}`).join("\n") : "No results reviewed in this window yet."}\nThis list shows reviewed findings only. They carry no baseline, target or variance. Those appear in the Delivery indicators above when indicators are set up.`;
   const changes = `Reported changes and corrections\n${s.changes.length ? s.changes.map((c) => `- ${c.text} ${ref(c.ref)} (${c.source})`).join("\n") : "None recorded in the reviewed findings."}`;
   const fwd = `Decisions, open questions and next steps\n${s.forward.length ? s.forward.map((c) => `- ${c.kind}: ${c.text} ${ref(c.ref)}`).join("\n") : "None recorded in the reviewed findings."}`;
   const gaps = `Information not recorded\n${s.missing.map((m) => `- ${m}`).join("\n")}`;
