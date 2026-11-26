@@ -32,6 +32,10 @@ import {
   type Chart,
   type PackItem,
   type PackSection,
+  buildStructure,
+  structureHtml,
+  structureText,
+  type ReportMeta,
 } from "@/lib/report-visuals";
 
 function download(name: string, blob: Blob) {
@@ -227,7 +231,9 @@ export function ReportPack({
   sources,
   disabled = false,
   excludedUndated = 0,
+  meta,
 }: {
+  meta?: ReportMeta;
   excludedUndated?: number;
   title: string;
   programName: string;
@@ -275,15 +281,21 @@ export function ReportPack({
   const sumCharts = useMemo(() => [...financeCharts(sections), chronologyChart(sections)].filter((c): c is Chart => !!c), [sections]);
   const annexCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections), ...charts].filter((c): c is Chart => !!c), [sections, sourceCount, charts]);
   const allItems = sections.flatMap((x) => x.items);
+  const structure = useMemo(
+    () => buildStructure({ sections, programName, from, to, sourceCount, findings: records.length, insights: insights.length, meta, generatedOn: new Date().toLocaleDateString("en-CA"), excludedUndated }),
+    [sections, programName, from, to, sourceCount, records.length, insights.length, meta, excludedUndated],
+  );
+  const structHtml = structureHtml(structure);
+  const structText = structureText(structure);
   const fullHtml = async () => {
     const withImg = await withImages([...sumCharts, ...(tChart.chart ? [tChart.chart] : []), ...annexCharts]);
     const sc = withImg.slice(0, sumCharts.length);
     const tc = tChart.chart ? withImg[sumCharts.length] : null;
-    return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status }).replace('<h2>Limitations</h2>', hypHtml + '<h2>Limitations</h2>');
+    return reportHtml({ title, programName, from, to, stats, sections, charts: withImg.slice(sumCharts.length + (tChart.chart ? 1 : 0)), caveat, headline: head, structure: structHtml, summaryCharts: sc, tableChart: tc, tableStatus: tChart.status }).replace('<h2>Limitations</h2>', hypHtml + '<h2>Limitations</h2>');
   };
   const scopeLine = `${programName} · Evidence window ${from} to ${to}`;
   const fullText = () =>
-    [title, scopeLine, `Summary\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), limitationsText(allItems), hypText, refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
+    [title, scopeLine, structText.front, `${empty ? "Summary" : "Reported points by theme"}\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), structText.back, limitationsText(allItems), hypText, refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
     <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
@@ -304,9 +316,16 @@ export function ReportPack({
       </div>
       {msg && <p role="status" className="pack-msg">{msg}</p>}
       {empty && <p role="status">No reviewed findings or approved team insights fall in this window yet, so there is no wording to copy. Approve evidence in Review, or widen the dates.</p>}
+      {!empty && (
+        <div className="pack-summary" data-testid="report-structure">
+          <h3>Report cover</h3>
+          <div dangerouslySetInnerHTML={{ __html: structHtml.front }} />
+          <p className="pack-hint">Layout follows a standard progress-report order (cover, executive summary, results, evidence by theme, changes, next steps, gaps, limitations). It is a MapToc draft, not an official UN or UNDP template. Fields marked Not recorded are left for you to fill; nothing is estimated.</p>
+        </div>
+      )}
       {head.sentence && (
         <div className="pack-summary">
-          <h3>Summary</h3>
+          <h3>Reported points by theme</h3>
           <table className="pack-table-sum">
             <thead><tr><th>Theme</th><th>Statement</th><th>Ref</th></tr></thead>
             <tbody>
@@ -346,6 +365,11 @@ export function ReportPack({
           ) : <p className="pack-hint">{s.id === "finance" ? "No finance statement has been reviewed yet. Figures should come from the finance system." : "Nothing reviewed yet for this theme."}</p>}
         </div>
       ))}
+      {!empty && (
+        <div className="pack-summary" data-testid="report-structure-back">
+          <div dangerouslySetInnerHTML={{ __html: structHtml.back }} />
+        </div>
+      )}
       {hyp.length > 0 && (
         <div className="pack-section" data-testid="pack-ai-hypotheses">
           <h3>AI-proposed hypotheses accepted by a reviewer <small>({hyp.length})</small></h3>
