@@ -29,6 +29,8 @@ export type PackItem = {
   hypothesis?: string;
   /** Reference number shown as [n] in the summary and sections. */
   ref?: number;
+  /** Where in the source document the passage sits (for example a page or sheet), when the source records it. */
+  locator?: string;
   /** Id of the finding or insight, so a reviewer can move it to another theme. */
   id?: string;
   /** Event date (YYYY-MM-DD) when the source states one; absent when only the document date is known. */
@@ -92,6 +94,7 @@ export function buildSections(records: ProgramRecord[], insights: Reflection[], 
       limit: r.limitation || "",
       source: sourceTitle(sources, r.citation.versionId),
       link: `${origin}/sources/view?id=${encodeURIComponent(r.citation.versionId)}`,
+      locator: sources.find((x) => x.id === r.citation.versionId)?.passages.find((q) => q.id === r.citation.passageId)?.locator || undefined,
       kind: "finding",
       quote: r.citation.quote || undefined,
       level: r.level || undefined,
@@ -128,8 +131,8 @@ const sentence = (t: string) => {
 const shortDate = (meta: string) => meta.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? "";
 const cite = (it: PackItem) => `[${it.ref ?? ""}]`;
 /** One numbered reference: where the statement comes from. */
-export const refText = (it: PackItem) => `[${it.ref}] ${it.source}${shortDate(it.meta) ? `, ${shortDate(it.meta)}` : ""}. ${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}.${it.quote ? ` Source passage: \u201c${it.quote}\u201d.` : ""} ${it.link}`;
-export const refHtml = (it: PackItem) => `<li value="${it.ref}">${esc(it.source)}${shortDate(it.meta) ? `, ${esc(shortDate(it.meta))}` : ""}. ${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""}.${it.quote ? ` <i>Source passage: \u201c${esc(it.quote)}\u201d.</i>` : ""} <a href="${esc(it.link)}">${esc(it.link)}</a></li>`;
+export const refText = (it: PackItem) => `[${it.ref}] ${it.source}${shortDate(it.meta) ? `, ${shortDate(it.meta)}` : ""}. ${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}.${it.quote ? ` Source passage: \u201c${it.quote}\u201d.` : ""}${it.locator ? ` Location in source: ${it.locator}.` : ""}`;
+export const refHtml = (it: PackItem) => `<li value="${it.ref}">${esc(it.source)}${shortDate(it.meta) ? `, ${esc(shortDate(it.meta))}` : ""}. ${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""}.${it.quote ? ` <i>Source passage: \u201c${esc(it.quote)}\u201d.</i>` : ""}${it.locator ? ` Location in source: ${esc(it.locator)}.` : ""}</li>`;
 export const refsHtml = (items: PackItem[]) => (items.length ? `<details class="refs"><summary><b>References (${items.length})</b></summary><ol>${items.map(refHtml).join("")}</ol></details>` : "");
 export const refsText = (items: PackItem[]) => (items.length ? `References\n${items.map(refText).join("\n")}` : "");
 
@@ -170,7 +173,7 @@ const bulletHtml = (b: Bullet) =>
   `<li>${b.level ? `<b>[${esc(b.level)}]</b> ` : ""}${esc(sentence(b.text))} <span class="cite">${esc(b.cite)}</span>${b.hypothesis ? `<br><em>Idea to test (not a finding): ${esc(sentence(b.hypothesis))}</em>` : ""}</li>`;
 
 export const itemText = (it: PackItem) =>
-  `${it.title}\n${it.text}${it.quote ? `\nFrom the source: \u201c${it.quote}\u201d` : ""}${it.hypothesis ? `\nIdea to test (not a finding): ${it.hypothesis}` : ""}\n${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}\nSource: ${it.source}${it.limit ? `\nLimit: ${it.limit}` : ""}\nLink: ${it.link}`;
+  `${it.title}\n${it.text}${it.quote ? `\nFrom the source: \u201c${it.quote}\u201d` : ""}${it.hypothesis ? `\nIdea to test (not a finding): ${it.hypothesis}` : ""}\n${it.meta}${it.tags ? ` \u00b7 ${it.tags}` : ""}\nSource: ${it.source}${it.locator ? ` (${it.locator})` : ""}${it.limit ? `\nLimit: ${it.limit}` : ""}`;
 const EMPTY: Record<string, string> = { finance: "No finance statement has been reviewed yet. Figures should come from the finance system." };
 const emptyNote = (s: PackSection) => EMPTY[s.id] ?? "Nothing reviewed yet for this theme.";
 /** Copy-section text: bullets, then the limitations and references for these items. */
@@ -179,7 +182,7 @@ export const sectionText = (s: PackSection, withRefs = true) =>
     ? `${s.title}\n${s.lead}\n\n${s.bullets.map(bulletText).join("\n")}${withRefs ? `\n\n${limitationsText(s.items)}\n\n${refsText(s.items)}` : ""}`
     : `${s.title}\n\n${emptyNote(s)}`;
 export const itemHtml = (it: PackItem) =>
-  `<div class="item"><h4>${esc(it.title)}</h4><p>${esc(it.text)}</p>${it.quote ? `<blockquote>\u201c${esc(it.quote)}\u201d</blockquote>` : ""}${it.hypothesis ? `<p class="limit"><b>Idea to test (not a finding):</b> ${esc(it.hypothesis)}</p>` : ""}<p class="meta">${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""} \u00b7 Source: <a href="${esc(it.link)}">${esc(it.source)}</a></p>${it.limit ? `<p class="limit"><b>Limit:</b> ${esc(it.limit)}</p>` : ""}</div>`;
+  `<div class="item"><h4>${esc(it.title)}</h4><p>${esc(it.text)}</p>${it.quote ? `<blockquote>\u201c${esc(it.quote)}\u201d</blockquote>` : ""}${it.hypothesis ? `<p class="limit"><b>Idea to test (not a finding):</b> ${esc(it.hypothesis)}</p>` : ""}<p class="meta">${esc(it.meta)}${it.tags ? ` \u00b7 ${esc(it.tags)}` : ""} \u00b7 Source: ${esc(it.source)}${it.locator ? ` (${esc(it.locator)})` : ""}</p>${it.limit ? `<p class="limit"><b>Limit:</b> ${esc(it.limit)}</p>` : ""}</div>`;
 export const sectionHtml = (s: PackSection, withRefs = true) =>
   `<h3>${esc(s.title)}</h3>${
     s.items.length
@@ -564,6 +567,8 @@ export function reportHtml(opts: {
   /** Chart the user built from an uploaded table; included ahead of the evidence-base annex. */
   tableChart?: Chart | null;
   tableStatus?: string;
+  /** Cover, executive summary and results table (front); changes, next steps and gaps (back). */
+  structure?: { front: string; back: string };
 }) {
   const stats = opts.stats.map((s) => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("");
   let fig = 0;
@@ -577,5 +582,133 @@ h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin-top:32px;border-bottom
 .sub{color:#475569;margin:0 0 16px}.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{border:1px solid #cbd5e1;border-radius:8px;padding:10px 16px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:#475569}
 .item{border-left:3px solid #0f766e;padding:2px 0 2px 12px;margin:12px 0}.item p{margin:2px 0}.meta{font-size:12px;color:#475569}.limit{font-size:13px;color:#7c2d12}
 figure{margin:16px 0}figure svg{max-width:100%;height:auto;border:1px solid #e2e8f0}figcaption{font-size:12px;color:#475569}blockquote{margin:6px 0;padding:4px 12px;background:#f1f5f9;border-radius:4px;font-style:italic;font-size:13px}.callout{background:#f0fdfa;border-left:4px solid #0f766e;padding:6px 16px;margin:8px 0}table.sumtable{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}.sumtable th,.sumtable td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}.sumtable th{background:#e6f4f1}details.refs{margin-top:28px;border-top:1px solid #cbd5e1;padding-top:8px;font-size:12px}details.refs li{margin:4px 0}.callout h4{color:#0f766e;margin:10px 0 2px}.lead{color:#475569;font-size:13px}.cite{color:#475569;font-size:12px}.pts li{margin:6px 0}.caveat{margin-top:32px;font-size:12px;color:#475569;border-top:1px solid #cbd5e1;padding-top:8px}
-</style></head><body><h1>${esc(opts.title)}</h1><p class="sub">${esc(opts.programName)} · Evidence window ${esc(opts.from)} to ${esc(opts.to)}</p>${opts.headline?.sentence ? `<h2>Summary</h2><div class="callout">${opts.headline.html ?? `<p>${esc(opts.headline.sentence)}</p>`}</div>${sumFigs}` : ""}<h2>Updates, progress, finance, challenges and lessons</h2>${opts.sections.map((x) => sectionHtml(x, false)).join("")}<h2>Limitations</h2>${limitationsHtml(opts.sections.flatMap((x) => x.items)).replace("<h3>Limitations</h3>", "")}${tableBlock}${opts.charts.length ? `<h2>Annex: evidence base</h2><p class="meta">${esc(opts.headline?.base ?? "")} These charts count reviewed items. They do not measure results or impact.</p>${charts}` : ""}${refsHtml(opts.sections.flatMap((x) => x.items))}<p class="caveat">${esc(opts.caveat)}</p></body></html>`;
+</style></head><body><h1>${esc(opts.title)}</h1><p class="sub">${esc(opts.programName)} · Evidence window ${esc(opts.from)} to ${esc(opts.to)}</p>${opts.structure?.front ?? ""}${opts.headline?.sentence ? `<h2>${opts.structure ? "Reported points by theme" : "Summary"}</h2><div class="callout">${opts.headline.html ?? `<p>${esc(opts.headline.sentence)}</p>`}</div>${sumFigs}` : ""}<h2>Updates, progress, finance, challenges and lessons</h2>${opts.sections.map((x) => sectionHtml(x, false)).join("")}${opts.structure?.back ?? ""}<h2>Limitations</h2>${limitationsHtml(opts.sections.flatMap((x) => x.items)).replace("<h3>Limitations</h3>", "")}${tableBlock}${opts.charts.length ? `<h2>Annex: evidence base</h2><p class="meta">${esc(opts.headline?.base ?? "")} These charts count reviewed items. They do not measure results or impact.</p>${charts}` : ""}${refsHtml(opts.sections.flatMap((x) => x.items))}<p class="caveat">${esc(opts.caveat)}</p></body></html>`;
                       }
+
+/* ---------- UN-style report structure (cover, executive summary, results table) ---------- */
+
+/** Facts about the programme that the report cover can show. Empty values are printed as "Not recorded", never guessed. */
+export type ReportMeta = {
+  programRef?: string;
+  grantRef?: string;
+  donor?: string;
+  agreementStart?: string;
+  agreementEnd?: string;
+};
+
+export type StructureInput = {
+  sections: PackSection[];
+  programName: string;
+  from: string;
+  to: string;
+  sourceCount: number;
+  findings: number;
+  insights: number;
+  meta?: ReportMeta;
+  /** YYYY-MM-DD the draft was generated. */
+  generatedOn: string;
+  excludedUndated?: number;
+};
+
+const NOT_RECORDED = "Not recorded";
+const itemLine = (it: PackItem) => sentence(it.kind === "insight" ? `The team reports: ${it.text}` : it.text);
+const n = (c: number, one: string, many: string) => `${c} ${c === 1 ? one : many}`;
+const CHANGE_WORDS = /\b(correct\w*|revis\w*|supersed\w*|amended|instead of|rather than|differs?|discrepanc\w*|was wrong|not as reported)\b/i;
+
+export type Structure = {
+  cover: { label: string; value: string }[];
+  summary: string[];
+  points: { ref: number; text: string }[];
+  results: { ref: number; text: string; level: string; date: string; source: string; team: boolean }[];
+  changes: { ref: number; text: string; source: string }[];
+  forward: { ref: number; kind: string; text: string }[];
+  missing: string[];
+};
+
+export function buildStructure(i: StructureInput): Structure {
+  const by = (id: string) => i.sections.find((s) => s.id === id)?.items ?? [];
+  const progress = by("progress");
+  const all = i.sections.flatMap((s) => s.items);
+  const m = i.meta ?? {};
+  const agreement = m.agreementStart || m.agreementEnd ? `${m.agreementStart || "?"} to ${m.agreementEnd || "?"}` : NOT_RECORDED;
+  const cover = [
+    { label: "Report", value: "Programme progress report, draft for review" },
+    { label: "Programme", value: i.programName },
+    { label: "Programme ID", value: m.programRef?.trim() || NOT_RECORDED },
+    { label: "Grant ID", value: m.grantRef?.trim() || NOT_RECORDED },
+    { label: "Donor", value: m.donor?.trim() || NOT_RECORDED },
+    { label: "Agreement period", value: agreement },
+    { label: "Evidence window", value: `${i.from} to ${i.to}` },
+    { label: "Implementing partner", value: NOT_RECORDED },
+    { label: "Prepared by", value: NOT_RECORDED },
+    { label: "Draft generated", value: i.generatedOn },
+    { label: "Status", value: "Draft. Reviewer-approved evidence, not independently verified." },
+  ];
+  const resultItems = all.filter((x) => progress.includes(x) || /^Result\b/.test(x.meta)).sort((a, b) => (a.ref ?? 0) - (b.ref ?? 0));
+  const outputs = resultItems.filter((x) => /output/i.test(x.level ?? "")).length;
+  const signals = resultItems.filter((x) => /outcome/i.test(x.level ?? "")).length;
+  const undatedIn = all.filter((x) => x.kind === "finding" && !x.date).length;
+  const summary: string[] = [];
+  if (!all.length) {
+    summary.push(`No reviewed findings fall in ${i.from} to ${i.to} yet, so there is nothing to summarise.`);
+  } else {
+    summary.push(`This draft covers ${i.from} to ${i.to} for ${i.programName}. It draws on ${n(i.findings, "reviewed finding", "reviewed findings")} and ${n(i.insights, "approved team insight", "approved team insights")} from ${n(i.sourceCount, "source document", "source documents")}. A reviewer approved each item. None is independently verified.`);
+    summary.push(
+      resultItems.length
+        ? `Results and progress: ${n(resultItems.length, "item is", "items are")} recorded${outputs || signals ? ` (${outputs} marked Output, ${signals} marked Outcome signal)` : ""}. Outputs describe delivery or reach. They are not verified outcomes.`
+        : "Results and progress: nothing has been reviewed under this heading yet.",
+    );
+    const counts = [["Finance", by("finance").length], ["Challenges and risks", by("challenges").length], ["Lessons", by("lessons").length], ["Updates and decisions", by("updates").length]] as const;
+    const present = counts.filter(([, c]) => c > 0).map(([t, c]) => `${t.toLowerCase()} (${c})`);
+    const absent = counts.filter(([, c]) => c === 0).map(([t]) => t.toLowerCase());
+    summary.push(`Also recorded: ${present.length ? present.join(", ") : "nothing else"}.${absent.length ? ` Nothing reviewed yet for ${absent.join(", ")}.` : ""}`);
+    if (undatedIn || i.excludedUndated)
+      summary.push(`Date caveat: ${undatedIn ? `${n(undatedIn, "finding has", "findings have")} no confirmed event date and ${undatedIn === 1 ? "is" : "are"} not counted inside the evidence window. ` : ""}${i.excludedUndated ? `${n(i.excludedUndated, "approved finding", "approved findings")} with no confirmed event date ${i.excludedUndated === 1 ? "is" : "are"} left out, so the picture is incomplete.` : ""}`.trim());
+  }
+  const points = resultItems.slice(0, 3).map((x) => ({ ref: x.ref ?? 0, text: itemLine(x) }));
+  const results = resultItems.map((x) => ({
+    ref: x.ref ?? 0,
+    text: itemLine(x),
+    level: x.level ?? (x.kind === "insight" ? "Team insight" : "Not set"),
+    date: x.date ?? "Not confirmed",
+    source: x.source,
+    team: x.kind === "insight",
+  }));
+  const changes = all
+    .filter((x) => /^Change\b/.test(x.meta) || CHANGE_WORDS.test(x.text))
+    .map((x) => ({ ref: x.ref ?? 0, text: itemLine(x), source: x.source }));
+  const forward = all
+    .filter((x) => /^(Decision|Question)\b/.test(x.meta))
+    .map((x) => ({ ref: x.ref ?? 0, kind: x.meta.split(" · ")[0], text: itemLine(x) }));
+  const missing: string[] = [];
+  const unrecorded = cover.filter((c) => c.value === NOT_RECORDED).map((c) => c.label.toLowerCase());
+  if (unrecorded.length) missing.push(`Cover details not recorded: ${unrecorded.join(", ")}.`);
+  missing.push("Baseline, target and variance for each result are not calculated by MapToc. They appear only if a reviewed finding states them in its own words.");
+  const emptyThemes = i.sections.filter((s) => !s.items.length).map((s) => s.title.toLowerCase());
+  if (emptyThemes.length) missing.push(`No reviewed evidence yet for: ${emptyThemes.join(", ")}.`);
+  if (!forward.length) missing.push("No next steps, recommendations or open questions are recorded in the reviewed findings. Add them from the programme team before sending.");
+  missing.push("Conflicting figures are not detected automatically. Check the reported changes and corrections list, and compare figures across sources, before sending.");
+  return { cover, summary, points, results, changes, forward, missing };
+}
+
+const ref = (r: number) => `[${r}]`;
+
+export function structureHtml(s: Structure) {
+  const cover = `<table class="sumtable pack-table-sum cover"><tbody>${s.cover.map((c) => `<tr><th scope="row">${esc(c.label)}</th><td${c.value === NOT_RECORDED ? ' style="color:#7c2d12"' : ""}>${esc(c.value)}</td></tr>`).join("")}</tbody></table>`;
+  const exec = `<h2>Executive summary</h2>${s.summary.map((p) => `<p style="margin:6px 0">${esc(p)}</p>`).join("")}${s.points.length ? `<p><b>Main reported results</b></p><ul>${s.points.map((p) => `<li>${esc(p.text)} ${ref(p.ref)}</li>`).join("")}</ul>` : ""}`;
+  const results = `<h2>Results reported, with sources</h2>${s.results.length ? `<table class="sumtable pack-table-sum"><thead><tr><th>Ref</th><th>Result as reported</th><th>Level</th><th>Event date</th><th>Source</th></tr></thead><tbody>${s.results.map((r) => `<tr><td>${ref(r.ref)}</td><td>${esc(r.text)}${r.team ? " <small>(team interpretation, not a verified finding)</small>" : ""}</td><td>${esc(r.level)}</td><td>${esc(r.date)}</td><td>${esc(r.source)}</td></tr>`).join("")}</tbody></table>` : `<p class="meta">No results reviewed in this window yet.</p>`}<p class="meta">Baseline, target and variance are not calculated here. They appear only when a reviewed finding states them.</p>`;
+  const changes = `<h2>Reported changes and corrections</h2>${s.changes.length ? `<ul>${s.changes.map((c) => `<li>${esc(c.text)} ${ref(c.ref)} <small>${esc(c.source)}</small></li>`).join("")}</ul><p class="meta">Listed because the item is a change or its wording signals a correction. Check each against the earlier figure it replaces.</p>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
+  const fwd = `<h2>Decisions, open questions and next steps</h2>${s.forward.length ? `<ul>${s.forward.map((c) => `<li><b>${esc(c.kind)}:</b> ${esc(c.text)} ${ref(c.ref)}</li>`).join("")}</ul>` : `<p class="meta">None recorded in the reviewed findings.</p>`}`;
+  const gaps = `<h2>Information not recorded</h2><ul>${s.missing.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`;
+  return { front: `${cover}${exec}${results}`, back: `${changes}${fwd}${gaps}` };
+}
+
+export function structureText(s: Structure) {
+  const cover = s.cover.map((c) => `${c.label}: ${c.value}`).join("\n");
+  const exec = `Executive summary\n${s.summary.join("\n")}${s.points.length ? `\nMain reported results\n${s.points.map((p) => `- ${p.text} ${ref(p.ref)}`).join("\n")}` : ""}`;
+  const results = `Results reported, with sources\n${s.results.length ? s.results.map((r) => `- ${ref(r.ref)} ${r.text} | Level: ${r.level} | Event date: ${r.date} | Source: ${r.source}${r.team ? " | Team interpretation, not a verified finding" : ""}`).join("\n") : "No results reviewed in this window yet."}\nBaseline, target and variance are not calculated here. They appear only when a reviewed finding states them.`;
+  const changes = `Reported changes and corrections\n${s.changes.length ? s.changes.map((c) => `- ${c.text} ${ref(c.ref)} (${c.source})`).join("\n") : "None recorded in the reviewed findings."}`;
+  const fwd = `Decisions, open questions and next steps\n${s.forward.length ? s.forward.map((c) => `- ${c.kind}: ${c.text} ${ref(c.ref)}`).join("\n") : "None recorded in the reviewed findings."}`;
+  const gaps = `Information not recorded\n${s.missing.map((m) => `- ${m}`).join("\n")}`;
+  return { front: [cover, exec, results].join("\n\n"), back: [changes, fwd, gaps].join("\n\n") };
+}
