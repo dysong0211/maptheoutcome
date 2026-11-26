@@ -368,11 +368,13 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           disabled={evidenceChanged}
           excludedUndated={packUndated ? 0 : undatedRecords.length}
           meta={program ?? undefined}
+          program={program}
         />
       )}
       {draft && draftContext?.programId === programId && (
         <section className="memory-card report-draft-panel" aria-live="polite">
           <h2>Text draft (editable)</h2>
+          <p className="report-draft-scope">This is a plain list of reviewed findings with their source passages, for editing. The structured report (cover, executive summary, indicators, results, gaps) is the Report pack above. "Copy whole report" and "Download report" use the pack, not this text.</p>
           <p className="report-draft-scope">
             {draftContext?.from}–{draftContext?.to}
             {selectionChanged &&
