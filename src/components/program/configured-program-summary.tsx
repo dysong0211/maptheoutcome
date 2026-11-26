@@ -7,6 +7,7 @@ import { allEvidence } from "@/lib/assurance";
 import { presentCheck } from "@/lib/assurance-presentation";
 import { SummaryThemes } from "./summary-themes";
 import { themeFor } from "@/lib/report-visuals";
+import { inTheme, useThemeOverrides } from "@/lib/outcome-links";
 import { ReadinessStrip } from "./readiness-strip";
 import { AssuranceBirdseye } from "./assurance-birdseye";
 import { ProgramAssuranceTimeline } from "./program-assurance-timeline";
@@ -15,6 +16,7 @@ export function ConfiguredProgramSummary() {
   const state = useClarifications(),
     sources = useMemoryStore((s) => s.sources),
     allRecords = useMemoryStore((s) => s.records),
+    ov = useThemeOverrides(),
     p = state.program;
   if (!p) return null;
   const budget = p.rules.find((r) => r.method === "budget-approval"),
@@ -26,8 +28,8 @@ export function ConfiguredProgramSummary() {
       (s) => !s.id.startsWith("configured-inputs:"),
     );
   const mine = allRecords.filter((r) => sources.some((x) => x.id === r.citation.versionId && (x.programId || "cambodia-demo") === p.id)),
-    financeRec = mine.filter((r) => themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "finance"),
-    resultRec = mine.filter((r) => r.kind === "Result" || themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "progress"),
+    financeRec = mine.filter((r) => inTheme(r, "finance", ov, themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "finance")),
+    resultRec = mine.filter((r) => inTheme(r, "progress", ov, r.kind === "Result" || themeFor({ kind: r.kind, text: r.statement, title: r.title }) === "progress")),
     fromDocs = (r?: { statement: string }) => r ? `${r.statement.length > 160 ? r.statement.slice(0, 157) + "..." : r.statement} (from your approved findings, not audited)` : "";
   const coverage = [...new Set(p.rules.flatMap((r) => r.sourceIds))],
     linked = coverage.filter((id) => evidence.some((s) => s.id === id)).length,
