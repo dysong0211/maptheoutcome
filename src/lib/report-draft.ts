@@ -76,7 +76,7 @@ export function insightText(
   return insights
     .map(
       (i, index) =>
-        `${index + 1}. ${i.theme}\n${i.observation}${i.implication ? `\nFuture hypothesis: ${i.implication}` : ""}\nObserved: ${i.observedOn} · recorded by ${i.officer}\nSource: ${sources.find((s) => s.id === i.sourceId)?.title ?? "Source"}\nReviewed: ${(i.reviewedAt ?? "").slice(0, 10)} · ${i.reviewNote ?? ""}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(i.sourceId)}`,
+        `${index + 1}. ${i.theme}\n${i.observation}${i.implication ? `\nFuture hypothesis: ${i.implication}` : ""}\nObserved: ${i.observedOn} · recorded by ${i.officer}\nSource: ${sources.find((s) => s.id === i.sourceId)?.title ?? "Source"}\nReviewed: ${(i.reviewedAt ?? "").slice(0, 10)} · ${i.reviewNote ?? ""}`,
     )
     .join("\n\n");
 }
@@ -135,12 +135,12 @@ export function createPeriodReport({
     : "";
   const total = chosen.length + chosenInsights.length;
   const undatedText = undated.length
-    ? `\n\nDATE NOT CONFIRMED (not part of this period's results)\nThese approved findings do not state when the event happened. Confirm the event date in Review before relying on them.\n${undated.map((r, i) => `${i + 1}. ${r.title}\nSource: ${sources.find((s) => s.id === r.citation.versionId)?.title ?? "Source"}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(r.citation.versionId)}`).join("\n\n")}`
+    ? `\n\nDATE NOT CONFIRMED (not part of this period's results)\nThese approved findings do not state when the event happened. Confirm the event date in Review before relying on them.\n${undated.map((r, i) => `${i + 1}. ${r.title}\nSource: ${sources.find((s) => s.id === r.citation.versionId)?.title ?? "Source"}`).join("\n\n")}`
     : "";
   const content = chosen
     .map(
       (record, index) =>
-        `${index + 1}. ${record.title}\n${record.statement}\nEvent date: ${record.eventDateBasis === "document-date" ? "not confirmed" : record.eventDate.slice(0, 10)}\nSource: ${sources.find((source) => source.id === record.citation.versionId)!.title}\nOriginal passage: “${record.citation.quote}”\nLimit: ${record.limitation || "No additional limitation recorded."}\nSource link: ${origin}/sources/view?id=${encodeURIComponent(record.citation.versionId)}`,
+        `${index + 1}. ${record.title}\n${record.statement}\nEvent date: ${record.eventDateBasis === "document-date" ? "not confirmed" : record.eventDate.slice(0, 10)}\nSource: ${sources.find((source) => source.id === record.citation.versionId)!.title}${(() => { const l = sources.find((source) => source.id === record.citation.versionId)?.passages.find((q) => q.id === record.citation.passageId)?.locator; return l ? ` (${l})` : ""; })()}\nOriginal passage: “${record.citation.quote}”\nLimit: ${record.limitation || "No additional limitation recorded."}`,
     )
     .join("\n\n");
   const undpSections: Record<Exclude<typeof reportKind, "program-update">, string> = {
