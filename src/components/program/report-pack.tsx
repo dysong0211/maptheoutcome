@@ -342,10 +342,10 @@ export function ReportPack({
         <div className="pack-summary">
           <h3>Reported points by theme</h3>
           <table className="pack-table-sum">
-            <thead><tr><th>Theme</th><th>Statement</th><th>Ref</th></tr></thead>
+            <thead><tr><th style={{ minWidth: "7rem" }}>Theme</th><th>Statement</th><th style={{ whiteSpace: "nowrap" }}>Ref</th></tr></thead>
             <tbody>
               {head.rows.map((r) => (
-                <tr key={r.ref}><td>{r.area}{r.level && <small> {r.level}</small>}</td><td>{r.text}</td><td>[{r.ref}]</td></tr>
+                <tr key={r.ref}><td style={{ minWidth: "7rem" }}>{r.area}{r.level && <small> {r.level}</small>}</td><td>{r.text}</td><td style={{ whiteSpace: "nowrap" }}>[{r.ref}]</td></tr>
               ))}
             </tbody>
           </table>
@@ -402,10 +402,10 @@ export function ReportPack({
             <button disabled={disabled} onClick={async () => setMsg((await copyRich(limitationsHtml(allItems), limitationsText(allItems))) ? "Copied the limitations." : "Copy was blocked by this browser.")}>Copy limitations</button>
           </div>
           <table className="pack-table-sum">
-            <thead><tr><th>Applies to</th><th>Limitation</th></tr></thead>
+            <thead><tr><th style={{ minWidth: "5rem" }}>Applies to</th><th>Limitation</th></tr></thead>
             <tbody>
-              <tr><td>All</td><td>All statements were approved by a reviewer and are recorded as the sources state them. They are not independently verified. Outputs and reported community change are not verified outcomes.</td></tr>
-              {limitationsOf(allItems).map((l, i) => <tr key={i}><td>{l.refs.map((r) => `[${r}]`).join(" ")}</td><td>{l.text}</td></tr>)}
+              <tr><td style={{ minWidth: "5rem" }}>All</td><td>All statements were approved by a reviewer and are recorded as the sources state them. They are not independently verified. Outputs and reported community change are not verified outcomes.</td></tr>
+              {limitationsOf(allItems).map((l, i) => <tr key={i}><td style={{ minWidth: "5rem" }}>{l.refs.map((r) => `[${r}]`).join(" ")}</td><td>{l.text}</td></tr>)}
             </tbody>
           </table>
         </div>
