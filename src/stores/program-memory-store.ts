@@ -68,7 +68,7 @@ interface MemoryState {
     reason: string,
     sourceChecked?: boolean,
     tags?: FindingTags,
-    viaSave?: boolean,
+    viaSave?: boolean | "migration",
   ) => boolean;
   addRelation: (from: string, to: string, label: string) => boolean;
   removeRelation: (from: string, to: string) => void;
@@ -483,7 +483,7 @@ export const useMemoryStore = create<MemoryState>()(
         }));
         return true;
       },
-      review: (id, decision, statement, reason, sourceChecked = false, tags, viaSave = false) => {
+      review: (id, decision, statement, reason, sourceChecked = false, tags, viaSave: boolean | "migration" = false) => {
         const state = get();
         const proposal = state.proposals.find((item) => item.id === id);
         if (
@@ -509,7 +509,9 @@ export const useMemoryStore = create<MemoryState>()(
         )
           return false;
         const occurredAt = new Date().toISOString();
-        const actor = viaSave
+        const actor = viaSave === "migration"
+          ? "Automatic migration · earlier kept and saved, not a new review"
+          : viaSave
           ? decision === "approved"
             ? "Program manager · approved on save"
             : "Program manager · dismissed in review list"
