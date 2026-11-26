@@ -33,6 +33,7 @@ import {
   type PackItem,
   type PackSection,
   buildStructure,
+  indicatorRows,
   structureHtml,
   structureText,
   type ReportMeta,
@@ -232,7 +233,9 @@ export function ReportPack({
   disabled = false,
   excludedUndated = 0,
   meta,
+  program,
 }: {
+  program?: { rules?: import("@/lib/program-assurance").ProgramRule[]; data?: import("@/lib/program-assurance").ProgramDatum[]; sample?: boolean; id?: string } | null;
   meta?: ReportMeta;
   excludedUndated?: number;
   title: string;
@@ -281,9 +284,17 @@ export function ReportPack({
   const sumCharts = useMemo(() => [...financeCharts(sections), chronologyChart(sections)].filter((c): c is Chart => !!c), [sections]);
   const annexCharts = useMemo(() => [flowChart(sections, sourceCount), summaryChart(sections), ...charts].filter((c): c is Chart => !!c), [sections, sourceCount, charts]);
   const allItems = sections.flatMap((x) => x.items);
+  // Cover details the app does not hold. Typed here, kept in this browser per programme, and used in the copy and download.
+  const coverKey = `maptoc-report-cover:${program?.id ?? programName}`;
+  const [cover, setCover] = useState({ preparedBy: "", partner: "" });
+  useEffect(() => {
+    try { setCover({ preparedBy: "", partner: "", ...JSON.parse(localStorage.getItem(coverKey) ?? "{}") }); } catch { setCover({ preparedBy: "", partner: "" }); }
+  }, [coverKey]);
+  const setCoverField = (k: "preparedBy" | "partner", v: string) => setCover((c) => { const n = { ...c, [k]: v.slice(0, 120) }; try { localStorage.setItem(coverKey, JSON.stringify(n)); } catch {} return n; });
+  const indicators = useMemo(() => indicatorRows(program, sources, from, to), [program, sources, from, to]);
   const structure = useMemo(
-    () => buildStructure({ sections, programName, from, to, sourceCount, findings: records.length, insights: insights.length, meta, generatedOn: new Date().toLocaleDateString("en-CA"), excludedUndated }),
-    [sections, programName, from, to, sourceCount, records.length, insights.length, meta, excludedUndated],
+    () => buildStructure({ sections, programName, from, to, sourceCount, findings: records.length, insights: insights.length, meta, title, generatedOn: new Date().toLocaleDateString("en-CA"), excludedUndated, indicators, preparedBy: cover.preparedBy, partner: cover.partner, sample: !!program?.sample }),
+    [sections, programName, from, to, sourceCount, records.length, insights.length, meta, excludedUndated, indicators, cover, program?.sample],
   );
   const structHtml = structureHtml(structure);
   const structText = structureText(structure);
@@ -298,7 +309,7 @@ export function ReportPack({
     [title, scopeLine, structText.front, `${empty ? "Summary" : "Reported points by theme"}\n${head.sentence}`, ...sections.map((x) => sectionText(x, false)), structText.back, limitationsText(allItems), hypText, refsText(allItems), ...(tChart.chart ? [`Chart from uploaded data (not verified results; table status: ${tChart.status})\n[Chart: ${tChart.chart.title}. Paste the chart image separately, or use the formatted copy.]`] : [])].filter(Boolean).join("\n\n");
   const empty = records.length + insights.length === 0;
   return (
-    <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title">
+    <section className="memory-card report-draft-panel report-pack" aria-labelledby="pack-title" style={{ minWidth: 0, maxWidth: "100%" }}>
       <h2 id="pack-title">Report pack</h2>
       <p className="report-draft-scope" data-testid="pack-scope"><b>Scope:</b> {scopeLine}</p>
       <p className="report-draft-scope">Draft wording, results and charts built from reviewed evidence in {from} to {to}. Copy what you need into your final report.</p>
@@ -317,8 +328,12 @@ export function ReportPack({
       {msg && <p role="status" className="pack-msg">{msg}</p>}
       {empty && <p role="status">No reviewed findings or approved team insights fall in this window yet, so there is no wording to copy. Approve evidence in Review, or widen the dates.</p>}
       {!empty && (
-        <div className="pack-summary" data-testid="report-structure">
+        <div className="pack-summary" data-testid="report-structure" style={{ minWidth: 0, maxWidth: "100%" }}>
           <h3>Report cover</h3>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "4px 0 8px" }}>
+            <label style={{ fontSize: 12 }}>Prepared by (optional)<br /><input className="memory-input" aria-label="Prepared by" value={cover.preparedBy} onChange={(e) => setCoverField("preparedBy", e.target.value)} placeholder="Name and role" /></label>
+            <label style={{ fontSize: 12 }}>Implementing partner (optional)<br /><input className="memory-input" aria-label="Implementing partner" value={cover.partner} onChange={(e) => setCoverField("partner", e.target.value)} placeholder="Organisation" /></label>
+          </div>
           <div dangerouslySetInnerHTML={{ __html: structHtml.front }} />
           <p className="pack-hint">Layout follows a standard progress-report order (cover, executive summary, results, evidence by theme, changes, next steps, gaps, limitations). It is a MapToc draft, not an official UN or UNDP template. Fields marked Not recorded are left for you to fill; nothing is estimated.</p>
         </div>
