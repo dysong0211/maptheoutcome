@@ -367,6 +367,7 @@ export function CreateReport({ embedded = false }: { embedded?: boolean }) {
           sources={sources}
           disabled={evidenceChanged}
           excludedUndated={packUndated ? 0 : undatedRecords.length}
+          meta={program ?? undefined}
         />
       )}
       {draft && draftContext?.programId === programId && (
