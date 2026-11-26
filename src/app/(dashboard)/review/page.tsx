@@ -117,10 +117,14 @@ function List() {
   const review = useMemoryStore((s) => s.review);
   const sources = useMemoryStore((s) => s.sources);
   // Findings the user kept and saved before Save meant approval: approve them once, as she reviewed them.
+  // Each finding is tried at most once per page visit, so a refused one (bad quote, needs a check) cannot retry in a loop.
+  const tried = useRef<Set<string>>(new Set());
   useEffect(() => {
     for (const p of proposals)
-      if (p.status === "pending" && p.triage === "kept" && sources.find((x) => x.id === p.citation.versionId)?.reviewDisposition === "saved")
-        review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Kept and saved earlier during upload review. Recorded automatically when this page opened (migration), not a new review.", false, undefined, true);
+      if (p.status === "pending" && p.triage === "kept" && !tried.current.has(p.id) && sources.find((x) => x.id === p.citation.versionId)?.reviewDisposition === "saved") {
+        tried.current.add(p.id);
+        review(p.id, "approved", (p.draftStatement ?? p.statement).trim(), "Kept and saved earlier during upload review. Recorded automatically when this page opened (migration), not a new review.", false, undefined, "migration");
+      }
   }, [proposals, sources, review]);
   // Rows stay in place after an action: the list is fixed from the proposals pending when the page opened.
   const initial = useRef<string[] | null>(null);
