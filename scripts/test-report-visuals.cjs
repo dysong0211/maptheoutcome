@@ -24,7 +24,7 @@ const sections = v.buildSections(records, insights, sources, "https://x");
 assert.deepEqual(sections.map((s) => s.title), ["Updates", "Progress", "Finance", "Challenges", "Lessons"]);
 assert.deepEqual(sections.map((s) => s.items.length), [0, 2, 0, 2, 1]);
 assert.deepEqual(sections.flatMap((s) => s.items.map((i) => i.ref)), [1, 2, 3, 4, 5], "refs numbered in theme order");
-assert.ok(v.sectionText(sections[1]).includes("groups kept meeting"));
+assert.ok(v.sectionText(sections[1]).toLowerCase().includes("groups kept meeting"));
 assert.ok(v.sectionHtml(v.buildSections([{ ...records[0], statement: "Hit <b>x</b>" }], [], sources, "https://x")[1]).includes("Hit &lt;b&gt;x&lt;/b&gt;"), "html must be escaped");
 const charts = v.evidenceCharts(records, insights, sources, "2026-08-01", "2026-10-31");
 assert.deepEqual(charts.map((c) => c.id), ["by-kind", "insights-by-type", "timeline", "by-location", "by-source"]);
@@ -94,4 +94,34 @@ assert.equal(ov[2].items[0].moved, true);
 const chron = v.chronologyChart(sections);
 assert.ok(chron && !/marker|arrow/i.test(chron.svg) && /Order shows when/.test(chron.caption));
 assert.ok(!v.flowChart(sections, 1).title.startsWith("Documented"));
+// indicator variance: percentage indicators use percentage points, and unreviewed actuals get no variance
+{
+  const anchor = { sourceId: "s1", passageId: "s1-p1", quote: "text", version: 1, sourceDate: "2026-10-01" };
+  const mk = (id, unit, value, target, reviewed) => ({ rule: { id: "r" + id, title: "Ind " + id, method: "reported-result", inputIds: ["d" + id], target }, datum: { id: "d" + id, value, unit, periodStart: "2026-10-01", periodEnd: "2026-10-03", ...(reviewed ? { anchor, reviewedBy: "PM" } : {}) } });
+  const items = [mk(1, "%", "85", "100", true), mk(2, "employers", "14", "20", true), mk(3, "%", "85", "100", false), mk(4, "%", "85", undefined, true)];
+  const prog = { rules: items.map((i) => i.rule), data: items.map((i) => i.datum) };
+  const rows = v.indicatorRows(prog, sources, "2026-10-01", "2026-10-03");
+  assert.ok(rows[0].variance.startsWith("-15 percentage points"), rows[0].variance);
+  assert.ok(rows[0].variance.includes("85% of the target") && !rows[0].variance.startsWith("-15 %"));
+  assert.ok(rows[1].variance.startsWith("-6 employers") && rows[1].variance.includes("70% of target"), rows[1].variance);
+  assert.equal(rows[2].variance, "Not recorded", "unreviewed actual has no variance");
+  assert.equal(rows[3].variance, "Not recorded", "no target has no variance");
+  assert.equal(rows[0].baseline, "Not recorded");
+  const wide = v.indicatorRows(prog, sources, "2026-10-02", "2026-10-03");
+  assert.ok(wide[0].period.includes("extends outside the report window"));
+}
+// one routing rule for every screen: type or explicit theme first, budget wording second
+{
+  const w = "Spending on the budget line was reviewed";
+  assert.equal(v.themeFor({ kind: "Lesson", text: w, title: "T" }), "lessons");
+  assert.equal(v.themeFor({ kind: "Risk", text: w, title: "T" }), "challenges");
+  assert.equal(v.themeFor({ kind: "Decision", text: w, title: "T" }), "updates");
+  assert.equal(v.themeFor({ kind: "Result", text: w, title: "T" }), "finance");
+  assert.equal(v.themeFor({ theme: "Lesson for future programmes", text: w, title: "T" }), "lessons");
+  assert.equal(v.themeFor({ theme: "Limitation or challenge", text: w, title: "T" }), "challenges");
+  for (const f of ["src/components/program/overview-story.tsx", "src/components/program/summary-themes.tsx", "src/components/program/configured-program-summary.tsx", "src/lib/outcome-links.ts"]) {
+    const code = fs.readFileSync(path.join(root, f), "utf8");
+    assert.ok(/themeFor\(/.test(code) && !/themeFor\([^)]*,\s*(true|false)\)/.test(code), f + " must use the shared rule without overrides");
+  }
+}
 console.log("report visuals + themes ok");
