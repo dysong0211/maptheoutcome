@@ -256,7 +256,7 @@ export function ReportPack({
   }, []);
   const setTheme = (id: string, theme: string) => setOverrides((p) => {
     const n = { ...p, [id]: theme };
-    try { localStorage.setItem("maptoc-theme-overrides", JSON.stringify(n)); } catch { /* ignore */ }
+    try { localStorage.setItem("maptoc-theme-overrides", JSON.stringify(n)); window.dispatchEvent(new Event("maptoc-theme-overrides-changed")); } catch { /* ignore */ }
     return n;
   });
   const synthAll = useSynthesisStore((st) => st.items);
